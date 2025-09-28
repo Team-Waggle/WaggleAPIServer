@@ -1,4 +1,4 @@
-package io.devarium.waggleapiserver
+package io.waggle.waggleapiserver
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

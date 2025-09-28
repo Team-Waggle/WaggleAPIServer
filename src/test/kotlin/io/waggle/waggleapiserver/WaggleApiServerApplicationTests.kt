@@ -1,4 +1,4 @@
-package io.devarium.waggleapiserver
+package io.waggle.waggleapiserver
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
