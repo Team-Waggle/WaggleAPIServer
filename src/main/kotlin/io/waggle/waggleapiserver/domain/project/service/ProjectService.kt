@@ -8,6 +8,7 @@ import io.waggle.waggleapiserver.domain.project.dto.request.ProjectUpsertRequest
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
 import jakarta.persistence.EntityNotFoundException
+import org.springframework.dao.DuplicateKeyException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,6 +25,11 @@ class ProjectService(
         user: User,
     ) {
         val (name, description) = request
+
+        if (projectRepository.existsByName(name)) {
+            throw DuplicateKeyException("Already exists project name: $name")
+        }
+
         val project =
             Project(
                 name = name,
@@ -52,10 +58,15 @@ class ProjectService(
                 ?: throw EntityNotFoundException("Member not found: $user.id, $projectId")
         member.checkProjectUpdate()
 
-        val (name, description) = request
         val project =
             projectRepository.findByIdOrNull(projectId)
                 ?: throw EntityNotFoundException("Project not found: $projectId")
+
+        val (name, description) = request
+
+        if (name != project.name && projectRepository.existsByName(name)) {
+            throw DuplicateKeyException("Already exists project name: $name")
+        }
 
         project.update(
             name = name,
