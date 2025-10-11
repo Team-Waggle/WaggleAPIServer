@@ -6,7 +6,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.MalformedJwtException
 import io.jsonwebtoken.UnsupportedJwtException
 import io.jsonwebtoken.security.Keys
-import io.waggle.waggleapiserver.common.config.logger
+import io.waggle.waggleapiserver.common.util.logger
 import io.waggle.waggleapiserver.domain.user.UserRole
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service

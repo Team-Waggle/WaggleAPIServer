@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,27 +23,31 @@ class CustomOAuth2UserService(
                 else -> throw IllegalArgumentException("Unsupported provider: $registrationId")
             }
 
-        val user = getOrCreateUser(userInfo)
+        val user =
+            userRepository.findByProviderAndProviderId(
+                userInfo.provider,
+                userInfo.providerId,
+            ) ?: run {
+                require(!userRepository.existsByEmail(userInfo.email)) {
+                    "Already existing email: ${userInfo.email}"
+                }
+                userRepository.save(
+                    User(
+                        provider = userInfo.provider,
+                        providerId = userInfo.providerId,
+                        email = userInfo.email,
+                        profileImageUrl = userInfo.profileImageUrl,
+                    ),
+                )
+            }
 
-        return UserPrincipal(oauth2User, user)
-    }
+        val attributes =
+            oauth2User.attributes.toMutableMap().apply {
+                put("userId", user.id.toString())
+                put("email", user.email)
+                put("role", user.role.name)
+            }
 
-    private fun getOrCreateUser(userInfo: OAuth2UserInfo): User =
-        userRepository.findByProviderAndProviderId(userInfo.provider, userInfo.providerId)
-            ?: createUser(userInfo)
-
-    private fun createUser(userInfo: OAuth2UserInfo): User {
-        require(!userRepository.existsByEmail(userInfo.email)) {
-            "Already existing email: ${userInfo.email}"
-        }
-
-        return userRepository.save(
-            User(
-                provider = userInfo.provider,
-                providerId = userInfo.providerId,
-                email = userInfo.email,
-                profileImageUrl = userInfo.profileImageUrl,
-            ),
-        )
+        return DefaultOAuth2User(oauth2User.authorities, attributes, "email")
     }
 }

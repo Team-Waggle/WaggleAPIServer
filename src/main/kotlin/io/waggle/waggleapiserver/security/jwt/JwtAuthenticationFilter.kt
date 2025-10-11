@@ -1,6 +1,6 @@
 package io.waggle.waggleapiserver.security.jwt
 
-import io.waggle.waggleapiserver.domain.user.repository.UserRepository
+import io.waggle.waggleapiserver.domain.user.UserRole
 import io.waggle.waggleapiserver.security.oauth2.UserPrincipal
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -14,7 +14,6 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Component
 class JwtAuthenticationFilter(
     private val jwtProvider: JwtProvider,
-    private val userRepository: UserRepository,
 ) : OncePerRequestFilter() {
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -25,28 +24,40 @@ class JwtAuthenticationFilter(
             val token = extractTokenFromRequest(request)
 
             if (token != null && jwtProvider.isTokenValid(token)) {
+                val claims = jwtProvider.getClaimsFromToken(token)
+
                 val userId = jwtProvider.getUserIdFromToken(token)
+                val email =
+                    claims["email"] as? String
+                        ?: throw IllegalStateException("Email not found in JWT")
+                val roleString =
+                    claims["role"] as? String
+                        ?: throw IllegalStateException("Role not found in JWT")
 
-                val user = userRepository.findById(userId).orElse(null)
+                val role = UserRole.valueOf(roleString)
 
-                if (user != null) {
-                    val claims = jwtProvider.getClaimsFromToken(token)
-                    val authorities = listOf(SimpleGrantedAuthority("ROLE_${claims["role"]}"))
+                val userPrincipal =
+                    UserPrincipal(
+                        userId = userId,
+                        email = email,
+                        role = role,
+                    )
 
-                    val userPrincipal = UserPrincipal(user)
+                val authorities = listOf(SimpleGrantedAuthority("ROLE_${role.name}"))
 
-                    val authentication =
-                        UsernamePasswordAuthenticationToken(
-                            userPrincipal,
-                            null,
-                            authorities,
-                        )
+                val authentication =
+                    UsernamePasswordAuthenticationToken(
+                        userPrincipal,
+                        null,
+                        authorities,
+                    )
 
-                    SecurityContextHolder.getContext().authentication = authentication
-                }
+                SecurityContextHolder.getContext().authentication = authentication
+
+                logger.debug("JWT authentication successful for user: $userId")
             }
         } catch (e: Exception) {
-            logger.error("JWT authentication failed", e)
+            logger.error("JWT authentication failed: ${e.message}", e)
         }
 
         filterChain.doFilter(request, response)
