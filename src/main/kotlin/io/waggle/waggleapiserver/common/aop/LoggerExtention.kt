@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.common.config
+package io.waggle.waggleapiserver.common.aop
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
