@@ -30,6 +30,8 @@ class SecurityConfig(
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }.authorizeHttpRequests { authorize ->
                 authorize
+                    .requestMatchers("/actuator/health")
+                    .permitAll()
                     .requestMatchers(
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
