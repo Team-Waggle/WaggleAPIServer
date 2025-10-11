@@ -1,7 +1,6 @@
 package io.waggle.waggleapiserver.domain.post.dto.response
 
 import io.waggle.waggleapiserver.domain.post.Post
-import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
 
 data class PostDetailResponse(
@@ -11,15 +10,12 @@ data class PostDetailResponse(
     val user: UserDetailResponse,
 ) {
     companion object {
-        fun of(
-            post: Post,
-            user: User,
-        ): PostDetailResponse =
+        fun from(post: Post): PostDetailResponse =
             PostDetailResponse(
-                post.id!!,
+                post.id,
                 post.title,
                 post.content,
-                UserDetailResponse.from(user),
+                UserDetailResponse.from(post.user),
             )
     }
 }

@@ -16,7 +16,7 @@ data class PostSimpleResponse(
             user: User,
         ): PostSimpleResponse =
             PostSimpleResponse(
-                post.id!!,
+                post.id,
                 post.title,
                 post.content,
                 UserSimpleResponse.from(user),
