@@ -29,33 +29,33 @@ class Member(
     @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "project_id") val project: Project,
     @Enumerated(EnumType.STRING) var role: MemberRole = MemberRole.MEMBER,
 ) {
-    fun validateCanCreatePost() {
+    fun checkPostCreation() {
         if (!role.hasPermission(Permission.CREATE_POST)) {
             throw AccessDeniedException("$role cannot create posts")
         }
     }
 
-    fun validateCanManageMembers() {
-        if (!role.hasPermission(Permission.MANAGE_MEMBERS)) {
-            throw AccessDeniedException("$role cannot manage members")
-        }
-    }
-
-    fun validateCanDeletePost() {
+    fun checkPostDeletion() {
         if (!role.hasPermission(Permission.DELETE_POST)) {
             throw AccessDeniedException("$role cannot delete posts")
         }
     }
 
-    fun validateCanModifyProject() {
+    fun checkProjectUpdate() {
         if (!role.hasPermission(Permission.MODIFY_PROJECT)) {
-            throw AccessDeniedException("$role cannot modify project")
+            throw AccessDeniedException("$role cannot update project")
         }
     }
 
-    fun validateCanDeleteProject() {
+    fun checkProjectDeletion() {
         if (!role.hasPermission(Permission.DELETE_PROJECT)) {
             throw AccessDeniedException("Only LEADER can delete project")
+        }
+    }
+
+    fun checkMemberManagement() {
+        if (!role.hasPermission(Permission.MANAGE_MEMBERS)) {
+            throw AccessDeniedException("$role cannot manage members")
         }
     }
 }
