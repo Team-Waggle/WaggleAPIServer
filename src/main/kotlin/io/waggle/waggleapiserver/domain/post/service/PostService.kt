@@ -40,7 +40,13 @@ class PostService(
                 null
             }
 
-        val post = Post(title = title, content = content, user = user, project = project)
+        val post =
+            Post(
+                title = title,
+                content = content,
+                user = user,
+                project = project,
+            )
         postRepository.save(post)
     }
 
