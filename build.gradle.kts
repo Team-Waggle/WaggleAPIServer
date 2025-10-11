@@ -24,6 +24,9 @@ repositories {
 val snippetsDir = file("build/generated-snippets")
 
 dependencies {
+    // ID Generator
+    implementation("com.github.f4b6a3:uuid-creator:5.3.7")
+
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.5")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
