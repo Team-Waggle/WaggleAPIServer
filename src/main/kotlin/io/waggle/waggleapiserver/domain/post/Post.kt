@@ -26,19 +26,21 @@ class Post(
     @Column(nullable = false) var title: String,
     @Column(nullable = false, columnDefinition = "TEXT") var content: String,
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id") val user: User,
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "project_id") val project: Project?,
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "project_id") var project: Project?,
 ) : AuditingEntity() {
     fun update(
         title: String,
         content: String,
+        project: Project?,
     ) {
         this.title = title
         this.content = content
+        this.project = project
     }
 
-    fun validateOwnership(userId: UUID) {
+    fun checkOwnership(userId: UUID) {
         if (user.id != userId) {
-            throw AccessDeniedException("d")
+            throw AccessDeniedException("Not the owner of the post")
         }
     }
 }
