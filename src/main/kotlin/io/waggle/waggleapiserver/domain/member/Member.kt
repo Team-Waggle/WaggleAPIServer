@@ -19,7 +19,7 @@ import org.springframework.security.access.AccessDeniedException
 
 @Entity
 @Table(
-    name = "projects",
+    name = "members",
     uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "project_id"])],
     indexes = [Index(name = "idx_project_id", columnList = "project_id")],
 )
