@@ -8,6 +8,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
+import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.MapsId
@@ -28,7 +29,10 @@ data class BookmarkId(
 ) : Serializable
 
 @Entity
-@Table(name = "bookmarks")
+@Table(
+    name = "bookmarks",
+    indexes = [Index(name = "idx_bookmarkable", columnList = "bookmark_type, bookmarkable_id")],
+)
 class Bookmark(
     @EmbeddedId
     val id: BookmarkId,
