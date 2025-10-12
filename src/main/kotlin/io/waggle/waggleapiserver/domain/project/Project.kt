@@ -1,6 +1,8 @@
 package io.waggle.waggleapiserver.domain.project
 
 import io.waggle.waggleapiserver.common.AuditingEntity
+import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
+import io.waggle.waggleapiserver.domain.bookmark.Bookmarkable
 import io.waggle.waggleapiserver.domain.user.User
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -24,7 +26,12 @@ class Project(
     @Column(unique = true, nullable = false) var name: String,
     @Column(nullable = false) var description: String,
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id") var user: User,
-) : AuditingEntity() {
+) : AuditingEntity(),
+    Bookmarkable {
+    override val bookmarkableId: Long
+        get() = id
+    override val bookmarkableType: BookmarkType = BookmarkType.PROJECT
+
     fun update(
         name: String,
         description: String,
