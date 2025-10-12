@@ -33,7 +33,7 @@ class Post(
     Bookmarkable {
     override val bookmarkableId: Long
         get() = id
-    override val bookmarkableType: BookmarkType = BookmarkType.POST
+    override val bookmarkType: BookmarkType = BookmarkType.POST
 
     fun update(
         title: String,

@@ -30,7 +30,7 @@ class Project(
     Bookmarkable {
     override val bookmarkableId: Long
         get() = id
-    override val bookmarkableType: BookmarkType = BookmarkType.PROJECT
+    override val bookmarkType: BookmarkType = BookmarkType.PROJECT
 
     fun update(
         name: String,
