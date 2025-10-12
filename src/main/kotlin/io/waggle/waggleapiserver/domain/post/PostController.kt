@@ -65,16 +65,9 @@ class PostController(
         @PathVariable postId: Long,
         @Valid @RequestBody request: PostUpsertRequest,
         @CurrentUser user: User,
-    ): ResponseEntity<SingleItemResponse<PostDetailResponse>> =
-        ResponseEntity.ok(
-            SingleItemResponse(
-                postService.updatePost(
-                    postId,
-                    request,
-                    user,
-                ),
-            ),
-        )
+    ) {
+        postService.updatePost(postId, request, user)
+    }
 
     @DeleteMapping("/{postId}")
     fun deletePost(
