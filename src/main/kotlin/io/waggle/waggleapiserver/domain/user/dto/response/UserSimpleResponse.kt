@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.user.dto.response
 
 import io.waggle.waggleapiserver.domain.user.User
+import io.waggle.waggleapiserver.domain.user.enums.Position
 import java.util.UUID
 
 data class UserSimpleResponse(
@@ -8,6 +9,8 @@ data class UserSimpleResponse(
     val username: String?,
     val email: String,
     val profileImageUrl: String?,
+    val position: Position?,
+    val yearCount: Int?,
 ) {
     companion object {
         fun from(user: User): UserSimpleResponse =
@@ -16,6 +19,8 @@ data class UserSimpleResponse(
                 user.username,
                 user.email,
                 user.profileImageUrl,
+                user.position,
+                user.yearCount,
             )
     }
 }
