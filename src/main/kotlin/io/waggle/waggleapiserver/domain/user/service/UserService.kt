@@ -1,5 +1,6 @@
 package io.waggle.waggleapiserver.domain.user.service
 
+import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
@@ -14,8 +15,14 @@ import java.util.UUID
 @Service
 @Transactional(readOnly = true)
 class UserService(
+    private val memberRepository: MemberRepository,
     private val userRepository: UserRepository,
 ) {
+    fun getProjectUsers(projectId: Long): List<UserSimpleResponse> =
+        memberRepository
+            .findAllByProjectIdWithUserOrderByCreatedAtAsc(projectId)
+            .map { UserSimpleResponse.from(it.user) }
+
     @Transactional
     fun updateUser(
         userId: UUID,

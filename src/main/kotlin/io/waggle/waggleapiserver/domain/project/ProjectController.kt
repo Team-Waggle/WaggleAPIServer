@@ -7,6 +7,7 @@ import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleRespon
 import io.waggle.waggleapiserver.domain.project.service.ProjectService
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
+import io.waggle.waggleapiserver.domain.user.service.UserService
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/projects")
 @RestController
 class ProjectController(
-    private val memberService: MemberService,
+    private val userService: UserService,
     private val projectService: ProjectService,
 ) {
     @PostMapping
@@ -40,7 +41,7 @@ class ProjectController(
     @GetMapping("/{projectId}/members")
     fun getProjectMembers(
         @PathVariable("projectId") projectId: Long,
-    ): ResponseEntity<List<UserSimpleResponse>> = ResponseEntity.ok(memberService.getProjectMembers(projectId))
+    ): ResponseEntity<List<UserSimpleResponse>> = ResponseEntity.ok(userService.getProjectUsers(projectId))
 
     @PutMapping("/{projectId}")
     fun updateProject(
