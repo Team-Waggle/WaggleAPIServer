@@ -32,4 +32,6 @@ interface PostRepository : JpaRepository<Post, Long> {
         @Param("query") query: String,
         pageable: Pageable,
     ): Page<Post>
+
+    fun findByIdInOrderByCreatedAtDesc(ids: List<Long>): List<Post>
 }
