@@ -8,18 +8,20 @@ import io.waggle.waggleapiserver.domain.project.dto.request.ProjectUpsertRequest
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
+import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
+import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 @Service
 @Transactional(readOnly = true)
 class ProjectService(
     private val memberRepository: MemberRepository,
     private val projectRepository: ProjectRepository,
+    private val userRepository: UserRepository,
 ) {
     @Transactional
     fun createProject(
@@ -59,14 +61,14 @@ class ProjectService(
         return ProjectSimpleResponse.from(project)
     }
 
-    fun getUserProjects(userId: UUID): List<ProjectSimpleResponse> {
-        val projectIds =
+    fun getProjectUsers(projectId: Long): List<UserSimpleResponse> {
+        val userIds =
             memberRepository
-                .findAllByUserIdOrderByCreatedAtAsc(userId)
-                .map { it.projectId }
-        val projects = projectRepository.findAllById(projectIds)
+                .findAllByProjectIdOrderByCreatedAtAsc(projectId)
+                .map { it.userId }
+        val users = userRepository.findAllById(userIds)
 
-        return projects.map { ProjectSimpleResponse.from(it) }
+        return users.map { UserSimpleResponse.from(it) }
     }
 
     @Transactional
