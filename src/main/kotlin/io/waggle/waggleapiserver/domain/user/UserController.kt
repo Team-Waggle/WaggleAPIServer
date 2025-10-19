@@ -4,6 +4,8 @@ import io.waggle.waggleapiserver.common.util.CurrentUser
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.bookmark.service.BookmarkService
+import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
+import io.waggle.waggleapiserver.domain.notification.service.NotificationService
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
@@ -23,6 +25,7 @@ import java.util.UUID
 @RestController
 class UserController(
     private val bookmarkService: BookmarkService,
+    private val notificationService: NotificationService,
     private val userService: UserService,
 ) {
     @GetMapping("/me/bookmarks")
@@ -46,6 +49,11 @@ class UserController(
     fun getMyProjects(
         @CurrentUser user: User,
     ): ResponseEntity<List<ProjectSimpleResponse>> = ResponseEntity.ok(userService.getUserProjects(user.id))
+
+    @GetMapping("/me/notifications")
+    fun getMyNotifications(
+        @CurrentUser user: User,
+    ): ResponseEntity<List<NotificationResponse>> = ResponseEntity.ok(notificationService.getUserNotifications(user))
 
     @PutMapping("/me")
     fun updateMe(
