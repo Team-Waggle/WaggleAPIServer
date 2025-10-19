@@ -30,7 +30,7 @@ class FollowService(
             throw IllegalArgumentException("Cannot follow yourself")
         }
 
-        if (userRepository.existsById(followeeId)) {
+        if (!userRepository.existsById(followeeId)) {
             throw EntityNotFoundException("User not found: $followeeId")
         }
 
