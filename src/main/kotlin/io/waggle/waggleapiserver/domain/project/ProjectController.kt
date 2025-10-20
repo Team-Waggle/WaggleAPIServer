@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.project
 
 import io.waggle.waggleapiserver.common.util.CurrentUser
+import io.waggle.waggleapiserver.domain.application.service.ApplicationService
 import io.waggle.waggleapiserver.domain.project.dto.request.ProjectUpsertRequest
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.project.service.ProjectService
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/projects")
 @RestController
 class ProjectController(
+    private val applicationService: ApplicationService,
     private val recruitmentService: RecruitmentService,
     private val projectService: ProjectService,
 ) {
@@ -31,6 +33,14 @@ class ProjectController(
         @CurrentUser user: User,
     ) {
         projectService.createProject(request, user)
+    }
+
+    @PostMapping("/{projectId}/applications")
+    fun createApplication(
+        @PathVariable projectId: Long,
+        @CurrentUser user: User,
+    ) {
+        applicationService.createApplication(projectId, user)
     }
 
     @PostMapping("/{projectId}/recruitments")

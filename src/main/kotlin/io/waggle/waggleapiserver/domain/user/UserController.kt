@@ -1,6 +1,8 @@
 package io.waggle.waggleapiserver.domain.user
 
 import io.waggle.waggleapiserver.common.util.CurrentUser
+import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
+import io.waggle.waggleapiserver.domain.application.service.ApplicationService
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.bookmark.service.BookmarkService
@@ -24,6 +26,7 @@ import java.util.UUID
 @RequestMapping("/users")
 @RestController
 class UserController(
+    private val applicationService: ApplicationService,
     private val bookmarkService: BookmarkService,
     private val notificationService: NotificationService,
     private val userService: UserService,
@@ -45,15 +48,20 @@ class UserController(
         @PathVariable userId: UUID,
     ): ResponseEntity<List<ProjectSimpleResponse>> = ResponseEntity.ok(userService.getUserProjects(userId))
 
-    @GetMapping("/me/projects")
-    fun getMyProjects(
+    @GetMapping("/me/applications")
+    fun getMyApplications(
         @CurrentUser user: User,
-    ): ResponseEntity<List<ProjectSimpleResponse>> = ResponseEntity.ok(userService.getUserProjects(user.id))
+    ): ResponseEntity<List<ApplicationResponse>> = ResponseEntity.ok(applicationService.getUserApplications(user))
 
     @GetMapping("/me/notifications")
     fun getMyNotifications(
         @CurrentUser user: User,
     ): ResponseEntity<List<NotificationResponse>> = ResponseEntity.ok(notificationService.getUserNotifications(user))
+
+    @GetMapping("/me/projects")
+    fun getMyProjects(
+        @CurrentUser user: User,
+    ): ResponseEntity<List<ProjectSimpleResponse>> = ResponseEntity.ok(userService.getUserProjects(user.id))
 
     @PutMapping("/me")
     fun updateMe(
