@@ -9,6 +9,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 @Transactional(readOnly = true)
@@ -49,8 +50,8 @@ class ApplicationService(
         applicationRepository.save(application)
     }
 
-    fun getUserApplications(user: User): List<ApplicationResponse> {
-        val applications = applicationRepository.findByUserId(user.id)
+    fun getUserApplications(userId: UUID): List<ApplicationResponse> {
+        val applications = applicationRepository.findByUserId(userId)
         return applications.map { ApplicationResponse.from(it) }
     }
 }

@@ -51,12 +51,12 @@ class UserController(
     @GetMapping("/me/applications")
     fun getMyApplications(
         @CurrentUser user: User,
-    ): ResponseEntity<List<ApplicationResponse>> = ResponseEntity.ok(applicationService.getUserApplications(user))
+    ): ResponseEntity<List<ApplicationResponse>> = ResponseEntity.ok(applicationService.getUserApplications(user.id))
 
     @GetMapping("/me/notifications")
     fun getMyNotifications(
         @CurrentUser user: User,
-    ): ResponseEntity<List<NotificationResponse>> = ResponseEntity.ok(notificationService.getUserNotifications(user))
+    ): ResponseEntity<List<NotificationResponse>> = ResponseEntity.ok(notificationService.getUserNotifications(user.id))
 
     @GetMapping("/me/projects")
     fun getMyProjects(

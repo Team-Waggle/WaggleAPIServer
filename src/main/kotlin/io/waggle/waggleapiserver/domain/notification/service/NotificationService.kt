@@ -4,7 +4,6 @@ import io.waggle.waggleapiserver.domain.notification.Notification
 import io.waggle.waggleapiserver.domain.notification.dto.request.NotificationCreateRequest
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
-import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
@@ -41,8 +40,8 @@ class NotificationService(
         notificationRepository.save(notification)
     }
 
-    fun getUserNotifications(user: User): List<NotificationResponse> {
-        val notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.id)
+    fun getUserNotifications(userId: UUID): List<NotificationResponse> {
+        val notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
         return notifications.map { NotificationResponse.from(it) }
     }
 }
