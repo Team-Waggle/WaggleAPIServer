@@ -18,7 +18,7 @@ import java.util.UUID
 @Table(
     name = "members",
     uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "project_id"])],
-    indexes = [Index(name = "idx_project_id", columnList = "project_id")],
+    indexes = [Index(name = "idx_members_project_id", columnList = "project_id")],
 )
 class Member(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -15,7 +15,7 @@ import java.util.UUID
     name = "notifications",
     indexes = [
         Index(
-            name = "idx_user_id_is_read_created_at",
+            name = "idx_notifications_user_id_is_read_created_at",
             columnList = "user_id, is_read, created_at DESC",
         ),
     ],

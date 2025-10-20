@@ -15,7 +15,7 @@ import java.util.UUID
 @Entity
 @Table(
     name = "projects",
-    indexes = [Index(name = "idx_name", columnList = "name")],
+    indexes = [Index(name = "idx_projects_name", columnList = "name")],
 )
 class Project(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

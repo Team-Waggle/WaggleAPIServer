@@ -26,7 +26,12 @@ data class BookmarkId(
 @Entity
 @Table(
     name = "bookmarks",
-    indexes = [Index(name = "idx_bookmarkable", columnList = "bookmark_type, bookmarkable_id")],
+    indexes = [
+        Index(
+            name = "idx_bookmarks_bookmarkable",
+            columnList = "bookmark_type, bookmarkable_id",
+        ),
+    ],
 )
 class Bookmark(
     @EmbeddedId

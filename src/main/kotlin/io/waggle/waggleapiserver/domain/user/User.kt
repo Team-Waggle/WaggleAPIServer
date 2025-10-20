@@ -20,7 +20,7 @@ import java.util.UUID
 @Table(
     name = "users",
     uniqueConstraints = [UniqueConstraint(columnNames = ["provider", "provider_id"])],
-    indexes = [Index(name = "idx_email", columnList = "email")],
+    indexes = [Index(name = "idx_users_email", columnList = "email")],
 )
 class User(
     @Id val id: UUID = UuidCreator.getTimeOrderedEpoch(),
