@@ -34,6 +34,10 @@ class Member(
     val isLeader: Boolean
         get() = this.role == MemberRole.LEADER
 
+    fun updateRole(role: MemberRole) {
+        this.role = role
+    }
+
     fun checkMemberRole(role: MemberRole) {
         if (this.role.level < role.level) {
             throw AccessDeniedException("$role do not have the authority")

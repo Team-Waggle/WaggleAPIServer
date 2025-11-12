@@ -2,8 +2,6 @@ package io.waggle.waggleapiserver.domain.member.repository
 
 import io.waggle.waggleapiserver.domain.member.Member
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
 import java.util.UUID
 
 interface MemberRepository : JpaRepository<Member, Long> {
@@ -11,6 +9,11 @@ interface MemberRepository : JpaRepository<Member, Long> {
         userId: UUID,
         projectId: Long,
     ): Member?
+
+    fun findAllByIdNotAndProjectIdOrderByCreatedAtAsc(
+        id: Long,
+        projectId: Long,
+    ): List<Member>
 
     fun findAllByUserIdOrderByCreatedAtAsc(userId: UUID): List<Member>
 
