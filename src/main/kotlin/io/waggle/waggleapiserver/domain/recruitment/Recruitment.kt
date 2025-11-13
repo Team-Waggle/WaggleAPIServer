@@ -29,7 +29,7 @@ class Recruitment(
     var currentCount: Int = 0,
     @Column(name = "recruiting_count", nullable = false)
     val recruitingCount: Int,
-    @Column(name = "project_id", nullable = false)
+    @Column(name = "project_id", nullable = false, updatable = false)
     val projectId: Long,
 ) : AuditingEntity() {
     fun isRecruiting(): Boolean = currentCount < recruitingCount
