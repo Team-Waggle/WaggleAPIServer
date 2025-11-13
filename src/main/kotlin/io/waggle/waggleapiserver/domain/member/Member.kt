@@ -11,7 +11,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
-import org.springframework.security.access.AccessDeniedException
 import java.util.UUID
 
 @Entity
@@ -39,8 +38,6 @@ class Member(
     }
 
     fun checkMemberRole(role: MemberRole) {
-        if (this.role.level < role.level) {
-            throw AccessDeniedException("$role do not have the authority")
-        }
+        check(this.role.level > role.level) { "Do not have the authority" }
     }
 }
