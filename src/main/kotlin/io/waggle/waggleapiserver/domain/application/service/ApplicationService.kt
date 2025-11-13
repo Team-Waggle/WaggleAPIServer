@@ -13,7 +13,6 @@ import org.springframework.dao.DuplicateKeyException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 @Service
 @Transactional(readOnly = true)
@@ -56,8 +55,8 @@ class ApplicationService(
         return ApplicationResponse.from(savedApplication)
     }
 
-    fun getUserApplications(userId: UUID): List<ApplicationResponse> {
-        val applications = applicationRepository.findByUserId(userId)
+    fun getUserApplications(user: User): List<ApplicationResponse> {
+        val applications = applicationRepository.findByUserId(user.id)
         return applications.map { ApplicationResponse.from(it) }
     }
 

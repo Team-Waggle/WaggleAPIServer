@@ -60,7 +60,7 @@ class ProjectService(
         val project =
             projectRepository.findByIdOrNull(projectId)
                 ?: throw EntityNotFoundException("Project not found: $projectId")
-        val members = memberRepository.findAllByProjectIdOrderByCreatedAtAsc(projectId)
+        val members = memberRepository.findByProjectIdOrderByCreatedAtAsc(projectId)
         val users = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
 
         return ProjectDetailResponse.of(
@@ -100,7 +100,7 @@ class ProjectService(
             description = description,
         )
 
-        val members = memberRepository.findAllByProjectIdOrderByCreatedAtAsc(projectId)
+        val members = memberRepository.findByProjectIdOrderByCreatedAtAsc(projectId)
         val users = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
 
         return ProjectDetailResponse.of(

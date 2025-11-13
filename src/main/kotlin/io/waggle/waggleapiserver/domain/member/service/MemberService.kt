@@ -56,7 +56,7 @@ class MemberService(
             memberRepository.findByUserIdAndProjectId(user.id, projectId)
                 ?: throw EntityNotFoundException("Member Not Found")
         val members =
-            memberRepository.findAllByIdNotAndProjectIdOrderByCreatedAtAsc(member.id, projectId)
+            memberRepository.findByIdNotAndProjectIdOrderByCreatedAtAsc(member.id, projectId)
         check(members.isNotEmpty()) { "Cannot leave as the only member" }
 
         if (member.isLeader) {

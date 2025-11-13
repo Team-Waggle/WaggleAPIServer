@@ -31,7 +31,7 @@ class RecruitmentService(
 
         val existingPositions =
             recruitmentRepository
-                .findAllByProjectId(projectId)
+                .findByProjectId(projectId)
                 .map { it.position }
         val duplicates = request.map { it.position }.intersect(existingPositions.toSet())
         if (duplicates.isNotEmpty()) {

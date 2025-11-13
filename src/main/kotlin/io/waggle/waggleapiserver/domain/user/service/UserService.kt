@@ -3,6 +3,7 @@ package io.waggle.waggleapiserver.domain.user.service
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
+import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
@@ -30,7 +31,7 @@ class UserService(
     fun getUserProjects(userId: UUID): List<ProjectSimpleResponse> {
         val projectIds =
             memberRepository
-                .findAllByUserIdOrderByCreatedAtAsc(userId)
+                .findByUserIdOrderByCreatedAtAsc(userId)
                 .map { it.projectId }
         val projects = projectRepository.findAllById(projectIds)
 
@@ -39,13 +40,10 @@ class UserService(
 
     @Transactional
     fun updateUser(
-        userId: UUID,
         request: UserUpdateRequest,
+        user: User,
     ): UserDetailResponse {
         val (username, workTime, workWay, sido, position, yearCount, detail) = request
-        val user =
-            userRepository.findByIdOrNull(userId)
-                ?: throw EntityNotFoundException("User not found: $userId")
 
         if (user.username != username && userRepository.existsByUsername(username)) {
             throw DuplicateKeyException("Username already exists")

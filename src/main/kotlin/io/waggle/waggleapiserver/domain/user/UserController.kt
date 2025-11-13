@@ -58,7 +58,7 @@ class UserController(
     @GetMapping("/me/applications")
     fun getMyApplications(
         @CurrentUser user: User,
-    ): List<ApplicationResponse> = applicationService.getUserApplications(user.id)
+    ): List<ApplicationResponse> = applicationService.getUserApplications(user)
 
     @GetMapping("/me/followees")
     fun getMyFollowees(
@@ -73,7 +73,7 @@ class UserController(
     @GetMapping("/me/notifications")
     fun getMyNotifications(
         @CurrentUser user: User,
-    ): List<NotificationResponse> = notificationService.getUserNotifications(user.id)
+    ): List<NotificationResponse> = notificationService.getUserNotifications(user)
 
     @GetMapping("/me/projects")
     fun getMyProjects(
@@ -84,5 +84,5 @@ class UserController(
     fun updateMe(
         @Valid @RequestBody request: UserUpdateRequest,
         @CurrentUser user: User,
-    ): UserDetailResponse = userService.updateUser(user.id, request)
+    ): UserDetailResponse = userService.updateUser(request, user)
 }
