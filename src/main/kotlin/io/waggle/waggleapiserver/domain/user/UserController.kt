@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.user
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.util.CurrentUser
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.service.ApplicationService
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
+@Tag(name = "사용자")
 @RequestMapping("/users")
 @RestController
 class UserController(
@@ -34,52 +37,62 @@ class UserController(
     private val notificationService: NotificationService,
     private val userService: UserService,
 ) {
+    @Operation(summary = "사용자 조회")
     @GetMapping("/{userId}")
     fun getUser(
         @PathVariable userId: UUID,
     ): UserDetailResponse = userService.getUser(userId)
 
+    @Operation(summary = "사용자 팔로우 개수 정보 조회")
     @GetMapping("/{userId}/follow-count")
     fun getUserFollowCount(
         @PathVariable userId: UUID,
     ): FollowCountResponse = followService.getUserFollowCount(userId)
 
+    @Operation(summary = "본인 북마크 목록 조회")
     @GetMapping("/me/bookmarks")
     fun getMyBookmarks(
         @RequestParam bookmarkType: BookmarkType,
         @CurrentUser user: User,
     ): List<BookmarkResponse> = bookmarkService.getUserBookmarkables(bookmarkType, user)
 
+    @Operation(summary = "사용자 참여 프로젝트 목록 조회")
     @GetMapping("/{userId}/projects")
     fun getUserProjects(
         @PathVariable userId: UUID,
     ): List<ProjectSimpleResponse> = userService.getUserProjects(userId)
 
+    @Operation(summary = "본인 지원 목록 조회")
     @GetMapping("/me/applications")
     fun getMyApplications(
         @CurrentUser user: User,
     ): List<ApplicationResponse> = applicationService.getUserApplications(user)
 
+    @Operation(summary = "본인이 팔로우 하는 계정 목록 조회")
     @GetMapping("/me/followees")
     fun getMyFollowees(
         @CurrentUser user: User,
     ): List<UserSimpleResponse> = followService.getUserFollowees(user.id)
 
+    @Operation(summary = "본인을 팔로우 하는 계정 목록 조회")
     @GetMapping("/me/followers")
     fun getMyFollowers(
         @CurrentUser user: User,
     ): List<UserSimpleResponse> = followService.getUserFollowers(user.id)
 
+    @Operation(summary = "본인 알림 목록 조회")
     @GetMapping("/me/notifications")
     fun getMyNotifications(
         @CurrentUser user: User,
     ): List<NotificationResponse> = notificationService.getUserNotifications(user)
 
+    @Operation(summary = "본인 참여 프로젝트 목록 조회")
     @GetMapping("/me/projects")
     fun getMyProjects(
         @CurrentUser user: User,
     ): List<ProjectSimpleResponse> = userService.getUserProjects(user.id)
 
+    @Operation(summary = "본인 프로필 수정")
     @PutMapping("/me")
     fun updateMe(
         @Valid @RequestBody request: UserUpdateRequest,
