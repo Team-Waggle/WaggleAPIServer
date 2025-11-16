@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.post
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.util.CurrentUser
 import io.waggle.waggleapiserver.domain.post.dto.request.PostSearchQuery
 import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
@@ -24,11 +26,13 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
+@Tag(name = "모집글")
 @RequestMapping("/posts")
 @RestController
 class PostController(
     private val postService: PostService,
 ) {
+    @Operation(summary = "모집글 생성")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun createPost(
@@ -36,6 +40,7 @@ class PostController(
         @CurrentUser user: User,
     ): PostDetailResponse = postService.createPost(request, user)
 
+    @Operation(summary = "모집글 목록 페이지네이션 조회")
     @GetMapping
     fun getPosts(
         @ModelAttribute query: PostSearchQuery,
@@ -47,12 +52,14 @@ class PostController(
         ) pageable: Pageable,
     ): Page<PostSimpleResponse> = postService.getPosts(query, pageable)
 
+    @Operation(summary = "모집글 상세 조회")
     @GetMapping("/{postId}")
     fun getPost(
         @PathVariable postId: Long,
         @CurrentUser user: User?,
     ): PostDetailResponse = postService.getPost(postId)
 
+    @Operation(summary = "모집글 수정")
     @PutMapping("/{postId}")
     fun updatePost(
         @PathVariable postId: Long,
@@ -60,6 +67,7 @@ class PostController(
         @CurrentUser user: User,
     ): PostDetailResponse = postService.updatePost(postId, request, user)
 
+    @Operation(summary = "모집글 삭제")
     @DeleteMapping("/{postId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deletePost(
