@@ -1,6 +1,5 @@
 package io.waggle.waggleapiserver.security.jwt
 
-import io.waggle.waggleapiserver.domain.user.UserRole
 import io.waggle.waggleapiserver.security.oauth2.UserPrincipal
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -24,14 +23,8 @@ class JwtAuthenticationFilter(
             val token = extractTokenFromRequest(request)
 
             if (token != null && jwtProvider.isTokenValid(token)) {
-                val claims = jwtProvider.getClaimsFromToken(token)
-
                 val userId = jwtProvider.getUserIdFromToken(token)
-                val roleString =
-                    claims["role"] as? String
-                        ?: throw IllegalStateException("Role not found in JWT")
-
-                val role = UserRole.valueOf(roleString)
+                val role = jwtProvider.getRoleFromToken(token)
 
                 val userPrincipal =
                     UserPrincipal(

@@ -9,49 +9,27 @@ import io.jsonwebtoken.security.Keys
 import io.waggle.waggleapiserver.common.util.logger
 import io.waggle.waggleapiserver.domain.user.UserRole
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import java.util.Date
 import java.util.UUID
 
-@Service
+@Component
 class JwtProvider(
     @Value("\${jwt.secret}") private val jwtSecret: String,
-    @Value("\${jwt.access-token-expiration}") private val accessTokenExpiration: Long,
-    @Value("\${jwt.refresh-token-expiration}") private val refreshTokenExpiration: Long,
+    @Value("\${jwt.access-token-ttl}") private val accessTokenTtl: Long,
+    @Value("\${jwt.refresh-token-ttl}") private val refreshTokenTtl: Long,
 ) {
     private val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
 
     fun generateAccessToken(
-        userId: String,
-        email: String,
+        userId: UUID,
         role: UserRole,
-    ): String {
-        val now = Date()
-        val expiration = Date(now.time + accessTokenExpiration)
+    ): String = generateToken(userId, role, accessTokenTtl)
 
-        return Jwts
-            .builder()
-            .subject(userId)
-            .claim("email", email)
-            .claim("role", role.name)
-            .issuedAt(now)
-            .expiration(expiration)
-            .signWith(key)
-            .compact()
-    }
-
-    fun generateRefreshToken(userId: String): String {
-        val now = Date()
-        val expiration = Date(now.time + refreshTokenExpiration)
-
-        return Jwts
-            .builder()
-            .subject(userId)
-            .issuedAt(now)
-            .expiration(expiration)
-            .signWith(key)
-            .compact()
-    }
+    fun generateRefreshToken(
+        userId: UUID,
+        role: UserRole,
+    ): String = generateToken(userId, role, refreshTokenTtl)
 
     fun isTokenValid(token: String): Boolean =
         try {
@@ -78,12 +56,32 @@ class JwtProvider(
             false
         }
 
-    fun getUserIdFromToken(token: String): UUID {
-        val claims = getClaimsFromToken(token)
-        return UUID.fromString(claims.subject)
+    fun getUserIdFromToken(token: String): UUID = UUID.fromString(getClaimsFromToken(token).subject)
+
+    fun getRoleFromToken(token: String): UserRole =
+        (getClaimsFromToken(token)["role"] as? String)
+            ?.let { UserRole.valueOf(it) }
+            ?: UserRole.USER
+
+    private fun generateToken(
+        userId: UUID,
+        role: UserRole,
+        ttl: Long,
+    ): String {
+        val now = Date()
+        val expiration = Date(now.time + ttl)
+
+        return Jwts
+            .builder()
+            .subject(userId.toString())
+            .claim("role", role.name)
+            .issuedAt(now)
+            .expiration(expiration)
+            .signWith(key)
+            .compact()
     }
 
-    fun getClaimsFromToken(token: String): Claims =
+    private fun getClaimsFromToken(token: String): Claims =
         Jwts
             .parser()
             .verifyWith(key)
