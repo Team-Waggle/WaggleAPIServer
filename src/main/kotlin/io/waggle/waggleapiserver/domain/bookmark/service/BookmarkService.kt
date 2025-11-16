@@ -12,6 +12,7 @@ import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
+import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -57,7 +58,7 @@ class BookmarkService(
             BookmarkType.POST -> {
                 postRepository
                     .findByIdInOrderByCreatedAtDesc(bookmarkableIds)
-                    .map { PostSimpleResponse.of(it, user) }
+                    .map { PostSimpleResponse.of(it, UserSimpleResponse.from(user)) }
             }
 
             BookmarkType.PROJECT -> {
