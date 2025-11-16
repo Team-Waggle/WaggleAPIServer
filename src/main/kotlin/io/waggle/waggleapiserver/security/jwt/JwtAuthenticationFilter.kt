@@ -27,9 +27,6 @@ class JwtAuthenticationFilter(
                 val claims = jwtProvider.getClaimsFromToken(token)
 
                 val userId = jwtProvider.getUserIdFromToken(token)
-                val email =
-                    claims["email"] as? String
-                        ?: throw IllegalStateException("Email not found in JWT")
                 val roleString =
                     claims["role"] as? String
                         ?: throw IllegalStateException("Role not found in JWT")
@@ -39,7 +36,6 @@ class JwtAuthenticationFilter(
                 val userPrincipal =
                     UserPrincipal(
                         userId = userId,
-                        email = email,
                         role = role,
                     )
 
