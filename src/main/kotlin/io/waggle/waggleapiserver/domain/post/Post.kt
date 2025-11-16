@@ -32,7 +32,7 @@ class Post(
 ) : AuditingEntity(),
     Bookmarkable {
     override val bookmarkableId: Long get() = id
-    override val bookmarkType: BookmarkType = BookmarkType.POST
+    override val bookmarkType: BookmarkType get() = BookmarkType.POST
 
     fun update(
         title: String,

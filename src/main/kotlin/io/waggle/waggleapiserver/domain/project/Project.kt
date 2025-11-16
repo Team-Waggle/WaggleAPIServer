@@ -33,7 +33,7 @@ class Project(
 ) : AuditingEntity(),
     Bookmarkable {
     override val bookmarkableId: Long get() = id
-    override val bookmarkType: BookmarkType = BookmarkType.PROJECT
+    override val bookmarkType: BookmarkType get() = BookmarkType.PROJECT
 
     fun update(
         name: String,
