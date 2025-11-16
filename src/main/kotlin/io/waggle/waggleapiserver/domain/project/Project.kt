@@ -3,6 +3,8 @@ package io.waggle.waggleapiserver.domain.project
 import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.Bookmarkable
+import jakarta.persistence.Access
+import jakarta.persistence.AccessType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -12,6 +14,7 @@ import jakarta.persistence.Index
 import jakarta.persistence.Table
 import java.util.UUID
 
+@Access(AccessType.FIELD)
 @Entity
 @Table(
     name = "projects",
@@ -32,8 +35,10 @@ class Project(
     val creatorId: UUID,
 ) : AuditingEntity(),
     Bookmarkable {
-    override val bookmarkableId: Long get() = id
-    override val bookmarkType: BookmarkType get() = BookmarkType.PROJECT
+    override val bookmarkableId: Long
+        get() = id
+    override val bookmarkType: BookmarkType
+        get() = BookmarkType.PROJECT
 
     fun update(
         name: String,

@@ -3,6 +3,8 @@ package io.waggle.waggleapiserver.domain.post
 import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.Bookmarkable
+import jakarta.persistence.Access
+import jakarta.persistence.AccessType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -13,6 +15,7 @@ import jakarta.persistence.Table
 import org.springframework.security.access.AccessDeniedException
 import java.util.UUID
 
+@Access(AccessType.FIELD)
 @Entity
 @Table(
     name = "posts",
@@ -31,8 +34,10 @@ class Post(
     var projectId: Long?,
 ) : AuditingEntity(),
     Bookmarkable {
-    override val bookmarkableId: Long get() = id
-    override val bookmarkType: BookmarkType get() = BookmarkType.POST
+    override val bookmarkableId: Long
+        get() = id
+    override val bookmarkType: BookmarkType
+        get() = BookmarkType.POST
 
     fun update(
         title: String,
