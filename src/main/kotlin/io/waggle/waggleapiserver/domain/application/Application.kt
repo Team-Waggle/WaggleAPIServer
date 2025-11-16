@@ -25,15 +25,23 @@ import java.util.UUID
     ],
 )
 class Application(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     val position: Position,
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     var status: ApplicationStatus = ApplicationStatus.PENDING,
     @Column(name = "project_id", nullable = false, updatable = false)
     val projectId: Long,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
-) : AuditingEntity()
+) : AuditingEntity() {
+    fun updateStatus(status: ApplicationStatus) {
+        if (this.status != ApplicationStatus.PENDING) {
+            throw IllegalStateException("status is not PENDING")
+        }
+        this.status = status
+    }
+}

@@ -6,7 +6,6 @@ import java.util.UUID
 
 class UserPrincipal(
     val userId: UUID,
-    val email: String,
     val role: UserRole,
 ) : Principal {
     override fun getName() = userId.toString()

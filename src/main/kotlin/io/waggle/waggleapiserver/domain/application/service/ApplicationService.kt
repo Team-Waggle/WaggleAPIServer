@@ -1,27 +1,31 @@
 package io.waggle.waggleapiserver.domain.application.service
 
 import io.waggle.waggleapiserver.domain.application.Application
+import io.waggle.waggleapiserver.domain.application.ApplicationStatus
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
+import io.waggle.waggleapiserver.domain.member.MemberRole
+import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.user.User
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.dao.DuplicateKeyException
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 @Service
 @Transactional(readOnly = true)
 class ApplicationService(
     private val applicationRepository: ApplicationRepository,
     private val recruitmentRepository: RecruitmentRepository,
+    private val memberRepository: MemberRepository,
 ) {
     @Transactional
-    fun createApplication(
+    fun applyProject(
         projectId: Long,
         user: User,
-    ) {
+    ): ApplicationResponse {
         val position = user.position ?: throw IllegalStateException("User must have position")
         val recruitment =
             recruitmentRepository.findByProjectIdAndPosition(projectId, position)
@@ -46,12 +50,76 @@ class ApplicationService(
                 projectId = projectId,
                 userId = user.id,
             )
+        val savedApplication = applicationRepository.save(application)
 
-        applicationRepository.save(application)
+        return ApplicationResponse.from(savedApplication)
     }
 
-    fun getUserApplications(userId: UUID): List<ApplicationResponse> {
-        val applications = applicationRepository.findByUserId(userId)
+    fun getUserApplications(user: User): List<ApplicationResponse> {
+        val applications = applicationRepository.findByUserId(user.id)
         return applications.map { ApplicationResponse.from(it) }
+    }
+
+    fun getProjectApplications(
+        projectId: Long,
+        user: User,
+    ): List<ApplicationResponse> {
+        val member =
+            memberRepository.findByUserIdAndProjectId(user.id, projectId)
+                ?: throw EntityNotFoundException("Member not found")
+        member.checkMemberRole(MemberRole.MEMBER)
+
+        val applications = applicationRepository.findByProjectId(projectId)
+
+        return applications.map { ApplicationResponse.from(it) }
+    }
+
+    @Transactional
+    fun approveApplication(
+        applicationId: Long,
+        user: User,
+    ): ApplicationResponse {
+        val application =
+            applicationRepository.findByIdOrNull(applicationId)
+                ?: throw EntityNotFoundException("Application not found: $applicationId")
+
+        val member =
+            memberRepository.findByUserIdAndProjectId(user.id, application.projectId)
+                ?: throw EntityNotFoundException("Member not found")
+        member.checkMemberRole(MemberRole.MANAGER)
+
+        application.updateStatus(ApplicationStatus.APPROVED)
+
+        return ApplicationResponse.from(application)
+    }
+
+    @Transactional
+    fun rejectApplication(
+        applicationId: Long,
+        user: User,
+    ): ApplicationResponse {
+        val application =
+            applicationRepository.findByIdOrNull(applicationId)
+                ?: throw EntityNotFoundException("Application not found: $applicationId")
+
+        val member =
+            memberRepository.findByUserIdAndProjectId(user.id, application.projectId)
+                ?: throw EntityNotFoundException("Member not found")
+        member.checkMemberRole(MemberRole.MANAGER)
+
+        application.updateStatus(ApplicationStatus.REJECTED)
+
+        return ApplicationResponse.from(application)
+    }
+
+    @Transactional
+    fun deleteApplication(
+        applicationId: Long,
+        user: User,
+    ) {
+        val application =
+            applicationRepository.findByIdAndUserId(applicationId, user.id)
+                ?: throw EntityNotFoundException("Application not found: $applicationId")
+        application.delete()
     }
 }

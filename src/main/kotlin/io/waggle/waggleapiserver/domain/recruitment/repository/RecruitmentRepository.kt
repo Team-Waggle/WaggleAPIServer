@@ -10,5 +10,5 @@ interface RecruitmentRepository : JpaRepository<Recruitment, Long> {
         position: Position,
     ): Recruitment?
 
-    fun findAllByProjectId(projectId: Long): List<Recruitment>
+    fun findByProjectId(projectId: Long): List<Recruitment>
 }

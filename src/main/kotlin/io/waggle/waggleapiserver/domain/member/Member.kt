@@ -11,7 +11,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
-import org.springframework.security.access.AccessDeniedException
 import java.util.UUID
 
 @Entity
@@ -28,11 +27,17 @@ class Member(
     @Column(name = "project_id", nullable = false, updatable = false)
     val projectId: Long,
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(10)")
     var role: MemberRole = MemberRole.MEMBER,
 ) : AuditingEntity() {
-    fun checkMembership(requiredRole: MemberRole) {
-        if (role.level < requiredRole.level) {
-            throw AccessDeniedException("$role do not have the authority")
-        }
+    val isLeader: Boolean
+        get() = this.role == MemberRole.LEADER
+
+    fun updateRole(role: MemberRole) {
+        this.role = role
+    }
+
+    fun checkMemberRole(role: MemberRole) {
+        check(this.role.level > role.level) { "Do not have the authority" }
     }
 }
