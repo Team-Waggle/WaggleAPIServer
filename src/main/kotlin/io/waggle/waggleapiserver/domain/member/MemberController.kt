@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.member
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.util.CurrentUser
 import io.waggle.waggleapiserver.domain.member.dto.request.MemberUpdateRoleRequest
 import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
@@ -14,11 +16,16 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
+@Tag(name = "프로젝트 멤버")
 @RequestMapping("/members")
 @RestController
 class MemberController(
     private val memberService: MemberService,
 ) {
+    @Operation(
+        summary = "멤버 역할 변경",
+        description = "본인의 멤버 권한에 따라 타 멤버의 권한을 변경함",
+    )
     @PatchMapping("/{memberId}")
     fun updateMemberRole(
         @PathVariable memberId: Long,
@@ -26,6 +33,10 @@ class MemberController(
         @CurrentUser user: User,
     ): MemberResponse = memberService.updateMemberRole(memberId, request, user)
 
+    @Operation(
+        summary = "멤버 추방",
+        description = "리더가 타 멤버를 추방함",
+    )
     @DeleteMapping("/{memberId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun removeMember(

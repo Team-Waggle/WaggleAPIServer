@@ -78,8 +78,8 @@ class FollowService(
     }
 
     fun getUserFollowCount(userId: UUID): FollowCountResponse =
-        FollowCountResponse.of(
-            followRepository.countByFolloweeId(userId).toInt(),
-            followRepository.countByFollowerId(userId).toInt(),
+        FollowCountResponse(
+            followedCount = followRepository.countByFolloweeId(userId).toInt(),
+            followingCount = followRepository.countByFollowerId(userId).toInt(),
         )
 }
