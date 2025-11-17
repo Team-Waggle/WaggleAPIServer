@@ -11,7 +11,9 @@ import java.util.UUID
 data class MemberResponse(
     @Schema(description = "멤버 ID", example = "1")
     val memberId: Long,
-    @Schema(description = "멤버 사용자 ID", example = " 550e8400-e29b-41d4-a716-446655440000")
+    @Schema(description = "프로젝트 ID", example = "1")
+    val projectId: Long,
+    @Schema(description = "멤버 사용자 ID", example = "550e8400-e29b-41d4-a716-446655440000")
     val userId: UUID,
     @Schema(description = "멤버 역할", example = "LEADER")
     val role: MemberRole,
@@ -32,6 +34,7 @@ data class MemberResponse(
         ): MemberResponse =
             MemberResponse(
                 memberId = member.id,
+                projectId = member.projectId,
                 userId = member.userId,
                 role = member.role,
                 username = user.username!!,
