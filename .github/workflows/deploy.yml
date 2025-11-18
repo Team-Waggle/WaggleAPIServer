@@ -34,6 +34,7 @@ jobs:
             git pull origin main
             ./gradlew clean build -x test
             cp build/libs/WaggleAPIServer-0.0.1-SNAPSHOT.jar /opt/waggle/app.jar
+            sudo systemctl daemon-reload
             sudo systemctl restart waggle
             sudo systemctl status waggle --no-pager
             echo "======== PROD DONE ========"
@@ -61,6 +62,7 @@ jobs:
             git pull origin dev
             ./gradlew clean build -x test
             cp build/libs/WaggleAPIServer-0.0.1-SNAPSHOT.jar /opt/waggle-dev/app.jar
+            sudo systemctl daemon-reload
             sudo systemctl restart waggle-dev
             sudo systemctl status waggle-dev --no-pager
             echo "======== DEV DONE ========"
