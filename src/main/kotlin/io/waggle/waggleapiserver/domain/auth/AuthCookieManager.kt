@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.auth
+package io.waggle.waggleapiserver.domain.auth
 
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse

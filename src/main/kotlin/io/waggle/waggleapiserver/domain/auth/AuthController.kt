@@ -1,9 +1,9 @@
-package io.waggle.waggleapiserver.auth
+package io.waggle.waggleapiserver.domain.auth
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import io.waggle.waggleapiserver.auth.dto.response.AccessTokenResponse
-import io.waggle.waggleapiserver.auth.service.AuthService
+import io.waggle.waggleapiserver.domain.auth.dto.response.AccessTokenResponse
+import io.waggle.waggleapiserver.domain.auth.service.AuthService
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.PostMapping

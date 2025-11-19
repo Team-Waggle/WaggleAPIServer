@@ -1,6 +1,6 @@
 package io.waggle.waggleapiserver.security.oauth2
 
-import io.waggle.waggleapiserver.auth.service.AuthService
+import io.waggle.waggleapiserver.domain.auth.service.AuthService
 import io.waggle.waggleapiserver.domain.user.UserRole
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

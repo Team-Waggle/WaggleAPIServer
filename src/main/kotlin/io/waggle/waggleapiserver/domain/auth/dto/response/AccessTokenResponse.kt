@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.auth.dto.response
+package io.waggle.waggleapiserver.domain.auth.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
 

@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.common.dto
+package io.waggle.waggleapiserver.common.exception.dto
 
 data class ErrorResponse(
     val code: Int = 500,

@@ -1,7 +1,7 @@
-package io.waggle.waggleapiserver.auth.service
+package io.waggle.waggleapiserver.domain.auth.service
 
-import io.waggle.waggleapiserver.auth.AuthCookieManager
-import io.waggle.waggleapiserver.auth.dto.response.AccessTokenResponse
+import io.waggle.waggleapiserver.domain.auth.AuthCookieManager
+import io.waggle.waggleapiserver.domain.auth.dto.response.AccessTokenResponse
 import io.waggle.waggleapiserver.domain.user.UserRole
 import io.waggle.waggleapiserver.security.jwt.JwtProvider
 import jakarta.servlet.http.HttpServletResponse
