@@ -24,7 +24,7 @@ class OAuth2LoginSuccessHandler(
     ) {
         val oauth2User = authentication.principal as OAuth2User
 
-        val userId = oauth2User.getAttribute<UUID>("userId")!!
+        val userId = UUID.fromString(oauth2User.getAttribute<String>("userId")!!)
         val role = UserRole.valueOf(oauth2User.getAttribute<String>("role")!!)
 
         val accessToken = authService.issueTokens(userId, role, response)
