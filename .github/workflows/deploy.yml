@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - dev
-
   pull_request:
     types: [ closed ]
     branches:
@@ -13,42 +12,60 @@ on:
 jobs:
 
   # ----------------------
-  # PROD DEPLOY
+  # 1) COMMON BUILD STEP
   # ----------------------
-  deploy-prod:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      jar-path: ${{ steps.build.outputs.jar-path }}
+
+    steps:
+      # 1. 소스 체크아웃
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Corretto 21 설치
+      - name: Setup JDK (Corretto 21)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+
+      # 3. Gradle 빌드
+      - name: Build JAR
+        id: build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build -x test
+
+          # 가장 최근 생성된 jar 자동 선택
+          JAR_PATH=$(ls -t build/libs/*.jar | head -n 1)
+
+          echo "JAR_PATH=$JAR_PATH"
+          echo "jar-path=$JAR_PATH" >> $GITHUB_OUTPUT
+
+
+  # ----------------------
+  # 2) DEV DEPLOYMENT
+  # ----------------------
+  deploy-dev:
+    needs: build
+    if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to Production
-        uses: appleboy/ssh-action@v1.0.0
+      # 1. JAR 파일 EC2로 복사
+      - name: Upload JAR to EC2 (DEV)
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "======== PROD Deployment ========"
-            cd /opt/waggle/WaggleAPIServer
-            git fetch origin
-            git checkout main
-            git pull origin main
-            ./gradlew clean build -x test
-            cp build/libs/WaggleAPIServer-0.0.1-SNAPSHOT.jar /opt/waggle/app.jar
-            sudo systemctl daemon-reload
-            sudo systemctl restart waggle
-            sudo systemctl status waggle --no-pager
-            echo "======== PROD DONE ========"
+          source: ${{ needs.build.outputs.jar-path }}
+          target: /opt/waggle-dev/app.jar
 
-
-  # ----------------------
-  # DEV DEPLOY
-  # ----------------------
-  deploy-dev:
-    if: github.ref == 'refs/heads/dev'   # dev로 push될 때만 실행
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy to Development
+      # 2. systemctl restart
+      - name: Restart DEV server
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -56,13 +73,41 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "======== DEV Deployment ========"
-            cd /opt/waggle/WaggleAPIServer
-            git fetch origin
-            git checkout dev
-            git pull origin dev
-            ./gradlew clean build -x test
-            cp build/libs/WaggleAPIServer-0.0.1-SNAPSHOT.jar /opt/waggle-dev/app.jar
             sudo systemctl daemon-reload
             sudo systemctl restart waggle-dev
             sudo systemctl status waggle-dev --no-pager
             echo "======== DEV DONE ========"
+
+
+  # ----------------------
+  # 3) PROD DEPLOYMENT
+  # ----------------------
+  deploy-prod:
+    needs: build
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. JAR 파일 EC2로 복사
+      - name: Upload JAR to EC2 (PROD)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: ${{ needs.build.outputs.jar-path }}
+          target: /opt/waggle/app.jar
+
+      # 2. systemctl restart
+      - name: Restart PROD server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "======== PROD Deployment ========"
+            sudo systemctl daemon-reload
+            sudo systemctl restart waggle
+            sudo systemctl status waggle --no-pager
+            echo "======== PROD DONE ========"
