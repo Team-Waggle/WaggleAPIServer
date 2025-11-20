@@ -16,29 +16,33 @@ jobs:
   # ----------------------
   build:
     runs-on: ubuntu-latest
+
     outputs:
       jar-path: ${{ steps.build.outputs.jar-path }}
 
     steps:
-      # 1. 소스 체크아웃
+      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Corretto 21 설치
+      # 2. Corretto 21
       - name: Setup JDK (Corretto 21)
         uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
           java-version: '21'
 
-      # 3. Gradle 빌드
+      # 3. Build JAR
       - name: Build JAR
         id: build
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
 
-          # 가장 최근 생성된 jar 자동 선택
+          echo "=== List build/libs ==="
+          ls -al build/libs
+
+          # 최신 jar 자동 선택
           JAR_PATH=$(ls -t build/libs/*.jar | head -n 1)
 
           echo "JAR_PATH=$JAR_PATH"
@@ -54,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. JAR 파일 EC2로 복사
+      # 1. Upload
       - name: Upload JAR to EC2 (DEV)
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -63,9 +67,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: ${{ needs.build.outputs.jar-path }}
           target: /opt/waggle-dev/app.jar
+          overwrite: true
 
-      # 2. systemctl restart
-      - name: Restart DEV server
+      # 2. Restart
+      - name: Restart DEV service
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -73,8 +78,9 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "======== DEV Deployment ========"
+            sudo systemctl stop waggle-dev || true
             sudo systemctl daemon-reload
-            sudo systemctl restart waggle-dev
+            sudo systemctl start waggle-dev
             sudo systemctl status waggle-dev --no-pager
             echo "======== DEV DONE ========"
 
@@ -88,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. JAR 파일 EC2로 복사
+      # 1. Upload
       - name: Upload JAR to EC2 (PROD)
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -97,9 +103,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: ${{ needs.build.outputs.jar-path }}
           target: /opt/waggle/app.jar
+          overwrite: true
 
-      # 2. systemctl restart
-      - name: Restart PROD server
+      # 2. Restart
+      - name: Restart PROD service
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -107,7 +114,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "======== PROD Deployment ========"
+            sudo systemctl stop waggle || true
             sudo systemctl daemon-reload
-            sudo systemctl restart waggle
+            sudo systemctl start waggle
             sudo systemctl status waggle --no-pager
             echo "======== PROD DONE ========"
