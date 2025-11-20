@@ -38,15 +38,11 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
-
-          echo "=== List build/libs ==="
-          ls -al build/libs
-
-          # 최신 jar 자동 선택
-          JAR_PATH=$(ls -t build/libs/*.jar | head -n 1)
-
-          echo "JAR_PATH=$JAR_PATH"
-          echo "jar-path=$JAR_PATH" >> $GITHUB_OUTPUT
+          
+          RELATIVE_JAR=$(ls -t build/libs/*.jar | head -n 1)
+          ABSOLUTE_JAR="$GITHUB_WORKSPACE/$RELATIVE_JAR"
+          
+          echo "jar-path=$ABSOLUTE_JAR" >> $GITHUB_OUTPUT
 
 
   # ----------------------
