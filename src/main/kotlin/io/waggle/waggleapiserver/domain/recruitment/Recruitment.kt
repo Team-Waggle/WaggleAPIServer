@@ -17,7 +17,7 @@ import jakarta.persistence.UniqueConstraint
 @Table(
     name = "recruitments",
     uniqueConstraints = [UniqueConstraint(columnNames = ["project_id", "position"])],
-    indexes = [Index(name = "idx_recruitments_project_id", columnList = "project_id")],
+    indexes = [Index(name = "idx_recruitments_project", columnList = "project_id")],
 )
 class Recruitment(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
