@@ -9,9 +9,6 @@ on:
 
 jobs:
 
-  # -------------------------------------------------------
-  # 1) BUILD JAR (공통)
-  # -------------------------------------------------------
   build:
     runs-on: ubuntu-latest
 
@@ -33,15 +30,13 @@ jobs:
           chmod +x gradlew
           ./gradlew clean build -x test
 
-          echo "=== build/libs 내용 ==="
+          echo "=== build/libs ==="
           ls -al build/libs
 
-          # 최신 JAR 파일명만 가져오기
           JAR_NAME=$(ls -t build/libs/*.jar | head -n 1 | xargs -n1 basename)
-
           echo "jar-name=$JAR_NAME" >> $GITHUB_OUTPUT
 
-      - name: Upload JAR Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: waggle-jar
@@ -49,9 +44,6 @@ jobs:
           retention-days: 1
 
 
-  # -------------------------------------------------------
-  # 2) DEV DEPLOY (단일 EC2)
-  # -------------------------------------------------------
   deploy-dev:
     needs: build
     if: github.ref == 'refs/heads/dev'
@@ -62,8 +54,8 @@ jobs:
         with:
           name: waggle-jar
 
-      - name: Upload JAR to EC2 (DEV)
-        uses: appleboy/scp-action@v0.1.9
+      - name: Upload to EC2 (DEV)
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
@@ -72,7 +64,7 @@ jobs:
           target: "/opt/waggle-dev/"
           overwrite: true
 
-      - name: Restart DEV service
+      - name: Restart Service (DEV)
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -85,9 +77,6 @@ jobs:
             sudo systemctl status waggle-dev --no-pager
 
 
-  # -------------------------------------------------------
-  # 3) PROD DEPLOY (PR → main 머지 시)
-  # -------------------------------------------------------
   deploy-prod:
     needs: build
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
@@ -98,8 +87,8 @@ jobs:
         with:
           name: waggle-jar
 
-      - name: Upload JAR to EC2 (PROD)
-        uses: appleboy/scp-action@v0.1.9
+      - name: Upload to EC2 (PROD)
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
@@ -108,7 +97,7 @@ jobs:
           target: "/opt/waggle/"
           overwrite: true
 
-      - name: Restart PROD service
+      - name: Restart Service (PROD)
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
