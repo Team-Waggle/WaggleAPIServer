@@ -33,6 +33,7 @@ class Notification(
     val isRead: Boolean = false,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
+) {
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now(),
-)
+    val createdAt: Instant = Instant.now()
+}

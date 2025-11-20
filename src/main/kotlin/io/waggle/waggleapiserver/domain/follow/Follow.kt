@@ -24,6 +24,7 @@ class Follow(
     val followerId: UUID,
     @Column(name = "followee_id", nullable = false)
     val followeeId: UUID,
+) {
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now(),
-)
+    val createdAt: Instant = Instant.now()
+}
