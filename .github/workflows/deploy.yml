@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      jar-path: ${{ steps.build.outputs.jar-path }}
+      jar-path: ${{ steps.export.outputs.jar-path }}
 
     steps:
       # 1. Checkout
@@ -34,15 +34,18 @@ jobs:
 
       # 3. Build JAR
       - name: Build JAR
-        id: build
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
-          
-          RELATIVE_JAR=$(ls -t build/libs/*.jar | head -n 1)
-          ABSOLUTE_JAR="$GITHUB_WORKSPACE/$RELATIVE_JAR"
-          
-          echo "jar-path=$ABSOLUTE_JAR" >> $GITHUB_OUTPUT
+          echo "=== Build files ==="
+          ls -al build/libs
+
+      # 4. Export wildcard path (appleboy 버그 회피)
+      - name: Export JAR path
+        id: export
+        run: |
+          # wildcard path로 넘기기 (단일 파일 업로드 버그 해결)
+          echo "jar-path=$GITHUB_WORKSPACE/build/libs/*.jar" >> $GITHUB_OUTPUT
 
 
   # ----------------------
@@ -54,22 +57,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Upload
       - name: Upload JAR to EC2 (DEV)
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.EC2_DEV_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: ${{ needs.build.outputs.jar-path }}
           target: /opt/waggle-dev/app.jar
           overwrite: true
 
-      # 2. Restart
       - name: Restart DEV service
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.EC2_DEV_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
@@ -90,7 +91,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Upload
       - name: Upload JAR to EC2 (PROD)
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -101,7 +101,6 @@ jobs:
           target: /opt/waggle/app.jar
           overwrite: true
 
-      # 2. Restart
       - name: Restart PROD service
         uses: appleboy/ssh-action@v1.0.0
         with:
