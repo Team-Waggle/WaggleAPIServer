@@ -2,103 +2,110 @@ name: Deploy to EC2
 
 on:
   push:
-    branches:
-      - dev
+    branches: [ dev ]
   pull_request:
     types: [ closed ]
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
 
-  # ----------------------
-  # 1) COMMON BUILD STEP
-  # ----------------------
+  # -------------------------------------------------------
+  # 1) BUILD JAR (공통)
+  # -------------------------------------------------------
   build:
     runs-on: ubuntu-latest
 
     outputs:
-      jar-path: ${{ steps.export.outputs.jar-path }}
+      jar-name: ${{ steps.build.outputs.jar-name }}
 
     steps:
-      # 1. Checkout
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 2. Corretto 21
-      - name: Setup JDK (Corretto 21)
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
           java-version: '21'
 
-      # 3. Build JAR
       - name: Build JAR
+        id: build
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
-          echo "=== Build files ==="
+
+          echo "=== build/libs 내용 ==="
           ls -al build/libs
 
-      # 4. Export wildcard path (appleboy 버그 회피)
-      - name: Export JAR path
-        id: export
-        run: |
-          # wildcard path로 넘기기 (단일 파일 업로드 버그 해결)
-          echo "jar-path=$GITHUB_WORKSPACE/build/libs/*.jar" >> $GITHUB_OUTPUT
+          # 최신 JAR 파일명만 가져오기
+          JAR_NAME=$(ls -t build/libs/*.jar | head -n 1 | xargs -n1 basename)
+
+          echo "jar-name=$JAR_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload JAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: waggle-jar
+          path: build/libs/*.jar
+          retention-days: 1
 
 
-  # ----------------------
-  # 2) DEV DEPLOYMENT
-  # ----------------------
+  # -------------------------------------------------------
+  # 2) DEV DEPLOY (단일 EC2)
+  # -------------------------------------------------------
   deploy-dev:
     needs: build
     if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Upload JAR to EC2 (DEV)
-        uses: appleboy/scp-action@v0.1.7
+      - uses: actions/download-artifact@v4
         with:
-          host: ${{ secrets.EC2_DEV_HOST }}
+          name: waggle-jar
+
+      - name: Upload JAR to EC2 (DEV)
+        uses: appleboy/scp-action@v0.1.9
+        with:
+          host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: ${{ needs.build.outputs.jar-path }}
-          target: /opt/waggle-dev/app.jar
+          source: "*.jar"
+          target: "/opt/waggle-dev/"
           overwrite: true
 
       - name: Restart DEV service
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_DEV_HOST }}
+          host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "======== DEV Deployment ========"
-            sudo systemctl stop waggle-dev || true
+            sudo mv /opt/waggle-dev/*.jar /opt/waggle-dev/app.jar
             sudo systemctl daemon-reload
-            sudo systemctl start waggle-dev
+            sudo systemctl restart waggle-dev
             sudo systemctl status waggle-dev --no-pager
-            echo "======== DEV DONE ========"
 
 
-  # ----------------------
-  # 3) PROD DEPLOYMENT
-  # ----------------------
+  # -------------------------------------------------------
+  # 3) PROD DEPLOY (PR → main 머지 시)
+  # -------------------------------------------------------
   deploy-prod:
     needs: build
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: waggle-jar
+
       - name: Upload JAR to EC2 (PROD)
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v0.1.9
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: ${{ needs.build.outputs.jar-path }}
-          target: /opt/waggle/app.jar
+          source: "*.jar"
+          target: "/opt/waggle/"
           overwrite: true
 
       - name: Restart PROD service
@@ -108,9 +115,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "======== PROD Deployment ========"
-            sudo systemctl stop waggle || true
+            sudo mv /opt/waggle/*.jar /opt/waggle/app.jar
             sudo systemctl daemon-reload
-            sudo systemctl start waggle
+            sudo systemctl restart waggle
             sudo systemctl status waggle --no-pager
-            echo "======== PROD DONE ========"
