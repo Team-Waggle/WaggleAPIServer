@@ -14,8 +14,8 @@ data class NotificationResponse(
     val content: String,
     @Schema(description = "프로젝트 리다이렉트 URL", example = "https://waggle.store")
     val redirectUrl: String,
-    @Schema(description = "알림 읽음 여부", example = "false")
-    val isRead: Boolean,
+    @Schema(description = "알림 확인 일시", example = "false")
+    val readAt: Instant?,
     @Schema(description = "알림 생성 일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) {
@@ -26,7 +26,7 @@ data class NotificationResponse(
                 notification.title,
                 notification.content,
                 notification.redirectUrl,
-                notification.isRead,
+                notification.readAt,
                 notification.createdAt,
             )
     }

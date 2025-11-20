@@ -36,9 +36,10 @@ data class BookmarkId(
 class Bookmark(
     @EmbeddedId
     val id: BookmarkId,
-    @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now(),
 ) {
+    @Column(name = "created_at", nullable = false, updatable = false)
+    val createdAt: Instant = Instant.now()
+
     val bookmarkableId: Long get() = id.bookmarkableId
     val bookmarkType: BookmarkType get() = id.bookmarkType
 }

@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.common.aspect
+package io.waggle.waggleapiserver.common.infrastructure.aspect
 
 import jakarta.persistence.EntityManager
 import org.aspectj.lang.annotation.Aspect

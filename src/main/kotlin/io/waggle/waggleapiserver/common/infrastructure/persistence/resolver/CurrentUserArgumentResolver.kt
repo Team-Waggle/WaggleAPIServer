@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.common.util
+package io.waggle.waggleapiserver.common.infrastructure.persistence.resolver
 
 import io.swagger.v3.oas.annotations.Parameter
 import io.waggle.waggleapiserver.domain.user.User

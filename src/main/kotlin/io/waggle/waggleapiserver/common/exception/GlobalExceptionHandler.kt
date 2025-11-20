@@ -1,6 +1,6 @@
 package io.waggle.waggleapiserver.common.exception
 
-import io.waggle.waggleapiserver.common.dto.ErrorResponse
+import io.waggle.waggleapiserver.common.exception.dto.ErrorResponse
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ExceptionHandler

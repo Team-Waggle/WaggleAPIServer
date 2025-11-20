@@ -15,7 +15,7 @@ import java.util.UUID
     name = "notifications",
     indexes = [
         Index(
-            name = "idx_notifications_user_id_is_read_created_at",
+            name = "idx_notifications_user_read_created",
             columnList = "user_id, is_read, created_at DESC",
         ),
     ],
@@ -29,10 +29,12 @@ class Notification(
     val content: String,
     @Column(name = "redirect_url", nullable = false)
     val redirectUrl: String,
-    @Column(name = "is_read", nullable = false)
-    val isRead: Boolean = false,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
+) {
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now(),
-)
+    val createdAt: Instant = Instant.now()
+
+    @Column(name = "read_at")
+    var readAt: Instant? = null
+}

@@ -15,7 +15,7 @@ import java.util.UUID
 @Table(
     name = "follows",
     uniqueConstraints = [UniqueConstraint(columnNames = ["follower_id", "followee_id"])],
-    indexes = [Index(name = "idx_follows_folowee_id", columnList = "followee_id")],
+    indexes = [Index(name = "idx_follows_folowee", columnList = "followee_id")],
 )
 class Follow(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +24,7 @@ class Follow(
     val followerId: UUID,
     @Column(name = "followee_id", nullable = false)
     val followeeId: UUID,
+) {
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now(),
-)
+    val createdAt: Instant = Instant.now()
+}
