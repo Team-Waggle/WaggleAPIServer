@@ -3,9 +3,6 @@ package io.waggle.waggleapiserver.domain.user
 import com.github.f4b6a3.uuid.UuidCreator
 import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.domain.user.enums.Position
-import io.waggle.waggleapiserver.domain.user.enums.Sido
-import io.waggle.waggleapiserver.domain.user.enums.WorkTime
-import io.waggle.waggleapiserver.domain.user.enums.WorkWay
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -40,42 +37,19 @@ class User(
     var username: String? = null
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "work_time", columnDefinition = "VARCHAR(20)")
-    var workTime: WorkTime? = null
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "work_way", columnDefinition = "VARCHAR(20)")
-    var workWay: WorkWay? = null
-
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "VARCHAR(20)")
-    var sido: Sido? = null
-
-    @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "VARCHAR(20)")
     var position: Position? = null
-
-    @Column(name = "year_count")
-    var yearCount: Int? = null
 
     @Column(columnDefinition = "VARCHAR(5000)")
     var detail: String? = null
 
     fun update(
         username: String,
-        workTime: WorkTime,
-        workWay: WorkWay,
-        sido: Sido,
         position: Position,
-        yearCount: Int?,
         detail: String?,
     ) {
         this.username = username
-        this.workTime = workTime
-        this.workWay = workWay
-        this.sido = sido
         this.position = position
-        this.yearCount = yearCount
         this.detail = detail
     }
 }

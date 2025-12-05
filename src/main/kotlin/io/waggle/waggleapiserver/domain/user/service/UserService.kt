@@ -43,7 +43,7 @@ class UserService(
         request: UserUpdateRequest,
         user: User,
     ): UserDetailResponse {
-        val (username, workTime, workWay, sido, position, yearCount, detail) = request
+        val (username, position, detail) = request
 
         if (user.username != username && userRepository.existsByUsername(username)) {
             throw DuplicateKeyException("Username already exists")
@@ -51,12 +51,8 @@ class UserService(
 
         user.update(
             username = username,
-            workTime = workTime,
-            workWay = workWay,
-            sido = sido,
             detail = detail,
             position = position,
-            yearCount = yearCount,
         )
 
         return UserDetailResponse.from(user)
