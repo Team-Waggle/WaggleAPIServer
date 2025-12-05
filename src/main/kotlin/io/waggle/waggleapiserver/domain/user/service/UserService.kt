@@ -6,6 +6,7 @@ import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
+import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.dao.DuplicateKeyException
@@ -37,6 +38,8 @@ class UserService(
 
         return projects.map { ProjectSimpleResponse.from(it) }
     }
+
+    fun getUserProfileCompletion(user: User): UserProfileCompletionResponse = UserProfileCompletionResponse(user.isProfileComplete())
 
     @Transactional
     fun updateUser(

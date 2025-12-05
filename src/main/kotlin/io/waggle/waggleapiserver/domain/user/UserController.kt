@@ -15,6 +15,7 @@ import io.waggle.waggleapiserver.domain.notification.service.NotificationService
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
+import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.service.UserService
 import jakarta.validation.Valid
@@ -49,13 +50,6 @@ class UserController(
         @PathVariable userId: UUID,
     ): FollowCountResponse = followService.getUserFollowCount(userId)
 
-    @Operation(summary = "본인 북마크 목록 조회")
-    @GetMapping("/me/bookmarks")
-    fun getMyBookmarks(
-        @RequestParam bookmarkType: BookmarkType,
-        @CurrentUser user: User,
-    ): List<BookmarkResponse> = bookmarkService.getUserBookmarkables(bookmarkType, user)
-
     @Operation(summary = "사용자 참여 프로젝트 목록 조회")
     @GetMapping("/{userId}/projects")
     fun getUserProjects(
@@ -67,6 +61,13 @@ class UserController(
     fun getMyApplications(
         @CurrentUser user: User,
     ): List<ApplicationResponse> = applicationService.getUserApplications(user)
+
+    @Operation(summary = "본인 북마크 목록 조회")
+    @GetMapping("/me/bookmarks")
+    fun getMyBookmarks(
+        @RequestParam bookmarkType: BookmarkType,
+        @CurrentUser user: User,
+    ): List<BookmarkResponse> = bookmarkService.getUserBookmarkables(bookmarkType, user)
 
     @Operation(summary = "본인이 팔로우 하는 계정 목록 조회")
     @GetMapping("/me/followees")
@@ -85,6 +86,12 @@ class UserController(
     fun getMyNotifications(
         @CurrentUser user: User,
     ): List<NotificationResponse> = notificationService.getUserNotifications(user)
+
+    @Operation(summary = "프로필 완성 여부 조회")
+    @GetMapping("/me/profile-completion")
+    fun getMyProfileCompletion(
+        @CurrentUser user: User,
+    ): UserProfileCompletionResponse = userService.getUserProfileCompletion(user)
 
     @Operation(summary = "본인 참여 프로젝트 목록 조회")
     @GetMapping("/me/projects")

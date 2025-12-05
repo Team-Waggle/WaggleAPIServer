@@ -52,4 +52,6 @@ class User(
         this.position = position
         this.detail = detail
     }
+
+    fun isProfileComplete(): Boolean = this.username != null && this.position != null && this.detail != null
 }
