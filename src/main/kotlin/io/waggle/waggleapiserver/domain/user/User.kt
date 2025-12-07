@@ -3,12 +3,16 @@ package io.waggle.waggleapiserver.domain.user
 import com.github.f4b6a3.uuid.UuidCreator
 import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.domain.user.enums.Position
+import io.waggle.waggleapiserver.domain.user.enums.Skill
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import java.util.UUID
@@ -40,18 +44,24 @@ class User(
     @Column(columnDefinition = "VARCHAR(20)")
     var position: Position? = null
 
-    @Column(columnDefinition = "VARCHAR(5000)")
-    var detail: String? = null
+    @ElementCollection
+    @CollectionTable(name = "user_skills", joinColumns = [JoinColumn(name = "user_id")])
+    @Enumerated(EnumType.STRING)
+    @Column(name = "skill", nullable = false, columnDefinition = "VARCHAR(50)")
+    val skills: MutableSet<Skill> = mutableSetOf()
+
+    @Column(columnDefinition = "VARCHAR(1000)")
+    var bio: String? = null
 
     fun update(
         username: String,
         position: Position,
-        detail: String?,
+        bio: String?,
     ) {
         this.username = username
         this.position = position
-        this.detail = detail
+        this.bio = bio
     }
 
-    fun isProfileComplete(): Boolean = this.username != null && this.position != null && this.detail != null
+    fun isProfileComplete(): Boolean = this.username != null && this.position != null && this.skills.isNotEmpty()
 }

@@ -20,8 +20,6 @@ data class UserSimpleResponse(
     val profileImageUrl: String?,
     @Schema(description = "직무", example = "BACKEND")
     val position: Position?,
-    @Schema(description = "경력", example = "1")
-    val yearCount: Int?,
 ) {
     companion object {
         fun from(user: User): UserSimpleResponse =
@@ -31,7 +29,6 @@ data class UserSimpleResponse(
                 user.email,
                 user.profileImageUrl,
                 user.position,
-                user.yearCount,
             )
     }
 }

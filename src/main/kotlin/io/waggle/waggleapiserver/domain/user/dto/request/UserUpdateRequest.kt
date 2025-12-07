@@ -7,5 +7,5 @@ import jakarta.validation.constraints.NotNull
 data class UserUpdateRequest(
     @field:NotBlank val username: String,
     @field:NotNull val position: Position,
-    val detail: String?,
+    val bio: String?,
 )

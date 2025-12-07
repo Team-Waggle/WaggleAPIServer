@@ -20,8 +20,8 @@ data class UserDetailResponse(
     val profileImageUrl: String?,
     @Schema(description = "직무", example = "BACKEND")
     val position: Position?,
-    @Schema(description = "상세 설명")
-    val detail: String?,
+    @Schema(description = "자기소개")
+    val bio: String?,
 ) {
     companion object {
         fun from(user: User): UserDetailResponse =
@@ -31,7 +31,7 @@ data class UserDetailResponse(
                 user.email,
                 user.profileImageUrl,
                 user.position,
-                user.detail,
+                user.bio,
             )
     }
 }
