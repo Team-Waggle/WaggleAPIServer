@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.application.service
 
 import io.waggle.waggleapiserver.domain.application.Application
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
+import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreateRequest
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
@@ -24,8 +25,11 @@ class ApplicationService(
     @Transactional
     fun applyProject(
         projectId: Long,
+        request: ApplicationCreateRequest,
         user: User,
     ): ApplicationResponse {
+        val detail = request.detail
+
         val position = user.position ?: throw IllegalStateException("User must have position")
         val recruitment =
             recruitmentRepository.findByProjectIdAndPosition(projectId, position)
@@ -49,6 +53,7 @@ class ApplicationService(
                 position = position,
                 projectId = projectId,
                 userId = user.id,
+                detail = detail,
             )
         val savedApplication = applicationRepository.save(application)
 
