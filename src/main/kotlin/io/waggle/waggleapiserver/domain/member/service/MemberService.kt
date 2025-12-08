@@ -24,21 +24,23 @@ class MemberService(
         request: MemberUpdateRoleRequest,
         user: User,
     ): MemberResponse {
-        val (projectId, role) = request
-
-        val member =
-            memberRepository.findByUserIdAndProjectId(user.id, projectId)
-                ?: throw EntityNotFoundException("Member not found")
-        require(member.id != memberId) { "Cannot update your own role" }
+        val role = request.role
 
         val targetMember =
             memberRepository.findByIdOrNull(memberId)
-                ?: throw EntityNotFoundException("Member not found: $memberId")
-        require(targetMember.projectId == projectId) { "Not a member of the project" }
+                ?: throw EntityNotFoundException("Member not found")
+        require(user.id != targetMember.userId) { "Cannot update your own role" }
+
+        val project =
+            projectRepository.findByIdOrNull(targetMember.projectId)
+                ?: throw EntityNotFoundException("Project Not Found: ${targetMember.projectId}")
+
+        val member =
+            memberRepository.findByUserIdAndProjectId(user.id, project.id)
+                ?: throw EntityNotFoundException("Member not found")
 
         when (role) {
-            MemberRole.MEMBER -> member.checkMemberRole(targetMember.role)
-            MemberRole.MANAGER -> member.checkMemberRole(MemberRole.LEADER)
+            MemberRole.MEMBER, MemberRole.MANAGER -> member.checkMemberRole(MemberRole.LEADER)
             MemberRole.LEADER -> delegateLeader(targetMember, member)
         }
 
