@@ -38,6 +38,6 @@ class Member(
     }
 
     fun checkMemberRole(role: MemberRole) {
-        check(this.role.level > role.level) { "Do not have the authority" }
+        check(this.role.level >= role.level) { "Do not have the authority" }
     }
 }
