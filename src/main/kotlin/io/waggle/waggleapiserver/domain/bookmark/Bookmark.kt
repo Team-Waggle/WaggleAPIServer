@@ -28,8 +28,8 @@ data class BookmarkId(
     name = "bookmarks",
     indexes = [
         Index(
-            name = "idx_bookmarks_bookmarkable",
-            columnList = "bookmark_type, bookmarkable_id",
+            name = "idx_bookmarks_type_target",
+            columnList = "type, target_id",
         ),
     ],
 )
