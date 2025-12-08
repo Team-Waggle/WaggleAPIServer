@@ -16,11 +16,11 @@ import java.util.UUID
 data class BookmarkId(
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
-    @Column(name = "bookmarkable_id", nullable = false, updatable = false)
-    val bookmarkableId: Long,
+    @Column(name = "target_id", nullable = false, updatable = false)
+    val targetId: Long,
     @Enumerated(EnumType.STRING)
-    @Column(name = "bookmark_type", nullable = false, updatable = false)
-    val bookmarkType: BookmarkType,
+    @Column(nullable = false, updatable = false)
+    val type: BookmarkType,
 ) : Serializable
 
 @Entity
@@ -40,8 +40,8 @@ class Bookmark(
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now()
 
-    val bookmarkableId: Long get() = id.bookmarkableId
-    val bookmarkType: BookmarkType get() = id.bookmarkType
+    val targetId: Long get() = id.targetId
+    val type: BookmarkType get() = id.type
 }
 
 enum class BookmarkType {

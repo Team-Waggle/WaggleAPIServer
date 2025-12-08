@@ -27,13 +27,13 @@ class BookmarkService(
         request: BookmarkToggleRequest,
         user: User,
     ): BookmarkToggleResponse {
-        val (bookmarkableId, bookmarkType) = request
+        val (targetId, type) = request
 
         val bookmarkId =
             BookmarkId(
                 userId = user.id,
-                bookmarkableId = bookmarkableId,
-                bookmarkType = bookmarkType,
+                targetId = targetId,
+                type = type,
             )
         return if (bookmarkRepository.existsById(bookmarkId)) {
             bookmarkRepository.deleteById(bookmarkId)
@@ -46,24 +46,24 @@ class BookmarkService(
     }
 
     fun getUserBookmarkables(
-        bookmarkType: BookmarkType,
+        type: BookmarkType,
         user: User,
     ): List<BookmarkResponse> {
-        val bookmarkableIds =
+        val targetIds =
             bookmarkRepository
-                .findByIdUserIdAndIdBookmarkType(user.id, bookmarkType)
-                .map { it.bookmarkableId }
+                .findByIdUserIdAndIdType(user.id, type)
+                .map { it.targetId }
 
-        return when (bookmarkType) {
+        return when (type) {
             BookmarkType.POST -> {
                 postRepository
-                    .findByIdInOrderByCreatedAtDesc(bookmarkableIds)
+                    .findByIdInOrderByCreatedAtDesc(targetIds)
                     .map { PostSimpleResponse.of(it, UserSimpleResponse.from(user)) }
             }
 
             BookmarkType.PROJECT -> {
                 projectRepository
-                    .findByIdInOrderByCreatedAtDesc(bookmarkableIds)
+                    .findByIdInOrderByCreatedAtDesc(targetIds)
                     .map { ProjectSimpleResponse.from(it) }
             }
         }

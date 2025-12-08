@@ -7,13 +7,13 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 
 interface BookmarkRepository : JpaRepository<Bookmark, BookmarkId> {
-    fun countByIdBookmarkableIdAndIdBookmarkType(
-        bookmarkableId: Long,
-        bookmarkType: BookmarkType,
+    fun countByIdTargetIdAndIdType(
+        targetId: Long,
+        type: BookmarkType,
     ): Int
 
-    fun findByIdUserIdAndIdBookmarkType(
+    fun findByIdUserIdAndIdType(
         userId: UUID,
-        bookmarkType: BookmarkType,
+        type: BookmarkType,
     ): List<Bookmark>
 }

@@ -65,9 +65,9 @@ class UserController(
     @Operation(summary = "본인 북마크 목록 조회")
     @GetMapping("/me/bookmarks")
     fun getMyBookmarks(
-        @RequestParam bookmarkType: BookmarkType,
+        @RequestParam type: BookmarkType,
         @CurrentUser user: User,
-    ): List<BookmarkResponse> = bookmarkService.getUserBookmarkables(bookmarkType, user)
+    ): List<BookmarkResponse> = bookmarkService.getUserBookmarkables(type, user)
 
     @Operation(summary = "본인이 팔로우 하는 계정 목록 조회")
     @GetMapping("/me/followees")
