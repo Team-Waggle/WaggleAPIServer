@@ -57,10 +57,13 @@ class User(
         username: String,
         position: Position,
         bio: String?,
+        skills: Set<Skill>,
     ) {
         this.username = username
         this.position = position
         this.bio = bio
+        this.skills.clear()
+        this.skills.addAll(skills)
     }
 
     fun isProfileComplete(): Boolean = this.username != null && this.position != null && this.skills.isNotEmpty()
