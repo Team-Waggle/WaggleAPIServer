@@ -54,12 +54,10 @@ class User(
     var bio: String? = null
 
     fun update(
-        username: String,
         position: Position,
         bio: String?,
         skills: Set<Skill>,
     ) {
-        this.username = username
         this.position = position
         this.bio = bio
         this.skills.clear()

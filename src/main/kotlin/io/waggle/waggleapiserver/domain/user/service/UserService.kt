@@ -7,8 +7,10 @@ import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleRespon
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
+import io.waggle.waggleapiserver.domain.user.dto.response.UserCheckUsernameResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
+import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -22,6 +24,11 @@ class UserService(
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
 ) {
+    fun checkUsername(username: String): UserCheckUsernameResponse {
+        val isAvailable = !userRepository.existsByUsername(username)
+        return UserCheckUsernameResponse(isAvailable)
+    }
+
     fun getUser(userId: UUID): UserDetailResponse {
         val user =
             userRepository.findByIdOrNull(userId)
@@ -46,14 +53,9 @@ class UserService(
         request: UserUpdateRequest,
         user: User,
     ): UserDetailResponse {
-        val (username, position, bio, skills) = request
-
-        if (user.username != username && userRepository.existsByUsername(username)) {
-            throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Username already exists")
-        }
+        val (position, bio, skills) = request
 
         user.update(
-            username = username,
             bio = bio,
             position = position,
             skills = skills,

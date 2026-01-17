@@ -14,6 +14,7 @@ import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationRe
 import io.waggle.waggleapiserver.domain.notification.service.NotificationService
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
+import io.waggle.waggleapiserver.domain.user.dto.response.UserCheckUsernameResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
@@ -38,6 +39,12 @@ class UserController(
     private val notificationService: NotificationService,
     private val userService: UserService,
 ) {
+    @Operation(summary = "사용자명 사용 가능 여부 조회")
+    @GetMapping("/check")
+    fun checkUsername(
+        @RequestParam username: String,
+    ): UserCheckUsernameResponse = userService.checkUsername(username)
+
     @Operation(summary = "사용자 조회")
     @GetMapping("/{userId}")
     fun getUser(
