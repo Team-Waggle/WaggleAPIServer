@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.follow.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.follow.Follow
 import io.waggle.waggleapiserver.domain.follow.dto.request.FollowToggleRequest
 import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountResponse
@@ -7,7 +9,6 @@ import io.waggle.waggleapiserver.domain.follow.repository.FollowRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -27,11 +28,11 @@ class FollowService(
         val followerId = user.id
 
         if (followeeId == user.id) {
-            throw IllegalArgumentException("Cannot follow yourself")
+            throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Cannot follow yourself")
         }
 
         if (!userRepository.existsById(followeeId)) {
-            throw EntityNotFoundException("User not found: $followeeId")
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $followeeId")
         }
 
         if (followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)) {
@@ -58,7 +59,10 @@ class FollowService(
         return follows.map { follow ->
             val user =
                 userMap[follow.followerId]
-                    ?: throw EntityNotFoundException("User not found: ${follow.followerId}")
+                    ?: throw BusinessException(
+                        ErrorCode.ENTITY_NOT_FOUND,
+                        "User not found: ${follow.followerId}",
+                    )
             UserSimpleResponse.from(user)
         }
     }
@@ -72,7 +76,10 @@ class FollowService(
         return follows.map { follow ->
             val user =
                 userMap[follow.followeeId]
-                    ?: throw EntityNotFoundException("User not found: ${follow.followeeId}")
+                    ?: throw BusinessException(
+                        ErrorCode.ENTITY_NOT_FOUND,
+                        "User not found: ${follow.followeeId}",
+                    )
             UserSimpleResponse.from(user)
         }
     }

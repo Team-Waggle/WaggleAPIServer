@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.project.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.member.Member
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
@@ -10,8 +12,6 @@ import io.waggle.waggleapiserver.domain.project.dto.response.ProjectDetailRespon
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
-import org.springframework.dao.DuplicateKeyException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,7 +31,7 @@ class ProjectService(
         val (name, description, thumbnailUrl) = request
 
         if (projectRepository.existsByName(name)) {
-            throw DuplicateKeyException("Already exists project name: $name")
+            throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Already exists project name: $name")
         }
 
         val project =
@@ -60,7 +60,7 @@ class ProjectService(
     fun getProject(projectId: Long): ProjectDetailResponse {
         val project =
             projectRepository.findByIdOrNull(projectId)
-                ?: throw EntityNotFoundException("Project not found: $projectId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project not found: $projectId")
         val members = memberRepository.findByProjectIdOrderByCreatedAtAsc(projectId)
         val userMap = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
 
@@ -83,17 +83,17 @@ class ProjectService(
     ): ProjectDetailResponse {
         val member =
             memberRepository.findByUserIdAndProjectId(user.id, projectId)
-                ?: throw EntityNotFoundException("Member not found: ${user.id}, $projectId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found: ${user.id}, $projectId")
         member.checkMemberRole(MemberRole.MANAGER)
 
         val project =
             projectRepository.findByIdOrNull(projectId)
-                ?: throw EntityNotFoundException("Project not found: $projectId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project not found: $projectId")
 
         val (name, description, thumbnailUrl) = request
 
         if (name != project.name && projectRepository.existsByName(name)) {
-            throw DuplicateKeyException("Already exists project name: $name")
+            throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Already exists project name: $name")
         }
 
         project.update(
@@ -123,12 +123,12 @@ class ProjectService(
     ) {
         val member =
             memberRepository.findByUserIdAndProjectId(user.id, projectId)
-                ?: throw EntityNotFoundException("Member not found: ${user.id}, $projectId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found: ${user.id}, $projectId")
         member.checkMemberRole(MemberRole.LEADER)
 
         val project =
             projectRepository.findByIdOrNull(projectId)
-                ?: throw EntityNotFoundException("Project not found: $projectId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project not found: $projectId")
 
         project.delete()
     }

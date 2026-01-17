@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.notification.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.notification.Notification
 import io.waggle.waggleapiserver.domain.notification.dto.request.NotificationCreateRequest
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
@@ -8,7 +10,6 @@ import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleRespon
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -25,11 +26,11 @@ class NotificationService(
         val (type, projectId, userId) = request
 
         if (!userRepository.existsById(userId)) {
-            throw EntityNotFoundException("User not found: $userId")
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
         }
 
         if (projectId != null && !projectRepository.existsById(projectId)) {
-            throw EntityNotFoundException("Project not found: $projectId")
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project not found: $projectId")
         }
 
         val notification =

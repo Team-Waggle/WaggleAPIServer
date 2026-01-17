@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.user.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
@@ -8,8 +10,6 @@ import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
-import org.springframework.dao.DuplicateKeyException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,7 +25,7 @@ class UserService(
     fun getUser(userId: UUID): UserDetailResponse {
         val user =
             userRepository.findByIdOrNull(userId)
-                ?: throw EntityNotFoundException("User not found: $userId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
         return UserDetailResponse.from(user)
     }
 
@@ -49,7 +49,7 @@ class UserService(
         val (username, position, bio, skills) = request
 
         if (user.username != username && userRepository.existsByUsername(username)) {
-            throw DuplicateKeyException("Username already exists")
+            throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Username already exists")
         }
 
         user.update(

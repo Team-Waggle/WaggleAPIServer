@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.post.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.post.Post
@@ -12,7 +14,6 @@ import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -37,7 +38,7 @@ class PostService(
         if (projectId != null) {
             val member =
                 memberRepository.findByUserIdAndProjectId(user.id, projectId)
-                    ?: throw EntityNotFoundException("Member not found: ${user.id}, $projectId")
+                    ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND,"Member not found: ${user.id}, $projectId")
             member.checkMemberRole(MemberRole.MEMBER)
         }
 
@@ -65,7 +66,7 @@ class PostService(
         return posts.map { post ->
             val user =
                 userMap[post.userId]
-                    ?: throw EntityNotFoundException("User not found: ${post.userId}")
+                    ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND,"User not found: ${post.userId}")
             PostSimpleResponse.of(post, UserSimpleResponse.from(user))
         }
     }
@@ -73,10 +74,10 @@ class PostService(
     fun getPost(postId: Long): PostDetailResponse {
         val post =
             postRepository.findByIdOrNull(postId)
-                ?: throw EntityNotFoundException("Post not found: $postId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND,"Post not found: $postId")
         val user =
             userRepository.findByIdOrNull(post.userId)
-                ?: throw EntityNotFoundException("User not found: $post.userId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND,"User not found: $post.userId")
         return PostDetailResponse.of(post, UserSimpleResponse.from(user))
     }
 
@@ -90,13 +91,13 @@ class PostService(
 
         val post =
             postRepository.findByIdOrNull(postId)
-                ?: throw EntityNotFoundException("Post not found: $postId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND,"Post not found: $postId")
         post.checkOwnership(user.id)
 
         if (projectId != null) {
             val member =
                 memberRepository.findByUserIdAndProjectId(user.id, projectId)
-                    ?: throw EntityNotFoundException("Member not found: ${user.id}, $projectId")
+                    ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND,"Member not found: ${user.id}, $projectId")
             member.checkMemberRole(MemberRole.MEMBER)
         }
 
@@ -112,7 +113,7 @@ class PostService(
     ) {
         val post =
             postRepository.findByIdOrNull(postId)
-                ?: throw EntityNotFoundException("Post not found: $postId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND,"Post not found: $postId")
         post.checkOwnership(user.id)
 
         post.delete()
