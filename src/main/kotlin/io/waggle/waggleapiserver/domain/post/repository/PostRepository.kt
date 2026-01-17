@@ -10,11 +10,11 @@ interface PostRepository : JpaRepository<Post, Long> {
     @Query(
         """
         SELECT p FROM Post p
-        WHERE p.title LIKE CONCAT('%', :q, '%')
+        WHERE (:q IS NULL OR p.title LIKE CONCAT('%', :q, '%'))
     """,
     )
     fun findWithFilter(
-        q: String,
+        q: String?,
         pageable: Pageable,
     ): Page<Post>
 
