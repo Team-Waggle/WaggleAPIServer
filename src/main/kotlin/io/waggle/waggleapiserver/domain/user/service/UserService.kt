@@ -53,12 +53,13 @@ class UserService(
         request: UserUpdateRequest,
         user: User,
     ): UserDetailResponse {
-        val (position, bio, skills) = request
+        val (position, bio, skills, portfolioUrls) = request
 
         user.update(
             bio = bio,
             position = position,
             skills = skills,
+            portfolioUrls = portfolioUrls,
         )
 
         return UserDetailResponse.from(user)

@@ -50,6 +50,11 @@ class User(
     @Column(name = "skill", nullable = false, columnDefinition = "VARCHAR(50)")
     val skills: MutableSet<Skill> = mutableSetOf()
 
+    @ElementCollection
+    @CollectionTable(name = "user_portfolios", joinColumns = [JoinColumn(name = "user_id")])
+    @Column(name = "portfolio_url", nullable = false, columnDefinition = "VARCHAR(2048)")
+    val portfolioUrls: MutableList<String> = mutableListOf()
+
     @Column(columnDefinition = "VARCHAR(1000)")
     var bio: String? = null
 
@@ -57,12 +62,15 @@ class User(
         position: Position,
         bio: String?,
         skills: Set<Skill>,
+        portfolioUrls: List<String>,
     ) {
         this.position = position
         this.bio = bio
         this.skills.clear()
         this.skills.addAll(skills)
+        this.portfolioUrls.clear()
+        this.portfolioUrls.addAll(portfolioUrls)
     }
 
-    fun isProfileComplete(): Boolean = this.username != null && this.position != null && this.skills.isNotEmpty()
+    fun isProfileComplete(): Boolean = this.username != null && this.position != null
 }

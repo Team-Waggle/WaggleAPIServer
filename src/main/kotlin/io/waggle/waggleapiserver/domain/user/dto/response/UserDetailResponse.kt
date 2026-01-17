@@ -22,6 +22,8 @@ data class UserDetailResponse(
     val position: Position?,
     @Schema(description = "자기소개")
     val bio: String?,
+    @Schema(description = "포트폴리오 URL 목록", example = "[\"https://github.com/user\"]")
+    val portfolioUrls: List<String>,
 ) {
     companion object {
         fun from(user: User): UserDetailResponse =
@@ -32,6 +34,7 @@ data class UserDetailResponse(
                 user.profileImageUrl,
                 user.position,
                 user.bio,
+                user.portfolioUrls,
             )
     }
 }
