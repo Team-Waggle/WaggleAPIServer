@@ -1,6 +1,8 @@
 package io.waggle.waggleapiserver.domain.member
 
 import io.waggle.waggleapiserver.common.AuditingEntity
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -38,6 +40,8 @@ class Member(
     }
 
     fun checkMemberRole(role: MemberRole) {
-        check(this.role.level >= role.level) { "Do not have the authority" }
+        if (this.role.level < role.level) {
+            throw BusinessException(ErrorCode.ACCESS_DENIED, "Do not have the authority")
+        }
     }
 }
