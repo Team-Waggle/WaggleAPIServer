@@ -6,11 +6,11 @@ import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
+import io.waggle.waggleapiserver.domain.user.dto.request.UserSetupProfileRequest
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.dto.response.UserCheckUsernameResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
-import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -24,6 +24,32 @@ class UserService(
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
 ) {
+    @Transactional
+    fun setupProfile(
+        request: UserSetupProfileRequest,
+        user: User,
+    ): UserDetailResponse {
+        if (user.username != null) {
+            throw BusinessException(ErrorCode.INVALID_STATE, "Profile already set up")
+        }
+
+        val (username, position, bio, skills, portfolioUrls) = request
+
+        if (userRepository.existsByUsername(username)) {
+            throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "$username exists already")
+        }
+
+        user.setupProfile(
+            username = username,
+            position = position,
+            bio = bio,
+            skills = skills,
+            portfolioUrls = portfolioUrls,
+        )
+
+        return UserDetailResponse.from(user)
+    }
+
     fun checkUsername(username: String): UserCheckUsernameResponse {
         val isAvailable = !userRepository.existsByUsername(username)
         return UserCheckUsernameResponse(isAvailable)

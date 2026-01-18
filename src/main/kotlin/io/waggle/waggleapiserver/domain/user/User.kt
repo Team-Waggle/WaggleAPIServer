@@ -58,6 +58,22 @@ class User(
     @Column(columnDefinition = "VARCHAR(1000)")
     var bio: String? = null
 
+    fun setupProfile(
+        username: String,
+        position: Position,
+        bio: String?,
+        skills: Set<Skill>,
+        portfolioUrls: List<String>,
+    ) {
+        this.username = username
+        this.position = position
+        this.bio = bio
+        this.skills.clear()
+        this.skills.addAll(skills)
+        this.portfolioUrls.clear()
+        this.portfolioUrls.addAll(portfolioUrls)
+    }
+
     fun update(
         position: Position,
         bio: String?,
