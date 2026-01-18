@@ -17,7 +17,7 @@ data class MemberResponse(
     val userId: UUID,
     @Schema(description = "멤버 역할", example = "LEADER")
     val role: MemberRole,
-    @Schema(description = "사용자명", example = "sillysillyman")
+    @Schema(description = "사용자명", example = "testUser")
     val username: String,
     @Schema(
         description = "프로필 이미지 URL",
