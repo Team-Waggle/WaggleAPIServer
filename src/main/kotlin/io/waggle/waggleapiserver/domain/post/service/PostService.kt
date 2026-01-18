@@ -10,7 +10,6 @@ import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
-import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
@@ -25,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional
 class PostService(
     private val memberRepository: MemberRepository,
     private val postRepository: PostRepository,
-    private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
 ) {
     @Transactional
