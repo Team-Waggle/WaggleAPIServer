@@ -8,7 +8,8 @@ import jakarta.validation.constraints.NotNull
 @Schema(description = "모집글 생성/수정 요청 DTO")
 data class PostUpsertRequest(
     @Schema(description = "프로젝트 ID", example = "1")
-    val projectId: Long?,
+    @field:NotNull
+    val projectId: Long,
     @Schema(description = "모집글 제목")
     @field:NotBlank
     val title: String,
