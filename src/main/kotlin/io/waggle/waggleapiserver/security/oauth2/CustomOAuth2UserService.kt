@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.security.oauth2
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
@@ -20,7 +22,7 @@ class CustomOAuth2UserService(
             when (val registrationId = request.clientRegistration.registrationId) {
                 "google" -> GoogleUserInfo(oauth2User.attributes)
                 "kakao" -> KakaoUserInfo(oauth2User.attributes)
-                else -> throw IllegalArgumentException("Unsupported provider: $registrationId")
+                else -> throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Unsupported provider: $registrationId")
             }
 
         val user =
@@ -28,8 +30,8 @@ class CustomOAuth2UserService(
                 userInfo.provider,
                 userInfo.providerId,
             ) ?: run {
-                require(!userRepository.existsByEmail(userInfo.email)) {
-                    "Already existing email: ${userInfo.email}"
+                if (userRepository.existsByEmail(userInfo.email)) {
+                    throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Already existing email: ${userInfo.email}")
                 }
                 userRepository.save(
                     User(

@@ -13,13 +13,17 @@ import io.waggle.waggleapiserver.domain.follow.service.FollowService
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.service.NotificationService
 import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
+import io.waggle.waggleapiserver.domain.user.dto.request.UserSetupProfileRequest
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
+import io.waggle.waggleapiserver.domain.user.dto.response.UserCheckUsernameResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
+import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.service.UserService
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -37,6 +41,19 @@ class UserController(
     private val notificationService: NotificationService,
     private val userService: UserService,
 ) {
+    @Operation(summary = "사용자 프로필 초기 설정")
+    @PostMapping("/me/profile")
+    fun setupProfile(
+        @Valid @RequestBody request: UserSetupProfileRequest,
+        @CurrentUser user: User,
+    ): UserDetailResponse = userService.setupProfile(request, user)
+
+    @Operation(summary = "사용자명 사용 가능 여부 조회")
+    @GetMapping("/check")
+    fun checkUsername(
+        @RequestParam username: String,
+    ): UserCheckUsernameResponse = userService.checkUsername(username)
+
     @Operation(summary = "사용자 조회")
     @GetMapping("/{userId}")
     fun getUser(
@@ -49,13 +66,6 @@ class UserController(
         @PathVariable userId: UUID,
     ): FollowCountResponse = followService.getUserFollowCount(userId)
 
-    @Operation(summary = "본인 북마크 목록 조회")
-    @GetMapping("/me/bookmarks")
-    fun getMyBookmarks(
-        @RequestParam bookmarkType: BookmarkType,
-        @CurrentUser user: User,
-    ): List<BookmarkResponse> = bookmarkService.getUserBookmarkables(bookmarkType, user)
-
     @Operation(summary = "사용자 참여 프로젝트 목록 조회")
     @GetMapping("/{userId}/projects")
     fun getUserProjects(
@@ -67,6 +77,13 @@ class UserController(
     fun getMyApplications(
         @CurrentUser user: User,
     ): List<ApplicationResponse> = applicationService.getUserApplications(user)
+
+    @Operation(summary = "본인 북마크 목록 조회")
+    @GetMapping("/me/bookmarks")
+    fun getMyBookmarks(
+        @RequestParam type: BookmarkType,
+        @CurrentUser user: User,
+    ): List<BookmarkResponse> = bookmarkService.getUserBookmarkables(type, user)
 
     @Operation(summary = "본인이 팔로우 하는 계정 목록 조회")
     @GetMapping("/me/followees")
@@ -85,6 +102,12 @@ class UserController(
     fun getMyNotifications(
         @CurrentUser user: User,
     ): List<NotificationResponse> = notificationService.getUserNotifications(user)
+
+    @Operation(summary = "프로필 완성 여부 조회")
+    @GetMapping("/me/profile-completion")
+    fun getMyProfileCompletion(
+        @CurrentUser user: User,
+    ): UserProfileCompletionResponse = userService.getUserProfileCompletion(user)
 
     @Operation(summary = "본인 참여 프로젝트 목록 조회")
     @GetMapping("/me/projects")

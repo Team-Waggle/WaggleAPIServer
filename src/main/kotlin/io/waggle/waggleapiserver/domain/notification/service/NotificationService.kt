@@ -1,12 +1,15 @@
 package io.waggle.waggleapiserver.domain.notification.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.notification.Notification
 import io.waggle.waggleapiserver.domain.notification.dto.request.NotificationCreateRequest
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
+import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
+import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -16,25 +19,24 @@ import java.util.UUID
 class NotificationService(
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
+    private val projectRepository: ProjectRepository,
 ) {
     @Transactional
-    fun createNotification(
-        userId: UUID,
-        request: NotificationCreateRequest,
-    ) {
+    fun createNotification(request: NotificationCreateRequest) {
+        val (type, projectId, userId) = request
+
         if (!userRepository.existsById(userId)) {
-            throw EntityNotFoundException("User not found: $userId")
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
         }
 
-        val (type, redirectUrl, contentArgs) = request
-        val title = type.title
-        val content = type.content(*contentArgs.toTypedArray())
+        if (projectId != null && !projectRepository.existsById(projectId)) {
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project not found: $projectId")
+        }
 
         val notification =
             Notification(
-                title = title,
-                content = content,
-                redirectUrl = redirectUrl,
+                type = type,
+                projectId = projectId,
                 userId = userId,
             )
 
@@ -43,6 +45,18 @@ class NotificationService(
 
     fun getUserNotifications(user: User): List<NotificationResponse> {
         val notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.id)
-        return notifications.map { NotificationResponse.from(it) }
+
+        val projectIds = notifications.mapNotNull { it.projectId }
+        val projectMap = projectRepository.findAllById(projectIds).associateBy { it.id }
+
+        return notifications.map { notification ->
+            val project =
+                notification.projectId?.let { projectMap[it] }?.let(ProjectSimpleResponse::from)
+
+            NotificationResponse.of(
+                notification = notification,
+                project = project,
+            )
+        }
     }
 }

@@ -19,6 +19,8 @@ data class ApplicationResponse(
     val projectId: Long,
     @Schema(description = "지원자 ID", example = "550e8400-e29b-41d4-a716-446655440000")
     val userId: UUID,
+    @Schema(description = "지원 동기")
+    val detail: String,
     @Schema(description = "지원 일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) {
@@ -30,6 +32,7 @@ data class ApplicationResponse(
                 status = application.status,
                 projectId = application.projectId,
                 userId = application.userId,
+                detail = application.detail,
                 createdAt = application.createdAt,
             )
     }

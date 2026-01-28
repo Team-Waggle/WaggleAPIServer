@@ -1,6 +1,8 @@
 package io.waggle.waggleapiserver.domain.post
 
 import io.waggle.waggleapiserver.common.AuditingEntity
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.Bookmarkable
 import jakarta.persistence.Access
@@ -12,7 +14,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.Table
-import org.springframework.security.access.AccessDeniedException
 import java.util.UUID
 
 @Access(AccessType.FIELD)
@@ -34,9 +35,9 @@ class Post(
     var projectId: Long?,
 ) : AuditingEntity(),
     Bookmarkable {
-    override val bookmarkableId: Long
+    override val targetId: Long
         get() = id
-    override val bookmarkType: BookmarkType
+    override val type: BookmarkType
         get() = BookmarkType.POST
 
     fun update(
@@ -51,7 +52,7 @@ class Post(
 
     fun checkOwnership(currentUserId: UUID) {
         if (userId != currentUserId) {
-            throw AccessDeniedException("Not the owner of the post")
+            throw BusinessException(ErrorCode.ACCESS_DENIED, "Not the owner of the post")
         }
     }
 }
