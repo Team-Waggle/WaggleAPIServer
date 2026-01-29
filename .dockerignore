@@ -1,0 +1,12 @@
+.git
+.gitignore
+.idea
+*.md
+.env*
+!.env.docker
+docker-compose*.yml
+nginx.conf
+tmp.html
+websocket-test.html
+build/
+!build/libs/*.jar
