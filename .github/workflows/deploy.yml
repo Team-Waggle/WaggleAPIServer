@@ -1,19 +1,16 @@
-name: Deploy to EC2
+name: Deploy to EC2 (Docker)
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ main ]
   pull_request:
     types: [ closed ]
     branches: [ main ]
 
 jobs:
-
-  build:
+  deploy:
+    if: github.event_name == 'push' || (github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
-
-    outputs:
-      jar-name: ${{ steps.build.outputs.jar-name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -25,86 +22,29 @@ jobs:
           java-version: '21'
 
       - name: Build JAR
-        id: build
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
 
-          echo "=== build/libs ==="
-          ls -al build/libs
-
-          JAR_NAME=$(ls -t build/libs/*.jar | head -n 1 | xargs -n1 basename)
-          echo "jar-name=$JAR_NAME" >> $GITHUB_OUTPUT
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: waggle-jar
-          path: build/libs/*.jar
-          retention-days: 1
-
-
-  deploy-dev:
-    needs: build
-    if: github.ref == 'refs/heads/dev'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: waggle-jar
-
-      - name: Upload to EC2 (DEV)
+      - name: Copy files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "*.jar"
-          target: "/opt/waggle-dev/"
-          overwrite: true
-
-      - name: Restart Service (DEV)
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo mv /opt/waggle-dev/*.jar /opt/waggle-dev/app.jar
-            sudo systemctl daemon-reload
-            sudo systemctl restart waggle-dev
-            sudo systemctl status waggle-dev --no-pager
-
-
-  deploy-prod:
-    needs: build
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: waggle-jar
-
-      - name: Upload to EC2 (PROD)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "*.jar"
+          source: "build/libs/*.jar,Dockerfile,docker-compose.yml,nginx.conf"
           target: "/opt/waggle/"
           overwrite: true
 
-      - name: Restart Service (PROD)
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Deploy with Docker
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo mv /opt/waggle/*.jar /opt/waggle/app.jar
-            sudo systemctl daemon-reload
-            sudo systemctl restart waggle
-            sudo systemctl status waggle --no-pager
+            cd /opt/waggle
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d
+            docker compose ps
