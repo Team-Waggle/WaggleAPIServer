@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.member.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.member.Member
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.dto.request.MemberUpdateRoleRequest
@@ -7,7 +9,6 @@ import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
 import io.waggle.waggleapiserver.domain.user.User
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,21 +25,25 @@ class MemberService(
         request: MemberUpdateRoleRequest,
         user: User,
     ): MemberResponse {
-        val (projectId, role) = request
-
-        val member =
-            memberRepository.findByUserIdAndProjectId(user.id, projectId)
-                ?: throw EntityNotFoundException("Member not found")
-        require(member.id != memberId) { "Cannot update your own role" }
+        val role = request.role
 
         val targetMember =
             memberRepository.findByIdOrNull(memberId)
-                ?: throw EntityNotFoundException("Member not found: $memberId")
-        require(targetMember.projectId == projectId) { "Not a member of the project" }
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
+        if (user.id == targetMember.userId) {
+            throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Cannot update your own role")
+        }
+
+        val project =
+            projectRepository.findByIdOrNull(targetMember.projectId)
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project Not Found: ${targetMember.projectId}")
+
+        val member =
+            memberRepository.findByUserIdAndProjectId(user.id, project.id)
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
 
         when (role) {
-            MemberRole.MEMBER -> member.checkMemberRole(targetMember.role)
-            MemberRole.MANAGER -> member.checkMemberRole(MemberRole.LEADER)
+            MemberRole.MEMBER, MemberRole.MANAGER -> member.checkMemberRole(MemberRole.LEADER)
             MemberRole.LEADER -> delegateLeader(targetMember, member)
         }
 
@@ -54,10 +59,12 @@ class MemberService(
     ) {
         val member =
             memberRepository.findByUserIdAndProjectId(user.id, projectId)
-                ?: throw EntityNotFoundException("Member Not Found")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member Not Found")
         val members =
             memberRepository.findByIdNotAndProjectIdOrderByCreatedAtAsc(member.id, projectId)
-        check(members.isNotEmpty()) { "Cannot leave as the only member" }
+        if (members.isEmpty()) {
+            throw BusinessException(ErrorCode.INVALID_STATE, "Cannot leave as the only member")
+        }
 
         if (member.isLeader) {
             delegateLeader(members[0], member)
@@ -73,16 +80,18 @@ class MemberService(
     ) {
         val member =
             memberRepository.findByIdOrNull(memberId)
-                ?: throw EntityNotFoundException("Member not found: $memberId")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found: $memberId")
 
         val project =
             projectRepository.findByIdOrNull(member.projectId)
-                ?: throw EntityNotFoundException("Project Not Found: ${member.projectId}")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project Not Found: ${member.projectId}")
 
         val leader =
             memberRepository.findByUserIdAndProjectId(user.id, project.id)
-                ?: throw EntityNotFoundException("Member not found")
-        check(leader.isLeader) { "Only leader can remove member" }
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
+        if (!leader.isLeader) {
+            throw BusinessException(ErrorCode.ACCESS_DENIED, "Only leader can remove member")
+        }
 
         member.delete()
     }
@@ -91,12 +100,16 @@ class MemberService(
         member: Member,
         leader: Member,
     ) {
-        check(leader.isLeader) { "Only leader can delegate authority" }
-        require(member.projectId == leader.projectId) { "Not in the same project" }
+        if (!leader.isLeader) {
+            throw BusinessException(ErrorCode.ACCESS_DENIED, "Only leader can delegate authority")
+        }
+        if (member.projectId != leader.projectId) {
+            throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Not in the same project")
+        }
 
         val project =
             projectRepository.findByIdOrNull(leader.projectId)
-                ?: throw EntityNotFoundException("Project Not Found: ${leader.projectId}")
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project Not Found: ${leader.projectId}")
 
         leader.updateRole(MemberRole.MANAGER)
         member.updateRole(MemberRole.LEADER)

@@ -1,6 +1,8 @@
 package io.waggle.waggleapiserver.domain.application
 
 import io.waggle.waggleapiserver.common.AuditingEntity
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.enums.Position
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -37,10 +39,12 @@ class Application(
     val projectId: Long,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
+    @Column(nullable = false, columnDefinition = "VARCHAR(5000)")
+    var detail: String,
 ) : AuditingEntity() {
     fun updateStatus(status: ApplicationStatus) {
         if (this.status != ApplicationStatus.PENDING) {
-            throw IllegalStateException("status is not PENDING")
+            throw BusinessException(ErrorCode.INVALID_STATE, "status is not PENDING")
         }
         this.status = status
     }

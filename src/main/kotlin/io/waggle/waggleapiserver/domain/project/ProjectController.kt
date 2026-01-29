@@ -3,6 +3,7 @@ package io.waggle.waggleapiserver.domain.project
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.CurrentUser
+import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreateRequest
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.service.ApplicationService
 import io.waggle.waggleapiserver.domain.member.service.MemberService
@@ -50,8 +51,9 @@ class ProjectController(
     @ResponseStatus(HttpStatus.CREATED)
     fun applyProject(
         @PathVariable projectId: Long,
+        @Valid @RequestBody request: ApplicationCreateRequest,
         @CurrentUser user: User,
-    ): ApplicationResponse = applicationService.applyProject(projectId, user)
+    ): ApplicationResponse = applicationService.applyProject(projectId, request, user)
 
     @Operation(
         summary = "프로젝트 모집 정보 생성",

@@ -9,9 +9,9 @@ import java.util.UUID
 data class UserSimpleResponse(
     @Schema(description = "사용자 ID", example = "550e8400-e29b-41d4-a716-446655440000")
     val userId: UUID,
-    @Schema(description = "사용자명", example = "sillysillyman")
+    @Schema(description = "사용자명", example = "testUser")
     val username: String,
-    @Schema(description = "이메일", example = "sillysillyman.cs@gmail.com")
+    @Schema(description = "이메일", example = "testUser@gmail.com")
     val email: String,
     @Schema(
         description = "프로필 이미지 URL",
@@ -20,8 +20,6 @@ data class UserSimpleResponse(
     val profileImageUrl: String?,
     @Schema(description = "직무", example = "BACKEND")
     val position: Position?,
-    @Schema(description = "경력", example = "1")
-    val yearCount: Int?,
 ) {
     companion object {
         fun from(user: User): UserSimpleResponse =
@@ -31,7 +29,6 @@ data class UserSimpleResponse(
                 user.email,
                 user.profileImageUrl,
                 user.position,
-                user.yearCount,
             )
     }
 }

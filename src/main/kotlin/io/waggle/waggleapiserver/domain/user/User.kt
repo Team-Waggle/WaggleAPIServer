@@ -3,15 +3,16 @@ package io.waggle.waggleapiserver.domain.user
 import com.github.f4b6a3.uuid.UuidCreator
 import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.domain.user.enums.Position
-import io.waggle.waggleapiserver.domain.user.enums.Sido
-import io.waggle.waggleapiserver.domain.user.enums.WorkTime
-import io.waggle.waggleapiserver.domain.user.enums.WorkWay
+import io.waggle.waggleapiserver.domain.user.enums.Skill
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import java.util.UUID
@@ -40,42 +41,52 @@ class User(
     var username: String? = null
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "work_time", columnDefinition = "VARCHAR(20)")
-    var workTime: WorkTime? = null
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "work_way", columnDefinition = "VARCHAR(20)")
-    var workWay: WorkWay? = null
-
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "VARCHAR(20)")
-    var sido: Sido? = null
-
-    @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "VARCHAR(20)")
     var position: Position? = null
 
-    @Column(name = "year_count")
-    var yearCount: Int? = null
+    @ElementCollection
+    @CollectionTable(name = "user_skills", joinColumns = [JoinColumn(name = "user_id")])
+    @Enumerated(EnumType.STRING)
+    @Column(name = "skill", nullable = false, columnDefinition = "VARCHAR(50)")
+    val skills: MutableSet<Skill> = mutableSetOf()
 
-    @Column(columnDefinition = "VARCHAR(5000)")
-    var detail: String? = null
+    @ElementCollection
+    @CollectionTable(name = "user_portfolios", joinColumns = [JoinColumn(name = "user_id")])
+    @Column(name = "portfolio_url", nullable = false, columnDefinition = "VARCHAR(2048)")
+    val portfolioUrls: MutableList<String> = mutableListOf()
 
-    fun update(
+    @Column(columnDefinition = "VARCHAR(1000)")
+    var bio: String? = null
+
+    fun setupProfile(
         username: String,
-        workTime: WorkTime,
-        workWay: WorkWay,
-        sido: Sido,
         position: Position,
-        yearCount: Int?,
-        detail: String?,
+        bio: String?,
+        skills: Set<Skill>,
+        portfolioUrls: List<String>,
     ) {
         this.username = username
-        this.workTime = workTime
-        this.workWay = workWay
-        this.sido = sido
         this.position = position
-        this.yearCount = yearCount
-        this.detail = detail
+        this.bio = bio
+        this.skills.clear()
+        this.skills.addAll(skills)
+        this.portfolioUrls.clear()
+        this.portfolioUrls.addAll(portfolioUrls)
     }
+
+    fun update(
+        position: Position,
+        bio: String?,
+        skills: Set<Skill>,
+        portfolioUrls: List<String>,
+    ) {
+        this.position = position
+        this.bio = bio
+        this.skills.clear()
+        this.skills.addAll(skills)
+        this.portfolioUrls.clear()
+        this.portfolioUrls.addAll(portfolioUrls)
+    }
+
+    fun isProfileComplete(): Boolean = this.username != null && this.position != null
 }

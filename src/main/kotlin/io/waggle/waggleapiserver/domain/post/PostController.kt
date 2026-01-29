@@ -3,7 +3,7 @@ package io.waggle.waggleapiserver.domain.post
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.CurrentUser
-import io.waggle.waggleapiserver.domain.post.dto.request.PostSearchQuery
+import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
 import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
@@ -43,7 +43,7 @@ class PostController(
     @Operation(summary = "모집글 목록 페이지네이션 조회")
     @GetMapping
     fun getPosts(
-        @ModelAttribute query: PostSearchQuery,
+        @ModelAttribute query: PostGetQuery,
         @CurrentUser user: User?,
         @PageableDefault(
             size = 15,

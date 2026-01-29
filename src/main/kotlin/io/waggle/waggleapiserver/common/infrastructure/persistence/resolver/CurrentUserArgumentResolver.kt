@@ -1,10 +1,11 @@
 package io.waggle.waggleapiserver.common.infrastructure.persistence.resolver
 
 import io.swagger.v3.oas.annotations.Parameter
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import io.waggle.waggleapiserver.security.oauth2.UserPrincipal
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.core.MethodParameter
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.context.SecurityContextHolder
@@ -38,6 +39,6 @@ class CurrentUserArgumentResolver(
         val userPrincipal = authentication?.principal as? UserPrincipal ?: return null
 
         return userRepository.findByIdOrNull(userPrincipal.userId)
-            ?: throw EntityNotFoundException("User not found: ${userPrincipal.userId}")
+            ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: ${userPrincipal.userId}")
     }
 }

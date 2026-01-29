@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.auth.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.auth.AuthCookieManager
 import io.waggle.waggleapiserver.domain.auth.dto.response.AccessTokenResponse
 import io.waggle.waggleapiserver.domain.user.UserRole
@@ -39,16 +41,20 @@ class AuthService(
     }
 
     fun refresh(refreshToken: String): AccessTokenResponse {
-        require(jwtProvider.isTokenValid(refreshToken)) { "Invalid refresh token" }
+        if (!jwtProvider.isTokenValid(refreshToken)) {
+            throw BusinessException(ErrorCode.INVALID_TOKEN, "Invalid refresh token")
+        }
 
         val userId = jwtProvider.getUserIdFromToken(refreshToken)
         val role = jwtProvider.getRoleFromToken(refreshToken)
 
         val stored =
             redisTemplate.opsForValue().get("refresh-token:$userId")
-                ?: throw IllegalArgumentException("Refresh token not found")
+                ?: throw BusinessException(ErrorCode.INVALID_TOKEN, "Refresh token not found")
 
-        require(stored == refreshToken) { "Refresh token mismatch" }
+        if (stored != refreshToken) {
+            throw BusinessException(ErrorCode.INVALID_TOKEN, "Refresh token mismatch")
+        }
 
         return AccessTokenResponse(jwtProvider.generateAccessToken(userId, role))
     }
