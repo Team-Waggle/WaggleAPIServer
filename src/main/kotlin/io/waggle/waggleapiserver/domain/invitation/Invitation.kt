@@ -23,7 +23,7 @@ class Invitation(
     @Column(name = "application_id")
     var applicationId: Long? = null,
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "VARCHAR(20))")
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     var status: InvitationStatus = InvitationStatus.PENDING,
     @Column(name = "expires_at")
     var expiresAt: Instant? = null,
