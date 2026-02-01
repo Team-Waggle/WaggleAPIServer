@@ -2,13 +2,16 @@ package io.waggle.waggleapiserver.security.oauth2
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler
 import org.springframework.stereotype.Component
 import org.springframework.web.util.UriComponentsBuilder
 
 @Component
-class OAuth2LoginFailureHandler : SimpleUrlAuthenticationFailureHandler() {
+class OAuth2LoginFailureHandler(
+    @Value("\${app.oauth2.redirect-uri}") private val redirectUri: String,
+) : SimpleUrlAuthenticationFailureHandler() {
     override fun onAuthenticationFailure(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -16,7 +19,7 @@ class OAuth2LoginFailureHandler : SimpleUrlAuthenticationFailureHandler() {
     ) {
         val targetUrl =
             UriComponentsBuilder
-                .fromUriString("http://localhost:3000/login")
+                .fromUriString(redirectUri)
                 .queryParam("error", exception.localizedMessage)
                 .build()
                 .toUriString()
