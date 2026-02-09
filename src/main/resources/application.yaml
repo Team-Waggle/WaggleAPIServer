@@ -26,7 +26,6 @@ spring:
   #    locations: classpath:db/migration
 
   jackson:
-    property-naming-strategy: SNAKE_CASE
     serialization:
       write-dates-as-timestamps: false
     time-zone: Asia/Seoul
