@@ -20,7 +20,7 @@ class AuthCookieManager(
             Cookie("refreshToken", token).apply {
                 isHttpOnly = true
                 secure = cookieSecure
-                path = "/auth/refresh"
+                path = "/auth"
                 maxAge = maxAgeSeconds
                 cookieDomain?.takeIf { it.isNotBlank() }?.let { domain = it }
             }
@@ -29,7 +29,7 @@ class AuthCookieManager(
 
         val header =
             buildString {
-                append("refreshToken=$token; HttpOnly; Path=/auth/refresh; Max-Age=$maxAgeSeconds; ")
+                append("refreshToken=$token; HttpOnly; Path=/auth; Max-Age=$maxAgeSeconds; ")
                 if (cookieSecure) append("Secure; ")
                 cookieDomain?.takeIf { it.isNotBlank() }?.let { append("Domain=$it; ") }
                 append("SameSite=$cookieSameSite")
@@ -43,7 +43,7 @@ class AuthCookieManager(
             Cookie("refreshToken", null).apply {
                 isHttpOnly = true
                 secure = cookieSecure
-                path = "/auth/refresh"
+                path = "/auth"
                 maxAge = 0
                 cookieDomain?.takeIf { it.isNotBlank() }?.let { domain = it }
             }
@@ -52,7 +52,7 @@ class AuthCookieManager(
 
         val header =
             buildString {
-                append("refreshToken=; HttpOnly; Path=/auth/refresh; Max-Age=0; ")
+                append("refreshToken=; HttpOnly; Path=/auth; Max-Age=0; ")
                 if (cookieSecure) append("Secure; ")
                 cookieDomain?.takeIf { it.isNotBlank() }?.let { append("Domain=$it; ") }
                 append("SameSite=$cookieSameSite")
