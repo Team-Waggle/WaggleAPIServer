@@ -27,8 +27,8 @@ class Team(
     var name: String,
     @Column(nullable = false)
     var description: String,
-    @Column(name = "thumbnail_url")
-    var thumbnailUrl: String? = null,
+    @Column(name = "profile_image_url")
+    var profileImageUrl: String? = null,
     @Column(name = "leader_id", nullable = false)
     var leaderId: UUID,
     @Column(name = "creator_id", nullable = false, updatable = false)
@@ -43,11 +43,11 @@ class Team(
     fun update(
         name: String,
         description: String,
-        thumbnailUrl: String?,
+        profileImageUrl: String?,
     ) {
         this.name = name
         this.description = description
-        this.thumbnailUrl = thumbnailUrl
+        this.profileImageUrl = profileImageUrl
     }
 
     fun isLeader(userId: UUID) = leaderId == userId

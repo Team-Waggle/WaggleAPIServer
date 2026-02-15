@@ -11,6 +11,6 @@ data class TeamUpsertRequest(
     @Schema(description = "팀 상세 설명")
     @field:NotBlank
     val description: String,
-    @Schema(description = "팀 섬네일 URL")
-    val thumbnailUrl: String?,
+    @Schema(description = "팀 프로필 이미지 URL")
+    val profileImageUrl: String?,
 )
