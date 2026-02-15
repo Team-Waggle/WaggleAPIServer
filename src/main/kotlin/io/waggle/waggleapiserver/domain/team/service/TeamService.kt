@@ -105,11 +105,15 @@ class TeamService(
 
         val (name, description, workMode, profileImageUrl) = request
 
-        if (name != team.name && teamRepository.existsByName(name)) {
-            throw BusinessException(
-                ErrorCode.DUPLICATE_RESOURCE,
-                "Already exists team name: $name",
-            )
+        if (name != team.name) {
+            member.checkMemberRole(MemberRole.LEADER)
+
+            if (teamRepository.existsByName(name)) {
+                throw BusinessException(
+                    ErrorCode.DUPLICATE_RESOURCE,
+                    "Already exists team name: $name",
+                )
+            }
         }
 
         team.update(
