@@ -9,6 +9,7 @@ import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
+import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional
 class MemberService(
     private val memberRepository: MemberRepository,
     private val teamRepository: TeamRepository,
+    private val userRepository: UserRepository,
 ) {
     @Transactional
     fun updateMemberRole(
@@ -46,13 +48,18 @@ class MemberService(
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
 
         when (role) {
-            MemberRole.MEMBER, MemberRole.MANAGER -> member.checkMemberRole(MemberRole.LEADER)
-            MemberRole.LEADER -> delegateLeader(targetMember, member)
+            MemberRole.MEMBER, MemberRole.MANAGER -> {
+                member.checkMemberRole(MemberRole.LEADER)
+                targetMember.updateRole(role)
+            }
+            MemberRole.LEADER -> delegateLeader(member, targetMember)
         }
 
-        targetMember.updateRole(role)
+        val targetUser =
+            userRepository.findByIdOrNull(targetMember.userId)
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: ${targetMember.userId}")
 
-        return MemberResponse.of(targetMember, user)
+        return MemberResponse.of(targetMember, targetUser)
     }
 
     @Transactional
@@ -64,13 +71,13 @@ class MemberService(
             memberRepository.findByUserIdAndTeamId(user.id, teamId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member Not Found")
         val members =
-            memberRepository.findByIdNotAndTeamIdOrderByCreatedAtAsc(member.id, teamId)
+            memberRepository.findByIdNotAndTeamIdOrderByRoleAscCreatedAtAsc(member.id, teamId)
         if (members.isEmpty()) {
             throw BusinessException(ErrorCode.INVALID_STATE, "Cannot leave as the only member")
         }
 
         if (member.isLeader) {
-            delegateLeader(members[0], member)
+            delegateLeader(member, members[0])
         }
 
         member.delete()
@@ -106,25 +113,25 @@ class MemberService(
     }
 
     private fun delegateLeader(
-        member: Member,
-        leader: Member,
+        oldLeader: Member,
+        newLeader: Member,
     ) {
-        if (!leader.isLeader) {
+        if (!oldLeader.isLeader) {
             throw BusinessException(ErrorCode.ACCESS_DENIED, "Only leader can delegate authority")
         }
-        if (member.teamId != leader.teamId) {
+        if (newLeader.teamId != oldLeader.teamId) {
             throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Not in the same team")
         }
 
         val team =
-            teamRepository.findByIdOrNull(leader.teamId)
+            teamRepository.findByIdOrNull(oldLeader.teamId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
-                    "Team Not Found: ${leader.teamId}",
+                    "Team Not Found: ${oldLeader.teamId}",
                 )
 
-        leader.updateRole(MemberRole.MANAGER)
-        member.updateRole(MemberRole.LEADER)
-        team.leaderId = member.userId
+        oldLeader.updateRole(MemberRole.MANAGER)
+        newLeader.updateRole(MemberRole.LEADER)
+        team.leaderId = newLeader.userId
     }
 }
