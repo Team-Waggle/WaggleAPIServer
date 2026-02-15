@@ -68,7 +68,7 @@ class TeamService(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Team not found: $teamId",
                 )
-        val members = memberRepository.findByTeamIdOrderByCreatedAtAsc(teamId)
+        val members = memberRepository.findByTeamIdOrderByRoleAscCreatedAtAsc(teamId)
         val userMap = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
 
         return TeamDetailResponse.of(
@@ -119,7 +119,7 @@ class TeamService(
             profileImageUrl = profileImageUrl,
         )
 
-        val members = memberRepository.findByTeamIdOrderByCreatedAtAsc(teamId)
+        val members = memberRepository.findByTeamIdOrderByRoleAscCreatedAtAsc(teamId)
         val userMap = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
 
         return TeamDetailResponse.of(
