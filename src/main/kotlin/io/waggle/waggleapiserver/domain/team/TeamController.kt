@@ -32,8 +32,8 @@ import org.springframework.web.bind.annotation.RestController
 class TeamController(
     private val applicationService: ApplicationService,
     private val memberService: MemberService,
-    private val teamService: TeamService,
     private val recruitmentService: RecruitmentService,
+    private val teamService: TeamService,
 ) {
     @Operation(summary = "팀 생성")
     @PostMapping

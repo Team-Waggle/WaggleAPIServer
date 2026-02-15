@@ -19,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class ApplicationService(
     private val applicationRepository: ApplicationRepository,
-    private val recruitmentRepository: RecruitmentRepository,
     private val memberRepository: MemberRepository,
+    private val recruitmentRepository: RecruitmentRepository,
 ) {
     @Transactional
     fun applyToTeam(

@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class NotificationService(
     private val notificationRepository: NotificationRepository,
-    private val userRepository: UserRepository,
     private val teamRepository: TeamRepository,
+    private val userRepository: UserRepository,
 ) {
     @Transactional
     fun createNotification(request: NotificationCreateRequest) {
