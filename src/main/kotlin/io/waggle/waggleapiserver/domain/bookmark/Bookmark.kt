@@ -19,7 +19,7 @@ data class BookmarkId(
     @Column(name = "target_id", nullable = false, updatable = false)
     val targetId: Long,
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, columnDefinition = "VARCHAR(20)")
     val type: BookmarkType,
 ) : Serializable
 
@@ -42,9 +42,4 @@ class Bookmark(
 
     val targetId: Long get() = id.targetId
     val type: BookmarkType get() = id.type
-}
-
-enum class BookmarkType {
-    POST,
-    TEAM,
 }
