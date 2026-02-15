@@ -7,6 +7,8 @@ import jakarta.persistence.Access
 import jakarta.persistence.AccessType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -25,8 +27,11 @@ class Team(
     val id: Long = 0,
     @Column(unique = true, nullable = false)
     var name: String,
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     var description: String,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "work_mode", nullable = false, columnDefinition = "VARCHAR(20)")
+    var workMode: WorkMode,
     @Column(name = "profile_image_url")
     var profileImageUrl: String? = null,
     @Column(name = "leader_id", nullable = false)
@@ -43,10 +48,12 @@ class Team(
     fun update(
         name: String,
         description: String,
+        workMode: WorkMode,
         profileImageUrl: String?,
     ) {
         this.name = name
         this.description = description
+        this.workMode = workMode
         this.profileImageUrl = profileImageUrl
     }
 

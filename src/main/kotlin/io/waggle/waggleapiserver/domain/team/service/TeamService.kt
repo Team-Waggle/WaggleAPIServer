@@ -28,7 +28,7 @@ class TeamService(
         request: TeamUpsertRequest,
         user: User,
     ): TeamDetailResponse {
-        val (name, description, profileImageUrl) = request
+        val (name, description, workMode, profileImageUrl) = request
 
         if (teamRepository.existsByName(name)) {
             throw BusinessException(
@@ -41,6 +41,7 @@ class TeamService(
             Team(
                 name = name,
                 description = description,
+                workMode = workMode,
                 profileImageUrl = profileImageUrl,
                 leaderId = user.id,
                 creatorId = user.id,
@@ -102,7 +103,7 @@ class TeamService(
                     "Team not found: $teamId",
                 )
 
-        val (name, description, profileImageUrl) = request
+        val (name, description, workMode, profileImageUrl) = request
 
         if (name != team.name && teamRepository.existsByName(name)) {
             throw BusinessException(
@@ -114,6 +115,7 @@ class TeamService(
         team.update(
             name = name,
             description = description,
+            workMode = workMode,
             profileImageUrl = profileImageUrl,
         )
 
