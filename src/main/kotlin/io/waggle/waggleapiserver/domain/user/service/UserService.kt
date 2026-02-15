@@ -65,11 +65,13 @@ class UserService(
     fun getUserTeams(userId: UUID): List<TeamSimpleResponse> {
         val teamIds =
             memberRepository
-                .findByUserIdOrderByCreatedAtAsc(userId)
+                .findByUserIdOrderByRoleAscCreatedAtAsc(userId)
                 .map { it.teamId }
-        val teams = teamRepository.findAllById(teamIds)
+        val teamMap = teamRepository.findAllById(teamIds).associateBy { it.id }
 
-        return teams.map { TeamSimpleResponse.from(it) }
+        return teamIds.mapNotNull { teamId ->
+            teamMap[teamId]?.let { TeamSimpleResponse.from(it) }
+        }
     }
 
     fun getUserProfileCompletion(user: User): UserProfileCompletionResponse = UserProfileCompletionResponse(user.isProfileComplete())
