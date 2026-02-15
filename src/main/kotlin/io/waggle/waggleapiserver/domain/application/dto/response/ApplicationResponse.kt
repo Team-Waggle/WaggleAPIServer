@@ -15,8 +15,8 @@ data class ApplicationResponse(
     val position: Position,
     @Schema(description = "지원 상태", example = "APPROVED")
     val status: ApplicationStatus,
-    @Schema(description = "지원 프로젝트 ID", example = "1")
-    val projectId: Long,
+    @Schema(description = "지원 팀 ID", example = "1")
+    val teamId: Long,
     @Schema(description = "지원자 ID", example = "550e8400-e29b-41d4-a716-446655440000")
     val userId: UUID,
     @Schema(description = "지원 동기")
@@ -30,7 +30,7 @@ data class ApplicationResponse(
                 applicationId = application.id,
                 position = application.position,
                 status = application.status,
-                projectId = application.projectId,
+                teamId = application.teamId,
                 userId = application.userId,
                 detail = application.detail,
                 createdAt = application.createdAt,

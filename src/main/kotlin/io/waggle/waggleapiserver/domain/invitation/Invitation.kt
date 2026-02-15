@@ -18,8 +18,8 @@ class Invitation(
     val id: Long = 0,
     @Column(name = "user_id", nullable = false)
     var userId: Long,
-    @Column(name = "project_id", nullable = false)
-    var projectId: Long,
+    @Column(name = "team_id", nullable = false)
+    var teamId: Long,
     @Column(name = "application_id")
     var applicationId: Long? = null,
     @Enumerated(EnumType.STRING)

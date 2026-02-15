@@ -23,35 +23,45 @@ class ApplicationService(
     private val memberRepository: MemberRepository,
 ) {
     @Transactional
-    fun applyProject(
-        projectId: Long,
+    fun applyToTeam(
+        teamId: Long,
         request: ApplicationCreateRequest,
         user: User,
     ): ApplicationResponse {
         val detail = request.detail
 
-        val position = user.position ?: throw BusinessException(ErrorCode.INVALID_STATE, "User must have position")
+        val position =
+            user.position ?: throw BusinessException(
+                ErrorCode.INVALID_STATE,
+                "User must have position",
+            )
         val recruitment =
-            recruitmentRepository.findByProjectIdAndPosition(projectId, position)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Recruitment not found: $projectId, $position")
+            recruitmentRepository.findByTeamIdAndPosition(teamId, position)
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Recruitment not found: $teamId, $position",
+                )
 
         if (!recruitment.isRecruiting()) {
             throw BusinessException(ErrorCode.INVALID_STATE, "$position is no longer recruiting")
         }
 
-        if (applicationRepository.existsByProjectIdAndUserIdAndPosition(
-                projectId,
+        if (applicationRepository.existsByTeamIdAndUserIdAndPosition(
+                teamId,
                 user.id,
                 position,
             )
         ) {
-            throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Already applied to project: $projectId")
+            throw BusinessException(
+                ErrorCode.DUPLICATE_RESOURCE,
+                "Already applied to team: $teamId",
+            )
         }
 
         val application =
             Application(
                 position = position,
-                projectId = projectId,
+                teamId = teamId,
                 userId = user.id,
                 detail = detail,
             )
@@ -65,16 +75,16 @@ class ApplicationService(
         return applications.map { ApplicationResponse.from(it) }
     }
 
-    fun getProjectApplications(
-        projectId: Long,
+    fun getTeamApplications(
+        teamId: Long,
         user: User,
     ): List<ApplicationResponse> {
         val member =
-            memberRepository.findByUserIdAndProjectId(user.id, projectId)
+            memberRepository.findByUserIdAndTeamId(user.id, teamId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
         member.checkMemberRole(MemberRole.MEMBER)
 
-        val applications = applicationRepository.findByProjectId(projectId)
+        val applications = applicationRepository.findByTeamId(teamId)
 
         return applications.map { ApplicationResponse.from(it) }
     }
@@ -86,10 +96,13 @@ class ApplicationService(
     ): ApplicationResponse {
         val application =
             applicationRepository.findByIdOrNull(applicationId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Application not found: $applicationId")
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Application not found: $applicationId",
+                )
 
         val member =
-            memberRepository.findByUserIdAndProjectId(user.id, application.projectId)
+            memberRepository.findByUserIdAndTeamId(user.id, application.teamId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
         member.checkMemberRole(MemberRole.MANAGER)
 
@@ -105,10 +118,13 @@ class ApplicationService(
     ): ApplicationResponse {
         val application =
             applicationRepository.findByIdOrNull(applicationId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Application not found: $applicationId")
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Application not found: $applicationId",
+                )
 
         val member =
-            memberRepository.findByUserIdAndProjectId(user.id, application.projectId)
+            memberRepository.findByUserIdAndTeamId(user.id, application.teamId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
         member.checkMemberRole(MemberRole.MANAGER)
 
@@ -124,7 +140,10 @@ class ApplicationService(
     ) {
         val application =
             applicationRepository.findByIdAndUserId(applicationId, user.id)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Application not found: $applicationId")
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Application not found: $applicationId",
+                )
         application.delete()
     }
 }

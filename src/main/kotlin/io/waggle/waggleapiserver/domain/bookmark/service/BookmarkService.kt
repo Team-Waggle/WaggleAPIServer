@@ -9,8 +9,8 @@ import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkToggleResp
 import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
-import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
-import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
+import io.waggle.waggleapiserver.domain.team.dto.response.TeamSimpleResponse
+import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import org.springframework.stereotype.Service
@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 class BookmarkService(
     private val bookmarkRepository: BookmarkRepository,
     private val postRepository: PostRepository,
-    private val projectRepository: ProjectRepository,
+    private val teamRepository: TeamRepository,
 ) {
     fun toggleBookmark(
         request: BookmarkToggleRequest,
@@ -61,10 +61,10 @@ class BookmarkService(
                     .map { PostSimpleResponse.of(it, UserSimpleResponse.from(user)) }
             }
 
-            BookmarkType.PROJECT -> {
-                projectRepository
+            BookmarkType.TEAM -> {
+                teamRepository
                     .findByIdInOrderByCreatedAtDesc(targetIds)
-                    .map { ProjectSimpleResponse.from(it) }
+                    .map { TeamSimpleResponse.from(it) }
             }
         }
     }

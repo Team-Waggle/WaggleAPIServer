@@ -5,17 +5,17 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 
 interface MemberRepository : JpaRepository<Member, Long> {
-    fun findByUserIdAndProjectId(
+    fun findByUserIdAndTeamId(
         userId: UUID,
-        projectId: Long,
+        teamId: Long,
     ): Member?
 
-    fun findByIdNotAndProjectIdOrderByCreatedAtAsc(
+    fun findByIdNotAndTeamIdOrderByCreatedAtAsc(
         id: Long,
-        projectId: Long,
+        teamId: Long,
     ): List<Member>
 
     fun findByUserIdOrderByCreatedAtAsc(userId: UUID): List<Member>
 
-    fun findByProjectIdOrderByCreatedAtAsc(projectId: Long): List<Member>
+    fun findByTeamIdOrderByCreatedAtAsc(teamId: Long): List<Member>
 }

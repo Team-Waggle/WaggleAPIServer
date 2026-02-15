@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 
 interface ApplicationRepository : JpaRepository<Application, Long> {
-    fun existsByProjectIdAndUserIdAndPosition(
-        projectId: Long,
+    fun existsByTeamIdAndUserIdAndPosition(
+        teamId: Long,
         userId: UUID,
         position: Position,
     ): Boolean
@@ -17,7 +17,7 @@ interface ApplicationRepository : JpaRepository<Application, Long> {
         userId: UUID,
     ): Application?
 
-    fun findByProjectId(projectId: Long): List<Application>
+    fun findByTeamId(teamId: Long): List<Application>
 
     fun findByUserId(userId: UUID): List<Application>
 }

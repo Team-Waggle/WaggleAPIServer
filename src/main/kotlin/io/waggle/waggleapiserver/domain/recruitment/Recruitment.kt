@@ -16,8 +16,8 @@ import jakarta.persistence.UniqueConstraint
 @Entity
 @Table(
     name = "recruitments",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["project_id", "position"])],
-    indexes = [Index(name = "idx_recruitments_project", columnList = "project_id")],
+    uniqueConstraints = [UniqueConstraint(columnNames = ["team_id", "position"])],
+    indexes = [Index(name = "idx_recruitments_team", columnList = "team_id")],
 )
 class Recruitment(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,8 +29,8 @@ class Recruitment(
     var currentCount: Int = 0,
     @Column(name = "recruiting_count", nullable = false)
     val recruitingCount: Int,
-    @Column(name = "project_id", nullable = false, updatable = false)
-    val projectId: Long,
+    @Column(name = "team_id", nullable = false, updatable = false)
+    val teamId: Long,
 ) : AuditingEntity() {
     fun isRecruiting(): Boolean = currentCount < recruitingCount
 }

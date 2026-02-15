@@ -20,22 +20,28 @@ class RecruitmentService(
 ) {
     @Transactional
     fun createRecruitments(
-        projectId: Long,
+        teamId: Long,
         request: List<RecruitmentUpsertRequest>,
         user: User,
     ): List<RecruitmentResponse> {
         val member =
-            memberRepository.findByUserIdAndProjectId(user.id, projectId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found: ${user.id}, $projectId")
+            memberRepository.findByUserIdAndTeamId(user.id, teamId)
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Member not found: ${user.id}, $teamId",
+                )
         member.checkMemberRole(MemberRole.MANAGER)
 
         val existingPositions =
             recruitmentRepository
-                .findByProjectId(projectId)
+                .findByTeamId(teamId)
                 .map { it.position }
         val duplicates = request.map { it.position }.intersect(existingPositions.toSet())
         if (duplicates.isNotEmpty()) {
-            throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Already exists recruitment for positions: $duplicates")
+            throw BusinessException(
+                ErrorCode.DUPLICATE_RESOURCE,
+                "Already exists recruitment for positions: $duplicates",
+            )
         }
 
         val recruitments =
@@ -43,7 +49,7 @@ class RecruitmentService(
                 Recruitment(
                     position = it.position,
                     recruitingCount = it.recruitingCount,
-                    projectId = projectId,
+                    teamId = teamId,
                 )
             }
         val savedRecruitments = recruitmentRepository.saveAll(recruitments)

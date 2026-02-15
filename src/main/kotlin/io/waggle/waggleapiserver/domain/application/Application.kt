@@ -19,11 +19,11 @@ import java.util.UUID
 @Entity
 @Table(
     name = "applications",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["project_id", "user_id", "position"])],
+    uniqueConstraints = [UniqueConstraint(columnNames = ["team_id", "user_id", "position"])],
     indexes = [
-        Index(name = "idx_applications_project", columnList = "project_id"),
+        Index(name = "idx_applications_team", columnList = "team_id"),
         Index(name = "idx_applications_user", columnList = "user_id"),
-        Index(name = "idx_applications_project_status", columnList = "project_id, status"),
+        Index(name = "idx_applications_team_status", columnList = "team_id, status"),
     ],
 )
 class Application(
@@ -35,8 +35,8 @@ class Application(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     var status: ApplicationStatus = ApplicationStatus.PENDING,
-    @Column(name = "project_id", nullable = false, updatable = false)
-    val projectId: Long,
+    @Column(name = "team_id", nullable = false, updatable = false)
+    val teamId: Long,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
     @Column(nullable = false, columnDefinition = "VARCHAR(5000)")

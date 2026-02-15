@@ -46,5 +46,5 @@ class Bookmark(
 
 enum class BookmarkType {
     POST,
-    PROJECT,
+    TEAM,
 }

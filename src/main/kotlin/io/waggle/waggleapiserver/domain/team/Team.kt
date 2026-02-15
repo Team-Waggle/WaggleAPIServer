@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.domain.project
+package io.waggle.waggleapiserver.domain.team
 
 import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
@@ -17,10 +17,10 @@ import java.util.UUID
 @Access(AccessType.FIELD)
 @Entity
 @Table(
-    name = "projects",
-    indexes = [Index(name = "idx_projects_name", columnList = "name")],
+    name = "teams",
+    indexes = [Index(name = "idx_teams_name", columnList = "name")],
 )
-class Project(
+class Team(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     @Column(unique = true, nullable = false)
@@ -38,7 +38,7 @@ class Project(
     override val targetId: Long
         get() = id
     override val type: BookmarkType
-        get() = BookmarkType.PROJECT
+        get() = BookmarkType.TEAM
 
     fun update(
         name: String,

@@ -31,13 +31,13 @@ class PostService(
         request: PostUpsertRequest,
         user: User,
     ): PostDetailResponse {
-        val (projectId, title, content, recruitments) = request
+        val (teamId, title, content, recruitments) = request
 
         val member =
-            memberRepository.findByUserIdAndProjectId(user.id, projectId)
+            memberRepository.findByUserIdAndTeamId(user.id, teamId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, $projectId",
+                    "Member not found: ${user.id}, $teamId",
                 )
         member.checkMemberRole(MemberRole.MEMBER)
 
@@ -46,7 +46,7 @@ class PostService(
                 title = title,
                 content = content,
                 userId = user.id,
-                projectId = projectId,
+                teamId = teamId,
             )
         val savedPost = postRepository.save(post)
 
@@ -92,14 +92,14 @@ class PostService(
         request: PostUpsertRequest,
         user: User,
     ): PostDetailResponse {
-        val (projectId, title, content, recruitments) = request
+        val (teamId, title, content, recruitments) = request
 
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
 
         post.checkOwnership(user.id)
-        post.update(title, content, projectId)
+        post.update(title, content, teamId)
 
         return PostDetailResponse.of(post, UserSimpleResponse.from(user))
     }

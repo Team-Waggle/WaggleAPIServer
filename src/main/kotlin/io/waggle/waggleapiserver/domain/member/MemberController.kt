@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
-@Tag(name = "프로젝트 멤버")
+@Tag(name = "팀 멤버")
 @RequestMapping("/members")
 @RestController
 class MemberController(

@@ -42,7 +42,7 @@ class SecurityConfig(
                         "/login/oauth2/**",
                         "/auth/refresh",
                     ).permitAll()
-                    .requestMatchers(HttpMethod.GET, "/posts/**", "/projects/**", "/users/**")
+                    .requestMatchers(HttpMethod.GET, "/posts/**", "/teams/**", "/users/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated()

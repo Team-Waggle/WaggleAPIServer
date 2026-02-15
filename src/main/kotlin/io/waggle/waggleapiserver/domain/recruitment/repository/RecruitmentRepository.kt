@@ -5,10 +5,10 @@ import io.waggle.waggleapiserver.domain.user.enums.Position
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface RecruitmentRepository : JpaRepository<Recruitment, Long> {
-    fun findByProjectIdAndPosition(
-        projectId: Long,
+    fun findByTeamIdAndPosition(
+        teamId: Long,
         position: Position,
     ): Recruitment?
 
-    fun findByProjectId(projectId: Long): List<Recruitment>
+    fun findByTeamId(teamId: Long): List<Recruitment>
 }

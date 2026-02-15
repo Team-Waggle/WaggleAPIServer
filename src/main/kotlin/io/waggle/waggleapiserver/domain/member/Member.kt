@@ -18,16 +18,16 @@ import java.util.UUID
 @Entity
 @Table(
     name = "members",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "project_id"])],
-    indexes = [Index(name = "idx_members_project", columnList = "project_id")],
+    uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "team_id"])],
+    indexes = [Index(name = "idx_members_team", columnList = "team_id")],
 )
 class Member(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
-    @Column(name = "project_id", nullable = false, updatable = false)
-    val projectId: Long,
+    @Column(name = "team_id", nullable = false, updatable = false)
+    val teamId: Long,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(10)")
     var role: MemberRole = MemberRole.MEMBER,
