@@ -27,8 +27,6 @@ class Recruitment(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     val position: Position,
-    @Column(name = "current_count", nullable = false)
-    var currentCount: Int = 0,
     @Column(name = "recruiting_count", nullable = false)
     val recruitingCount: Int,
     @Enumerated(EnumType.STRING)
@@ -37,7 +35,7 @@ class Recruitment(
     @Column(name = "post_id", nullable = false, updatable = false)
     val postId: Long,
 ) : AuditingEntity() {
-    fun isRecruiting(): Boolean = status == RecruitmentStatus.RECRUITING && currentCount < recruitingCount
+    fun isRecruiting(): Boolean = status == RecruitmentStatus.RECRUITING
 
     fun close() {
         if (status == RecruitmentStatus.CLOSED) {
