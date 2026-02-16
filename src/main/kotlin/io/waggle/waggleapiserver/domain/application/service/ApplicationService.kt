@@ -9,6 +9,7 @@ import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResp
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
+import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.user.User
 import org.springframework.data.repository.findByIdOrNull
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 class ApplicationService(
     private val applicationRepository: ApplicationRepository,
     private val memberRepository: MemberRepository,
+    private val postRepository: PostRepository,
     private val recruitmentRepository: RecruitmentRepository,
 ) {
     @Transactional
@@ -28,18 +30,24 @@ class ApplicationService(
         request: ApplicationCreateRequest,
         user: User,
     ): ApplicationResponse {
-        val detail = request.detail
+        val (postId, position, detail, portfolioUrls) = request
 
-        val position =
-            user.position ?: throw BusinessException(
+        val post =
+            postRepository.findByIdOrNull(postId)
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
+
+        if (post.teamId != teamId) {
+            throw BusinessException(
                 ErrorCode.INVALID_STATE,
-                "User must have position",
+                "Post $postId does not belong to team $teamId",
             )
+        }
+
         val recruitment =
-            recruitmentRepository.findByTeamIdAndPosition(teamId, position)
+            recruitmentRepository.findByPostIdAndPosition(postId, position)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
-                    "Recruitment not found: $teamId, $position",
+                    "Recruitment not found: $postId, $position",
                 )
 
         if (!recruitment.isRecruiting()) {
@@ -62,9 +70,11 @@ class ApplicationService(
             Application(
                 position = position,
                 teamId = teamId,
+                postId = postId,
                 userId = user.id,
                 detail = detail,
             )
+        portfolioUrls?.let { application.portfolioUrls.addAll(it) }
         val savedApplication = applicationRepository.save(application)
 
         return ApplicationResponse.from(savedApplication)
