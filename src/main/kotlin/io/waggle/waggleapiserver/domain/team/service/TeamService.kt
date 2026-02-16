@@ -69,14 +69,14 @@ class TeamService(
                     "Team not found: $teamId",
                 )
         val members = memberRepository.findByTeamIdOrderByRoleAscCreatedAtAsc(teamId)
-        val userMap = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
+        val userById = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
 
         return TeamDetailResponse.of(
             team,
             members.map {
                 MemberResponse.of(
                     it,
-                    userMap[it.userId]!!,
+                    userById[it.userId]!!,
                 )
             },
         )
@@ -124,14 +124,14 @@ class TeamService(
         )
 
         val members = memberRepository.findByTeamIdOrderByRoleAscCreatedAtAsc(teamId)
-        val userMap = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
+        val userById = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
 
         return TeamDetailResponse.of(
             team,
             members.map {
                 MemberResponse.of(
                     it,
-                    userMap[it.userId]!!,
+                    userById[it.userId]!!,
                 )
             },
         )
