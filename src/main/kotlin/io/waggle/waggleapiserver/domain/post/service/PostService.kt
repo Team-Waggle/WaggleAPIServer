@@ -151,7 +151,14 @@ class PostService(
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
-        post.checkOwnership(user.id)
+
+        val member =
+            memberRepository.findByUserIdAndTeamId(user.id, post.teamId)
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Member not found: ${user.id}, ${post.teamId}",
+                )
+        member.checkMemberRole(MemberRole.MANAGER)
 
         val recruitments = recruitmentRepository.findByPostId(postId)
         recruitments.forEach { it.close() }

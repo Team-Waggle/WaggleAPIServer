@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
@@ -66,6 +67,16 @@ class PostController(
         @Valid @RequestBody request: PostUpsertRequest,
         @CurrentUser user: User,
     ): PostDetailResponse = postService.updatePost(postId, request, user)
+
+    @Operation(summary = "모집 마감")
+    @PatchMapping("/{postId}/close")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun closePostRecruitments(
+        @PathVariable postId: Long,
+        @CurrentUser user: User,
+    ) {
+        postService.closePostRecruitments(postId, user)
+    }
 
     @Operation(summary = "모집글 삭제")
     @DeleteMapping("/{postId}")
