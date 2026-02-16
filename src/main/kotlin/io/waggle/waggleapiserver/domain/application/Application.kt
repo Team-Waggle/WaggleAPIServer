@@ -24,9 +24,9 @@ import java.util.UUID
     name = "applications",
     uniqueConstraints = [UniqueConstraint(columnNames = ["team_id", "user_id", "position"])],
     indexes = [
-        Index(name = "idx_applications_team", columnList = "team_id"),
         Index(name = "idx_applications_user", columnList = "user_id"),
         Index(name = "idx_applications_team_status", columnList = "team_id, status"),
+        Index(name = "idx_applications_post", columnList = "post_id"),
     ],
 )
 class Application(

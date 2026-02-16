@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.post.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.post.Post
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class PostService(
+    private val applicationRepository: ApplicationRepository,
     private val memberRepository: MemberRepository,
     private val postRepository: PostRepository,
     private val recruitmentRepository: RecruitmentRepository,
@@ -73,6 +75,7 @@ class PostService(
 
     fun getPosts(
         query: PostGetQuery,
+        user: User?,
         pageable: Pageable,
     ): Page<PostDetailResponse> {
         val posts = postRepository.findWithFilter(query.q, pageable)
@@ -84,8 +87,26 @@ class PostService(
         val recruitmentsByPostId =
             recruitmentRepository.findByPostIdIn(postIds).groupBy { it.postId }
 
+        val memberTeamIds =
+            user?.let {
+                memberRepository
+                    .findByUserIdOrderByRoleAscCreatedAtAsc(it.id)
+                    .map { m -> m.teamId }
+                    .toSet()
+            } ?: emptySet()
+
+        val memberPostIds = posts.content.filter { it.teamId in memberTeamIds }.map { it.id }
+        val applicantCountByPostId =
+            if (memberPostIds.isNotEmpty()) {
+                applicationRepository
+                    .countApplicantsGroupByPostId(memberPostIds)
+                    .associate { it.postId to it.applicantCount.toInt() }
+            } else {
+                emptyMap()
+            }
+
         return posts.map { post ->
-            val user =
+            val author =
                 userMap[post.userId]
                     ?: throw BusinessException(
                         ErrorCode.ENTITY_NOT_FOUND,
@@ -93,15 +114,25 @@ class PostService(
                     )
             val recruitments =
                 (recruitmentsByPostId[post.id] ?: emptyList()).map { RecruitmentResponse.from(it) }
-            PostDetailResponse.of(post, UserSimpleResponse.from(user), recruitments)
+            val applicantCount =
+                if (post.teamId in memberTeamIds) applicantCountByPostId[post.id] ?: 0 else null
+            PostDetailResponse.of(
+                post,
+                UserSimpleResponse.from(author),
+                recruitments,
+                applicantCount,
+            )
         }
     }
 
-    fun getPost(postId: Long): PostDetailResponse {
+    fun getPost(
+        postId: Long,
+        user: User?,
+    ): PostDetailResponse {
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
-        val user =
+        val author =
             userRepository.findByIdOrNull(post.userId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
@@ -109,7 +140,20 @@ class PostService(
                 )
         val recruitments =
             recruitmentRepository.findByPostId(postId).map { RecruitmentResponse.from(it) }
-        return PostDetailResponse.of(post, UserSimpleResponse.from(user), recruitments)
+
+        val applicantCount =
+            user?.let {
+                memberRepository.findByUserIdAndTeamId(it.id, post.teamId)?.let {
+                    applicationRepository.countByPostId(postId)
+                }
+            }
+
+        return PostDetailResponse.of(
+            post,
+            UserSimpleResponse.from(author),
+            recruitments,
+            applicantCount,
+        )
     }
 
     @Transactional

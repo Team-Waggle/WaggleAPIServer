@@ -14,10 +14,10 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -50,14 +50,14 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC,
         ) pageable: Pageable,
-    ): Page<PostDetailResponse> = postService.getPosts(query, pageable)
+    ): Page<PostDetailResponse> = postService.getPosts(query, user, pageable)
 
     @Operation(summary = "모집글 상세 조회")
     @GetMapping("/{postId}")
     fun getPost(
         @PathVariable postId: Long,
         @CurrentUser user: User?,
-    ): PostDetailResponse = postService.getPost(postId)
+    ): PostDetailResponse = postService.getPost(postId, user)
 
     @Operation(summary = "모집글 수정")
     @PutMapping("/{postId}")

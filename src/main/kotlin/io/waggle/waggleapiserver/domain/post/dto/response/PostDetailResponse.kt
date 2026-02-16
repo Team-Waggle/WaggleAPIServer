@@ -21,12 +21,15 @@ data class PostDetailResponse(
     val isRecruiting: Boolean,
     @Schema(description = "모집 정보 목록")
     val recruitments: List<RecruitmentResponse>,
+    @Schema(description = "지원자 수 (팀 멤버만 조회 가능)")
+    val applicantCount: Int? = null,
 ) : BookmarkResponse {
     companion object {
         fun of(
             post: Post,
             user: UserSimpleResponse,
             recruitments: List<RecruitmentResponse> = emptyList(),
+            applicantCount: Int? = null,
         ): PostDetailResponse =
             PostDetailResponse(
                 postId = post.id,
@@ -35,6 +38,7 @@ data class PostDetailResponse(
                 user = user,
                 isRecruiting = recruitments.any { it.status == RecruitmentStatus.RECRUITING },
                 recruitments = recruitments,
+                applicantCount = applicantCount,
             )
     }
 }
