@@ -7,9 +7,6 @@ import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreat
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.service.ApplicationService
 import io.waggle.waggleapiserver.domain.member.service.MemberService
-import io.waggle.waggleapiserver.domain.recruitment.dto.request.RecruitmentUpsertRequest
-import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
-import io.waggle.waggleapiserver.domain.recruitment.service.RecruitmentService
 import io.waggle.waggleapiserver.domain.team.dto.request.TeamUpsertRequest
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamDetailResponse
 import io.waggle.waggleapiserver.domain.team.service.TeamService
@@ -32,7 +29,6 @@ import org.springframework.web.bind.annotation.RestController
 class TeamController(
     private val applicationService: ApplicationService,
     private val memberService: MemberService,
-    private val recruitmentService: RecruitmentService,
     private val teamService: TeamService,
 ) {
     @Operation(summary = "팀 생성")
@@ -54,18 +50,6 @@ class TeamController(
         @Valid @RequestBody request: ApplicationCreateRequest,
         @CurrentUser user: User,
     ): ApplicationResponse = applicationService.applyToTeam(teamId, request, user)
-
-    @Operation(
-        summary = "팀 모집 정보 생성",
-        description = "팀의 직무별 모집 목록을 생성함",
-    )
-    @PostMapping("/{teamId}/recruitments")
-    @ResponseStatus(HttpStatus.CREATED)
-    fun createTeamRecruitments(
-        @PathVariable teamId: Long,
-        @Valid @RequestBody request: List<RecruitmentUpsertRequest>,
-        @CurrentUser user: User,
-    ): List<RecruitmentResponse> = recruitmentService.createRecruitments(teamId, request, user)
 
     @Operation(summary = "팀 상세 조회")
     @GetMapping("/{teamId}")

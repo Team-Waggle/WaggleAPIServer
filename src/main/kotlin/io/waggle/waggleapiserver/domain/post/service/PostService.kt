@@ -10,6 +10,9 @@ import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
+import io.waggle.waggleapiserver.domain.recruitment.Recruitment
+import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
+import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
@@ -24,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional
 class PostService(
     private val memberRepository: MemberRepository,
     private val postRepository: PostRepository,
+    private val recruitmentRepository: RecruitmentRepository,
     private val userRepository: UserRepository,
 ) {
     @Transactional
@@ -50,7 +54,22 @@ class PostService(
             )
         val savedPost = postRepository.save(post)
 
-        return PostDetailResponse.of(savedPost, UserSimpleResponse.from(user))
+        val savedRecruitments =
+            recruitmentRepository.saveAll(
+                recruitments.map {
+                    Recruitment(
+                        position = it.position,
+                        recruitingCount = it.recruitingCount,
+                        postId = savedPost.id,
+                    )
+                },
+            )
+
+        return PostDetailResponse.of(
+            savedPost,
+            UserSimpleResponse.from(user),
+            savedRecruitments.map { RecruitmentResponse.from(it) },
+        )
     }
 
     fun getPosts(
@@ -83,7 +102,9 @@ class PostService(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "User not found: $post.userId",
                 )
-        return PostDetailResponse.of(post, UserSimpleResponse.from(user))
+        val recruitments =
+            recruitmentRepository.findByPostId(postId).map { RecruitmentResponse.from(it) }
+        return PostDetailResponse.of(post, UserSimpleResponse.from(user), recruitments)
     }
 
     @Transactional
@@ -101,7 +122,39 @@ class PostService(
         post.checkOwnership(user.id)
         post.update(title, content, teamId)
 
-        return PostDetailResponse.of(post, UserSimpleResponse.from(user))
+        val existingRecruitments = recruitmentRepository.findByPostId(postId)
+        recruitmentRepository.deleteAll(existingRecruitments)
+
+        val savedRecruitments =
+            recruitmentRepository.saveAll(
+                recruitments.map {
+                    Recruitment(
+                        position = it.position,
+                        recruitingCount = it.recruitingCount,
+                        postId = postId,
+                    )
+                },
+            )
+
+        return PostDetailResponse.of(
+            post,
+            UserSimpleResponse.from(user),
+            savedRecruitments.map { RecruitmentResponse.from(it) },
+        )
+    }
+
+    @Transactional
+    fun closePostRecruitments(
+        postId: Long,
+        user: User,
+    ) {
+        val post =
+            postRepository.findByIdOrNull(postId)
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
+        post.checkOwnership(user.id)
+
+        val recruitments = recruitmentRepository.findByPostId(postId)
+        recruitments.forEach { it.close() }
     }
 
     @Transactional
