@@ -11,4 +11,6 @@ interface RecruitmentRepository : JpaRepository<Recruitment, Long> {
     ): Recruitment?
 
     fun findByPostId(postId: Long): List<Recruitment>
+
+    fun findByPostIdIn(postIds: List<Long>): List<Recruitment>
 }

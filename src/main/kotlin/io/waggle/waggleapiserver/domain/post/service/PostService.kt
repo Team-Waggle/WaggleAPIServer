@@ -8,7 +8,6 @@ import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
 import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
-import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
 import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
@@ -75,11 +74,15 @@ class PostService(
     fun getPosts(
         query: PostGetQuery,
         pageable: Pageable,
-    ): Page<PostSimpleResponse> {
+    ): Page<PostDetailResponse> {
         val posts = postRepository.findWithFilter(query.q, pageable)
 
         val userIds = posts.content.map { it.userId }.distinct()
         val userMap = userRepository.findAllById(userIds).associateBy { it.id }
+
+        val postIds = posts.content.map { it.id }
+        val recruitmentsByPostId =
+            recruitmentRepository.findByPostIdIn(postIds).groupBy { it.postId }
 
         return posts.map { post ->
             val user =
@@ -88,7 +91,9 @@ class PostService(
                         ErrorCode.ENTITY_NOT_FOUND,
                         "User not found: ${post.userId}",
                     )
-            PostSimpleResponse.of(post, UserSimpleResponse.from(user))
+            val recruitments =
+                (recruitmentsByPostId[post.id] ?: emptyList()).map { RecruitmentResponse.from(it) }
+            PostDetailResponse.of(post, UserSimpleResponse.from(user), recruitments)
         }
     }
 

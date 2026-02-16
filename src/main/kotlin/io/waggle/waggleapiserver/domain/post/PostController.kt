@@ -6,7 +6,6 @@ import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.Curr
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
 import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
-import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.service.PostService
 import io.waggle.waggleapiserver.domain.user.User
 import jakarta.validation.Valid
@@ -51,7 +50,7 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC,
         ) pageable: Pageable,
-    ): Page<PostSimpleResponse> = postService.getPosts(query, pageable)
+    ): Page<PostDetailResponse> = postService.getPosts(query, pageable)
 
     @Operation(summary = "모집글 상세 조회")
     @GetMapping("/{postId}")
