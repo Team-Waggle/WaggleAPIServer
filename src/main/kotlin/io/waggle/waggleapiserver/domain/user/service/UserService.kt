@@ -67,10 +67,10 @@ class UserService(
             memberRepository
                 .findByUserIdOrderByRoleAscCreatedAtAsc(userId)
                 .map { it.teamId }
-        val teamMap = teamRepository.findAllById(teamIds).associateBy { it.id }
+        val teamById = teamRepository.findAllById(teamIds).associateBy { it.id }
 
         return teamIds.mapNotNull { teamId ->
-            teamMap[teamId]?.let { TeamSimpleResponse.from(it) }
+            teamById[teamId]?.let { TeamSimpleResponse.from(it) }
         }
     }
 

@@ -46,10 +46,10 @@ class NotificationService(
         val notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.id)
 
         val teamIds = notifications.mapNotNull { it.teamId }
-        val teamMap = teamRepository.findAllById(teamIds).associateBy { it.id }
+        val teamById = teamRepository.findAllById(teamIds).associateBy { it.id }
 
         return notifications.map { notification ->
-            val team = notification.teamId?.let { teamMap[it] }?.let(TeamSimpleResponse::from)
+            val team = notification.teamId?.let { teamById[it] }?.let(TeamSimpleResponse::from)
 
             NotificationResponse.of(
                 notification = notification,
