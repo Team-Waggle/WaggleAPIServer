@@ -19,4 +19,6 @@ interface PostRepository : JpaRepository<Post, Long> {
     ): Page<Post>
 
     fun findByIdInOrderByCreatedAtDesc(ids: List<Long>): List<Post>
+
+    fun findByTeamIdOrderByCreatedAtDesc(teamId: Long): List<Post>
 }

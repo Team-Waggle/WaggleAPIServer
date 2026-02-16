@@ -7,6 +7,8 @@ import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreat
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.service.ApplicationService
 import io.waggle.waggleapiserver.domain.member.service.MemberService
+import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
+import io.waggle.waggleapiserver.domain.post.service.PostService
 import io.waggle.waggleapiserver.domain.team.dto.request.TeamUpsertRequest
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamDetailResponse
 import io.waggle.waggleapiserver.domain.team.service.TeamService
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController
 class TeamController(
     private val applicationService: ApplicationService,
     private val memberService: MemberService,
+    private val postService: PostService,
     private val teamService: TeamService,
 ) {
     @Operation(summary = "팀 생성")
@@ -66,6 +69,13 @@ class TeamController(
         @PathVariable teamId: Long,
         @CurrentUser user: User,
     ): List<ApplicationResponse> = applicationService.getTeamApplications(teamId, user)
+
+    @Operation(summary = "팀 모집글 목록 조회")
+    @GetMapping("/{teamId}/posts")
+    fun getTeamPosts(
+        @PathVariable teamId: Long,
+        @CurrentUser user: User?,
+    ): List<PostDetailResponse> = postService.getTeamPosts(teamId, user)
 
     @Operation(summary = "팀 수정")
     @PutMapping("/{teamId}")

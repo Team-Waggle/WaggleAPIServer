@@ -80,8 +80,8 @@ class PostService(
     ): Page<PostDetailResponse> {
         val posts = postRepository.findWithFilter(query.q, pageable)
 
-        val userIds = posts.content.map { it.userId }.distinct()
-        val userMap = userRepository.findAllById(userIds).associateBy { it.id }
+        val authorIds = posts.content.map { it.userId }.distinct()
+        val authorMap = userRepository.findAllById(authorIds).associateBy { it.id }
 
         val postIds = posts.content.map { it.id }
         val recruitmentsByPostId =
@@ -107,7 +107,7 @@ class PostService(
 
         return posts.map { post ->
             val author =
-                userMap[post.userId]
+                authorMap[post.userId]
                     ?: throw BusinessException(
                         ErrorCode.ENTITY_NOT_FOUND,
                         "User not found: ${post.userId}",
@@ -143,8 +143,10 @@ class PostService(
 
         val applicantCount =
             user?.let {
-                memberRepository.findByUserIdAndTeamId(it.id, post.teamId)?.let {
+                if (memberRepository.existsByUserIdAndTeamId(it.id, post.teamId)) {
                     applicationRepository.countByPostId(postId)
+                } else {
+                    null
                 }
             }
 
@@ -154,6 +156,50 @@ class PostService(
             recruitments,
             applicantCount,
         )
+    }
+
+    fun getTeamPosts(
+        teamId: Long,
+        user: User?,
+    ): List<PostDetailResponse> {
+        val posts = postRepository.findByTeamIdOrderByCreatedAtDesc(teamId)
+
+        val authorIds = posts.map { it.userId }.distinct()
+        val authorMap = userRepository.findAllById(authorIds).associateBy { it.id }
+
+        val postIds = posts.map { it.id }
+        val recruitmentsByPostId =
+            recruitmentRepository.findByPostIdIn(postIds).groupBy { it.postId }
+
+        val isMember =
+            user?.let { memberRepository.existsByUserIdAndTeamId(it.id, teamId) } ?: false
+
+        val applicantCountByPostId =
+            if (isMember && postIds.isNotEmpty()) {
+                applicationRepository
+                    .countApplicantsGroupByPostId(postIds)
+                    .associate { it.postId to it.applicantCount.toInt() }
+            } else {
+                emptyMap()
+            }
+
+        return posts.map { post ->
+            val author =
+                authorMap[post.userId]
+                    ?: throw BusinessException(
+                        ErrorCode.ENTITY_NOT_FOUND,
+                        "User not found: ${post.userId}",
+                    )
+            val recruitments =
+                (recruitmentsByPostId[post.id] ?: emptyList()).map { RecruitmentResponse.from(it) }
+            val applicantCount = if (isMember) applicantCountByPostId[post.id] ?: 0 else null
+            PostDetailResponse.of(
+                post,
+                UserSimpleResponse.from(author),
+                recruitments,
+                applicantCount,
+            )
+        }
     }
 
     @Transactional
