@@ -2,14 +2,17 @@ package io.waggle.waggleapiserver.domain.post.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
 import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
-import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
+import io.waggle.waggleapiserver.domain.recruitment.Recruitment
+import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
+import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
@@ -22,8 +25,10 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class PostService(
+    private val applicationRepository: ApplicationRepository,
     private val memberRepository: MemberRepository,
     private val postRepository: PostRepository,
+    private val recruitmentRepository: RecruitmentRepository,
     private val userRepository: UserRepository,
 ) {
     @Transactional
@@ -31,13 +36,13 @@ class PostService(
         request: PostUpsertRequest,
         user: User,
     ): PostDetailResponse {
-        val (projectId, title, content, recruitments) = request
+        val (teamId, title, content, recruitments) = request
 
         val member =
-            memberRepository.findByUserIdAndProjectId(user.id, projectId)
+            memberRepository.findByUserIdAndTeamId(user.id, teamId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, $projectId",
+                    "Member not found: ${user.id}, $teamId",
                 )
         member.checkMemberRole(MemberRole.MEMBER)
 
@@ -46,44 +51,155 @@ class PostService(
                 title = title,
                 content = content,
                 userId = user.id,
-                projectId = projectId,
+                teamId = teamId,
             )
         val savedPost = postRepository.save(post)
 
-        return PostDetailResponse.of(savedPost, UserSimpleResponse.from(user))
+        val savedRecruitments =
+            recruitmentRepository.saveAll(
+                recruitments.map {
+                    Recruitment(
+                        position = it.position,
+                        recruitingCount = it.recruitingCount,
+                        postId = savedPost.id,
+                    )
+                },
+            )
+
+        return PostDetailResponse.of(
+            savedPost,
+            UserSimpleResponse.from(user),
+            savedRecruitments.map { RecruitmentResponse.from(it) },
+        )
     }
 
     fun getPosts(
         query: PostGetQuery,
+        user: User?,
         pageable: Pageable,
-    ): Page<PostSimpleResponse> {
+    ): Page<PostDetailResponse> {
         val posts = postRepository.findWithFilter(query.q, pageable)
 
-        val userIds = posts.content.map { it.userId }.distinct()
-        val userMap = userRepository.findAllById(userIds).associateBy { it.id }
+        val authorIds = posts.content.map { it.userId }.distinct()
+        val authorById = userRepository.findAllById(authorIds).associateBy { it.id }
+
+        val postIds = posts.content.map { it.id }
+        val recruitmentsByPostId =
+            recruitmentRepository.findByPostIdIn(postIds).groupBy { it.postId }
+
+        val memberTeamIdSet =
+            user?.let {
+                memberRepository
+                    .findByUserIdOrderByRoleAscCreatedAtAsc(it.id)
+                    .map { m -> m.teamId }
+                    .toSet()
+            } ?: emptySet()
+
+        val memberPostIds = posts.content.filter { it.teamId in memberTeamIdSet }.map { it.id }
+        val applicantCountByPostId =
+            if (memberPostIds.isNotEmpty()) {
+                applicationRepository
+                    .countApplicantsGroupByPostId(memberPostIds)
+                    .associate { it.postId to it.applicantCount.toInt() }
+            } else {
+                emptyMap()
+            }
 
         return posts.map { post ->
-            val user =
-                userMap[post.userId]
+            val author =
+                authorById[post.userId]
                     ?: throw BusinessException(
                         ErrorCode.ENTITY_NOT_FOUND,
                         "User not found: ${post.userId}",
                     )
-            PostSimpleResponse.of(post, UserSimpleResponse.from(user))
+            val recruitments =
+                (recruitmentsByPostId[post.id] ?: emptyList()).map { RecruitmentResponse.from(it) }
+            val applicantCount =
+                if (post.teamId in memberTeamIdSet) applicantCountByPostId[post.id] ?: 0 else null
+            PostDetailResponse.of(
+                post,
+                UserSimpleResponse.from(author),
+                recruitments,
+                applicantCount,
+            )
         }
     }
 
-    fun getPost(postId: Long): PostDetailResponse {
+    fun getPost(
+        postId: Long,
+        user: User?,
+    ): PostDetailResponse {
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
-        val user =
+        val author =
             userRepository.findByIdOrNull(post.userId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "User not found: $post.userId",
                 )
-        return PostDetailResponse.of(post, UserSimpleResponse.from(user))
+        val recruitments =
+            recruitmentRepository.findByPostId(postId).map { RecruitmentResponse.from(it) }
+
+        val applicantCount =
+            user?.let {
+                if (memberRepository.existsByUserIdAndTeamId(it.id, post.teamId)) {
+                    applicationRepository.countByPostId(postId)
+                } else {
+                    null
+                }
+            }
+
+        return PostDetailResponse.of(
+            post,
+            UserSimpleResponse.from(author),
+            recruitments,
+            applicantCount,
+        )
+    }
+
+    fun getTeamPosts(
+        teamId: Long,
+        user: User?,
+    ): List<PostDetailResponse> {
+        val posts = postRepository.findByTeamIdOrderByCreatedAtDesc(teamId)
+
+        val authorIds = posts.map { it.userId }.distinct()
+        val authorById = userRepository.findAllById(authorIds).associateBy { it.id }
+
+        val postIds = posts.map { it.id }
+        val recruitmentsByPostId =
+            recruitmentRepository.findByPostIdIn(postIds).groupBy { it.postId }
+
+        val isMember =
+            user?.let { memberRepository.existsByUserIdAndTeamId(it.id, teamId) } ?: false
+
+        val applicantCountByPostId =
+            if (isMember && postIds.isNotEmpty()) {
+                applicationRepository
+                    .countApplicantsGroupByPostId(postIds)
+                    .associate { it.postId to it.applicantCount.toInt() }
+            } else {
+                emptyMap()
+            }
+
+        return posts.map { post ->
+            val author =
+                authorById[post.userId]
+                    ?: throw BusinessException(
+                        ErrorCode.ENTITY_NOT_FOUND,
+                        "User not found: ${post.userId}",
+                    )
+            val recruitments =
+                (recruitmentsByPostId[post.id] ?: emptyList()).map { RecruitmentResponse.from(it) }
+            val applicantCount = if (isMember) applicantCountByPostId[post.id] ?: 0 else null
+            PostDetailResponse.of(
+                post,
+                UserSimpleResponse.from(author),
+                recruitments,
+                applicantCount,
+            )
+        }
     }
 
     @Transactional
@@ -92,16 +208,55 @@ class PostService(
         request: PostUpsertRequest,
         user: User,
     ): PostDetailResponse {
-        val (projectId, title, content, recruitments) = request
+        val (teamId, title, content, recruitments) = request
 
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
 
         post.checkOwnership(user.id)
-        post.update(title, content, projectId)
+        post.update(title, content, teamId)
 
-        return PostDetailResponse.of(post, UserSimpleResponse.from(user))
+        val existingRecruitments = recruitmentRepository.findByPostId(postId)
+        recruitmentRepository.deleteAll(existingRecruitments)
+
+        val savedRecruitments =
+            recruitmentRepository.saveAll(
+                recruitments.map {
+                    Recruitment(
+                        position = it.position,
+                        recruitingCount = it.recruitingCount,
+                        postId = postId,
+                    )
+                },
+            )
+
+        return PostDetailResponse.of(
+            post,
+            UserSimpleResponse.from(user),
+            savedRecruitments.map { RecruitmentResponse.from(it) },
+        )
+    }
+
+    @Transactional
+    fun closePostRecruitments(
+        postId: Long,
+        user: User,
+    ) {
+        val post =
+            postRepository.findByIdOrNull(postId)
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
+
+        val member =
+            memberRepository.findByUserIdAndTeamId(user.id, post.teamId)
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Member not found: ${user.id}, ${post.teamId}",
+                )
+        member.checkMemberRole(MemberRole.MANAGER)
+
+        val recruitments = recruitmentRepository.findByPostId(postId)
+        recruitments.forEach { it.close() }
     }
 
     @Transactional

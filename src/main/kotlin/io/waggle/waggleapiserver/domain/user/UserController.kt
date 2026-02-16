@@ -12,7 +12,7 @@ import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountResponse
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.service.NotificationService
-import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
+import io.waggle.waggleapiserver.domain.team.dto.response.TeamSimpleResponse
 import io.waggle.waggleapiserver.domain.user.dto.request.UserSetupProfileRequest
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.dto.response.UserCheckUsernameResponse
@@ -66,11 +66,11 @@ class UserController(
         @PathVariable userId: UUID,
     ): FollowCountResponse = followService.getUserFollowCount(userId)
 
-    @Operation(summary = "사용자 참여 프로젝트 목록 조회")
-    @GetMapping("/{userId}/projects")
-    fun getUserProjects(
+    @Operation(summary = "사용자 참여 팀 목록 조회")
+    @GetMapping("/{userId}/teams")
+    fun getUserTeams(
         @PathVariable userId: UUID,
-    ): List<ProjectSimpleResponse> = userService.getUserProjects(userId)
+    ): List<TeamSimpleResponse> = userService.getUserTeams(userId)
 
     @Operation(summary = "본인 지원 목록 조회")
     @GetMapping("/me/applications")
@@ -109,11 +109,11 @@ class UserController(
         @CurrentUser user: User,
     ): UserProfileCompletionResponse = userService.getUserProfileCompletion(user)
 
-    @Operation(summary = "본인 참여 프로젝트 목록 조회")
-    @GetMapping("/me/projects")
-    fun getMyProjects(
+    @Operation(summary = "본인 참여 팀 목록 조회")
+    @GetMapping("/me/teams")
+    fun getMyTeams(
         @CurrentUser user: User,
-    ): List<ProjectSimpleResponse> = userService.getUserProjects(user.id)
+    ): List<TeamSimpleResponse> = userService.getUserTeams(user.id)
 
     @Operation(summary = "본인 프로필 수정")
     @PutMapping("/me")

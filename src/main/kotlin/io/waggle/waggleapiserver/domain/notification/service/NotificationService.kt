@@ -6,37 +6,36 @@ import io.waggle.waggleapiserver.domain.notification.Notification
 import io.waggle.waggleapiserver.domain.notification.dto.request.NotificationCreateRequest
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
-import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
-import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
+import io.waggle.waggleapiserver.domain.team.dto.response.TeamSimpleResponse
+import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 @Service
 @Transactional(readOnly = true)
 class NotificationService(
     private val notificationRepository: NotificationRepository,
+    private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
-    private val projectRepository: ProjectRepository,
 ) {
     @Transactional
     fun createNotification(request: NotificationCreateRequest) {
-        val (type, projectId, userId) = request
+        val (type, teamId, userId) = request
 
         if (!userRepository.existsById(userId)) {
             throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
         }
 
-        if (projectId != null && !projectRepository.existsById(projectId)) {
-            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project not found: $projectId")
+        if (teamId != null && !teamRepository.existsById(teamId)) {
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Team not found: $teamId")
         }
 
         val notification =
             Notification(
                 type = type,
-                projectId = projectId,
+                teamId = teamId,
                 userId = userId,
             )
 
@@ -46,16 +45,15 @@ class NotificationService(
     fun getUserNotifications(user: User): List<NotificationResponse> {
         val notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.id)
 
-        val projectIds = notifications.mapNotNull { it.projectId }
-        val projectMap = projectRepository.findAllById(projectIds).associateBy { it.id }
+        val teamIds = notifications.mapNotNull { it.teamId }
+        val teamById = teamRepository.findAllById(teamIds).associateBy { it.id }
 
         return notifications.map { notification ->
-            val project =
-                notification.projectId?.let { projectMap[it] }?.let(ProjectSimpleResponse::from)
+            val team = notification.teamId?.let { teamById[it] }?.let(TeamSimpleResponse::from)
 
             NotificationResponse.of(
                 notification = notification,
-                project = project,
+                team = team,
             )
         }
     }

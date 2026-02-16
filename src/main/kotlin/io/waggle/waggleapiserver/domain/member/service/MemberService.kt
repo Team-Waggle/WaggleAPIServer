@@ -7,8 +7,9 @@ import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.dto.request.MemberUpdateRoleRequest
 import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
-import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
+import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
+import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,7 +18,8 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class MemberService(
     private val memberRepository: MemberRepository,
-    private val projectRepository: ProjectRepository,
+    private val teamRepository: TeamRepository,
+    private val userRepository: UserRepository,
 ) {
     @Transactional
     fun updateMemberRole(
@@ -34,40 +36,48 @@ class MemberService(
             throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Cannot update your own role")
         }
 
-        val project =
-            projectRepository.findByIdOrNull(targetMember.projectId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project Not Found: ${targetMember.projectId}")
+        val team =
+            teamRepository.findByIdOrNull(targetMember.teamId)
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Team Not Found: ${targetMember.teamId}",
+                )
 
         val member =
-            memberRepository.findByUserIdAndProjectId(user.id, project.id)
+            memberRepository.findByUserIdAndTeamId(user.id, team.id)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
 
         when (role) {
-            MemberRole.MEMBER, MemberRole.MANAGER -> member.checkMemberRole(MemberRole.LEADER)
-            MemberRole.LEADER -> delegateLeader(targetMember, member)
+            MemberRole.MEMBER, MemberRole.MANAGER -> {
+                member.checkMemberRole(MemberRole.LEADER)
+                targetMember.updateRole(role)
+            }
+            MemberRole.LEADER -> delegateLeader(member, targetMember)
         }
 
-        targetMember.updateRole(role)
+        val targetUser =
+            userRepository.findByIdOrNull(targetMember.userId)
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: ${targetMember.userId}")
 
-        return MemberResponse.of(targetMember, user)
+        return MemberResponse.of(targetMember, targetUser)
     }
 
     @Transactional
-    fun leaveProject(
-        projectId: Long,
+    fun leaveTeam(
+        teamId: Long,
         user: User,
     ) {
         val member =
-            memberRepository.findByUserIdAndProjectId(user.id, projectId)
+            memberRepository.findByUserIdAndTeamId(user.id, teamId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member Not Found")
         val members =
-            memberRepository.findByIdNotAndProjectIdOrderByCreatedAtAsc(member.id, projectId)
+            memberRepository.findByIdNotAndTeamIdOrderByRoleAscCreatedAtAsc(member.id, teamId)
         if (members.isEmpty()) {
             throw BusinessException(ErrorCode.INVALID_STATE, "Cannot leave as the only member")
         }
 
         if (member.isLeader) {
-            delegateLeader(members[0], member)
+            delegateLeader(member, members[0])
         }
 
         member.delete()
@@ -80,14 +90,20 @@ class MemberService(
     ) {
         val member =
             memberRepository.findByIdOrNull(memberId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found: $memberId")
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Member not found: $memberId",
+                )
 
-        val project =
-            projectRepository.findByIdOrNull(member.projectId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project Not Found: ${member.projectId}")
+        val team =
+            teamRepository.findByIdOrNull(member.teamId)
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Team Not Found: ${member.teamId}",
+                )
 
         val leader =
-            memberRepository.findByUserIdAndProjectId(user.id, project.id)
+            memberRepository.findByUserIdAndTeamId(user.id, team.id)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
         if (!leader.isLeader) {
             throw BusinessException(ErrorCode.ACCESS_DENIED, "Only leader can remove member")
@@ -97,22 +113,25 @@ class MemberService(
     }
 
     private fun delegateLeader(
-        member: Member,
-        leader: Member,
+        oldLeader: Member,
+        newLeader: Member,
     ) {
-        if (!leader.isLeader) {
+        if (!oldLeader.isLeader) {
             throw BusinessException(ErrorCode.ACCESS_DENIED, "Only leader can delegate authority")
         }
-        if (member.projectId != leader.projectId) {
-            throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Not in the same project")
+        if (newLeader.teamId != oldLeader.teamId) {
+            throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Not in the same team")
         }
 
-        val project =
-            projectRepository.findByIdOrNull(leader.projectId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Project Not Found: ${leader.projectId}")
+        val team =
+            teamRepository.findByIdOrNull(oldLeader.teamId)
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Team Not Found: ${oldLeader.teamId}",
+                )
 
-        leader.updateRole(MemberRole.MANAGER)
-        member.updateRole(MemberRole.LEADER)
-        project.leaderId = member.userId
+        oldLeader.updateRole(MemberRole.MANAGER)
+        newLeader.updateRole(MemberRole.LEADER)
+        team.leaderId = newLeader.userId
     }
 }

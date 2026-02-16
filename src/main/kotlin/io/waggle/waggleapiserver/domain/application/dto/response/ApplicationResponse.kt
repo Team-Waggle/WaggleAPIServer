@@ -15,12 +15,19 @@ data class ApplicationResponse(
     val position: Position,
     @Schema(description = "지원 상태", example = "APPROVED")
     val status: ApplicationStatus,
-    @Schema(description = "지원 프로젝트 ID", example = "1")
-    val projectId: Long,
+    @Schema(description = "지원 팀 ID", example = "1")
+    val teamId: Long,
+    @Schema(description = "모집글 ID", example = "1")
+    val postId: Long,
     @Schema(description = "지원자 ID", example = "550e8400-e29b-41d4-a716-446655440000")
     val userId: UUID,
     @Schema(description = "지원 동기")
-    val detail: String,
+    val detail: String?,
+    @Schema(
+        description = "포트폴리오 URL 목록",
+        example = "[\"https://github.com/user\", \"https://blog.example.com\"]",
+    )
+    val portfolioUrls: List<String>,
     @Schema(description = "지원 일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) {
@@ -30,9 +37,11 @@ data class ApplicationResponse(
                 applicationId = application.id,
                 position = application.position,
                 status = application.status,
-                projectId = application.projectId,
+                teamId = application.teamId,
+                postId = application.postId,
                 userId = application.userId,
                 detail = application.detail,
+                portfolioUrls = application.portfolioUrls.toList(),
                 createdAt = application.createdAt,
             )
     }

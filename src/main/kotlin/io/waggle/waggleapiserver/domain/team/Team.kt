@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.domain.project
+package io.waggle.waggleapiserver.domain.team
 
 import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
@@ -7,6 +7,8 @@ import jakarta.persistence.Access
 import jakarta.persistence.AccessType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -17,18 +19,21 @@ import java.util.UUID
 @Access(AccessType.FIELD)
 @Entity
 @Table(
-    name = "projects",
-    indexes = [Index(name = "idx_projects_name", columnList = "name")],
+    name = "teams",
+    indexes = [Index(name = "idx_teams_name", columnList = "name")],
 )
-class Project(
+class Team(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     @Column(unique = true, nullable = false)
     var name: String,
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     var description: String,
-    @Column(name = "thumbnail_url")
-    var thumbnailUrl: String? = null,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "work_mode", nullable = false, columnDefinition = "VARCHAR(20)")
+    var workMode: WorkMode,
+    @Column(name = "profile_image_url")
+    var profileImageUrl: String? = null,
     @Column(name = "leader_id", nullable = false)
     var leaderId: UUID,
     @Column(name = "creator_id", nullable = false, updatable = false)
@@ -38,16 +43,18 @@ class Project(
     override val targetId: Long
         get() = id
     override val type: BookmarkType
-        get() = BookmarkType.PROJECT
+        get() = BookmarkType.TEAM
 
     fun update(
         name: String,
         description: String,
-        thumbnailUrl: String?,
+        workMode: WorkMode,
+        profileImageUrl: String?,
     ) {
         this.name = name
         this.description = description
-        this.thumbnailUrl = thumbnailUrl
+        this.workMode = workMode
+        this.profileImageUrl = profileImageUrl
     }
 
     fun isLeader(userId: UUID) = leaderId == userId

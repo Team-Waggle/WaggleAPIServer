@@ -7,10 +7,12 @@ import io.waggle.waggleapiserver.domain.bookmark.dto.request.BookmarkToggleReque
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkToggleResponse
 import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
-import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
+import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
-import io.waggle.waggleapiserver.domain.project.dto.response.ProjectSimpleResponse
-import io.waggle.waggleapiserver.domain.project.repository.ProjectRepository
+import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
+import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
+import io.waggle.waggleapiserver.domain.team.dto.response.TeamSimpleResponse
+import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import org.springframework.stereotype.Service
@@ -21,7 +23,8 @@ import org.springframework.transaction.annotation.Transactional
 class BookmarkService(
     private val bookmarkRepository: BookmarkRepository,
     private val postRepository: PostRepository,
-    private val projectRepository: ProjectRepository,
+    private val recruitmentRepository: RecruitmentRepository,
+    private val teamRepository: TeamRepository,
 ) {
     fun toggleBookmark(
         request: BookmarkToggleRequest,
@@ -56,15 +59,20 @@ class BookmarkService(
 
         return when (type) {
             BookmarkType.POST -> {
-                postRepository
-                    .findByIdInOrderByCreatedAtDesc(targetIds)
-                    .map { PostSimpleResponse.of(it, UserSimpleResponse.from(user)) }
+                val posts = postRepository.findByIdInOrderByCreatedAtDesc(targetIds)
+                val recruitmentsByPostId =
+                    recruitmentRepository.findByPostIdIn(posts.map { it.id }).groupBy { it.postId }
+                posts.map { post ->
+                    val recruitments =
+                        (recruitmentsByPostId[post.id] ?: emptyList()).map { RecruitmentResponse.from(it) }
+                    PostDetailResponse.of(post, UserSimpleResponse.from(user), recruitments)
+                }
             }
 
-            BookmarkType.PROJECT -> {
-                projectRepository
+            BookmarkType.TEAM -> {
+                teamRepository
                     .findByIdInOrderByCreatedAtDesc(targetIds)
-                    .map { ProjectSimpleResponse.from(it) }
+                    .map { TeamSimpleResponse.from(it) }
             }
         }
     }

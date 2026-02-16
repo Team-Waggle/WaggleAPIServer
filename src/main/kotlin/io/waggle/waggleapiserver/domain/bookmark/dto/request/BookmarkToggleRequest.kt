@@ -9,7 +9,7 @@ data class BookmarkToggleRequest(
     @Schema(description = "북마크 객체 ID", example = "1")
     @field:NotNull
     val targetId: Long,
-    @Schema(description = "북마크 객체 타입", example = "PROJECT")
+    @Schema(description = "북마크 객체 타입", example = "TEAM")
     @field:NotNull
     val type: BookmarkType,
 )

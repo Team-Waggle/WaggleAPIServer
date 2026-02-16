@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.recruitment.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
+import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
 import io.waggle.waggleapiserver.domain.user.enums.Position
 
 @Schema(description = "모집 정보 응답 DTO")
@@ -12,6 +13,8 @@ class RecruitmentResponse(
     val position: Position,
     @Schema(description = "모집 중인 인원 수", example = "3")
     val recruitingCount: Int,
+    @Schema(description = "모집 상태", example = "RECRUITING")
+    val status: RecruitmentStatus,
 ) {
     companion object {
         fun from(recruitment: Recruitment): RecruitmentResponse =
@@ -19,6 +22,7 @@ class RecruitmentResponse(
                 recruitmentId = recruitment.id,
                 position = recruitment.position,
                 recruitingCount = recruitment.recruitingCount,
+                status = recruitment.status,
             )
     }
 }

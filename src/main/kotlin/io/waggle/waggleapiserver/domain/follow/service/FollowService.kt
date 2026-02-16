@@ -53,12 +53,12 @@ class FollowService(
     fun getUserFollowees(userId: UUID): List<UserSimpleResponse> {
         val follows = followRepository.findByFollowerId(userId)
 
-        val userIds = follows.map { it.followerId }
-        val userMap = userRepository.findAllById(userIds).associateBy { it.id }
+        val followeeIds = follows.map { it.followeeId }
+        val userById = userRepository.findAllById(followeeIds).associateBy { it.id }
 
         return follows.map { follow ->
             val user =
-                userMap[follow.followerId]
+                userById[follow.followeeId]
                     ?: throw BusinessException(
                         ErrorCode.ENTITY_NOT_FOUND,
                         "User not found: ${follow.followerId}",
@@ -70,12 +70,12 @@ class FollowService(
     fun getUserFollowers(userId: UUID): List<UserSimpleResponse> {
         val follows = followRepository.findByFolloweeId(userId)
 
-        val userIds = follows.map { it.followeeId }
-        val userMap = userRepository.findAllById(userIds).associateBy { it.id }
+        val followerIds = follows.map { it.followerId }
+        val userById = userRepository.findAllById(followerIds).associateBy { it.id }
 
         return follows.map { follow ->
             val user =
-                userMap[follow.followeeId]
+                userById[follow.followerId]
                     ?: throw BusinessException(
                         ErrorCode.ENTITY_NOT_FOUND,
                         "User not found: ${follow.followeeId}",

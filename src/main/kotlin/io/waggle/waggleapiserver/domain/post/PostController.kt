@@ -6,7 +6,6 @@ import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.Curr
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
 import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
-import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.service.PostService
 import io.waggle.waggleapiserver.domain.user.User
 import jakarta.validation.Valid
@@ -18,6 +17,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -50,14 +50,14 @@ class PostController(
             sort = ["createdAt"],
             direction = Sort.Direction.DESC,
         ) pageable: Pageable,
-    ): Page<PostSimpleResponse> = postService.getPosts(query, pageable)
+    ): Page<PostDetailResponse> = postService.getPosts(query, user, pageable)
 
     @Operation(summary = "모집글 상세 조회")
     @GetMapping("/{postId}")
     fun getPost(
         @PathVariable postId: Long,
         @CurrentUser user: User?,
-    ): PostDetailResponse = postService.getPost(postId)
+    ): PostDetailResponse = postService.getPost(postId, user)
 
     @Operation(summary = "모집글 수정")
     @PutMapping("/{postId}")
@@ -66,6 +66,16 @@ class PostController(
         @Valid @RequestBody request: PostUpsertRequest,
         @CurrentUser user: User,
     ): PostDetailResponse = postService.updatePost(postId, request, user)
+
+    @Operation(summary = "모집 마감")
+    @PatchMapping("/{postId}/close")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun closePostRecruitments(
+        @PathVariable postId: Long,
+        @CurrentUser user: User,
+    ) {
+        postService.closePostRecruitments(postId, user)
+    }
 
     @Operation(summary = "모집글 삭제")
     @DeleteMapping("/{postId}")

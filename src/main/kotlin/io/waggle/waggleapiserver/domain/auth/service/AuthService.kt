@@ -15,10 +15,10 @@ import java.util.UUID
 
 @Service
 class AuthService(
+    @Value("\${jwt.refresh-token-ttl}") private val refreshTokenTtl: Long,
     private val authCookieManager: AuthCookieManager,
     private val jwtProvider: JwtProvider,
     private val redisTemplate: StringRedisTemplate,
-    @Value("\${jwt.refresh-token-ttl}") private val refreshTokenTtl: Long,
 ) {
     fun issueTokens(
         userId: UUID,

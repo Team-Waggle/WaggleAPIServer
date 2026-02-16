@@ -1,7 +1,10 @@
 package io.waggle.waggleapiserver.domain.post.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
+import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.post.Post
+import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
+import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 
 @Schema(description = "모집글 상세 응답 DTO")
@@ -14,17 +17,28 @@ data class PostDetailResponse(
     val content: String,
     @Schema(description = "작성자 정보")
     val user: UserSimpleResponse,
-) {
+    @Schema(description = "모집 중 여부")
+    val isRecruiting: Boolean,
+    @Schema(description = "모집 정보 목록")
+    val recruitments: List<RecruitmentResponse>,
+    @Schema(description = "지원자 수 (팀 멤버만 조회 가능)")
+    val applicantCount: Int? = null,
+) : BookmarkResponse {
     companion object {
         fun of(
             post: Post,
-            userSimpleResponse: UserSimpleResponse,
+            user: UserSimpleResponse,
+            recruitments: List<RecruitmentResponse> = emptyList(),
+            applicantCount: Int? = null,
         ): PostDetailResponse =
             PostDetailResponse(
                 postId = post.id,
                 title = post.title,
                 content = post.content,
-                user = userSimpleResponse,
+                user = user,
+                isRecruiting = recruitments.any { it.status == RecruitmentStatus.RECRUITING },
+                recruitments = recruitments,
+                applicantCount = applicantCount,
             )
     }
 }

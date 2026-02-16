@@ -4,7 +4,9 @@ import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.enums.Position
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -12,6 +14,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import java.util.UUID
@@ -19,11 +22,11 @@ import java.util.UUID
 @Entity
 @Table(
     name = "applications",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["project_id", "user_id", "position"])],
+    uniqueConstraints = [UniqueConstraint(columnNames = ["team_id", "user_id", "position"])],
     indexes = [
-        Index(name = "idx_applications_project", columnList = "project_id"),
         Index(name = "idx_applications_user", columnList = "user_id"),
-        Index(name = "idx_applications_project_status", columnList = "project_id, status"),
+        Index(name = "idx_applications_team_status", columnList = "team_id, status"),
+        Index(name = "idx_applications_post", columnList = "post_id"),
     ],
 )
 class Application(
@@ -35,13 +38,20 @@ class Application(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     var status: ApplicationStatus = ApplicationStatus.PENDING,
-    @Column(name = "project_id", nullable = false, updatable = false)
-    val projectId: Long,
+    @Column(name = "team_id", nullable = false, updatable = false)
+    val teamId: Long,
+    @Column(name = "post_id", nullable = false, updatable = false)
+    val postId: Long,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
-    @Column(nullable = false, columnDefinition = "VARCHAR(5000)")
-    var detail: String,
+    @Column(columnDefinition = "VARCHAR(5000)")
+    var detail: String?,
 ) : AuditingEntity() {
+    @ElementCollection
+    @CollectionTable(name = "application_portfolio_urls", joinColumns = [JoinColumn(name = "application_id")])
+    @Column(name = "portfolio_url", nullable = false, columnDefinition = "VARCHAR(2048)")
+    val portfolioUrls: MutableList<String> = mutableListOf()
+
     fun updateStatus(status: ApplicationStatus) {
         if (this.status != ApplicationStatus.PENDING) {
             throw BusinessException(ErrorCode.INVALID_STATE, "status is not PENDING")
