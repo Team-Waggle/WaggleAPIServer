@@ -2,6 +2,10 @@ package io.waggle.waggleapiserver.domain.user.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.storage.ImageDeleteEvent
+import io.waggle.waggleapiserver.common.storage.StorageClient
+import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
+import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamSimpleResponse
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
@@ -12,6 +16,7 @@ import io.waggle.waggleapiserver.domain.user.dto.response.UserCheckUsernameRespo
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,6 +25,8 @@ import java.util.UUID
 @Service
 @Transactional(readOnly = true)
 class UserService(
+    private val eventPublisher: ApplicationEventPublisher,
+    private val storageClient: StorageClient,
     private val memberRepository: MemberRepository,
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
@@ -48,6 +55,15 @@ class UserService(
         )
 
         return UserDetailResponse.from(user)
+    }
+
+    fun generateProfileImagePresignedUrl(
+        request: PresignedUrlRequest,
+        user: User,
+    ): PresignedUrlResponse {
+        val presignedUploadUrl =
+            storageClient.generateUploadUrl("users", request.contentType)
+        return PresignedUrlResponse.from(presignedUploadUrl)
     }
 
     fun checkUsername(username: String): UserCheckUsernameResponse {
@@ -81,11 +97,17 @@ class UserService(
         request: UserUpdateRequest,
         user: User,
     ): UserDetailResponse {
-        val (position, bio, skills, portfolioUrls) = request
+        val (position, bio, profileImageUrl, skills, portfolioUrls) = request
+
+        val oldProfileImageUrl = user.profileImageUrl
+        if (oldProfileImageUrl != null && oldProfileImageUrl != profileImageUrl) {
+            eventPublisher.publishEvent(ImageDeleteEvent(oldProfileImageUrl))
+        }
 
         user.update(
-            bio = bio,
             position = position,
+            bio = bio,
+            profileImageUrl = profileImageUrl,
             skills = skills,
             portfolioUrls = portfolioUrls,
         )
