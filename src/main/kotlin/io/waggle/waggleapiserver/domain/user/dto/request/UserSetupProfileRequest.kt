@@ -28,6 +28,5 @@ data class UserSetupProfileRequest(
         description = "포트폴리오 URL 목록",
         example = "[\"https://github.com/user\", \"https://blog.example.com\"]",
     )
-    @field:NotNull
-    val portfolioUrls: List<@URL String>,
+    val portfolioUrls: List<@URL String> = emptyList(),
 )
