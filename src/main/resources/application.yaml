@@ -1,4 +1,9 @@
 app:
+  s3:
+    bucket: ${S3_BUCKET}
+    region: ${AWS_REGION:ap-northeast-2}
+    base-url: ${S3_BASE_URL}
+    presigned-url-expiration: 600
   cookie:
     secure: ${COOKIE_SECURE:false}
     same-site: ${COOKIE_SAME_SITE:Lax}
