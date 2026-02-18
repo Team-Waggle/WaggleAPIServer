@@ -3,6 +3,8 @@ package io.waggle.waggleapiserver.domain.user
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.CurrentUser
+import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
+import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.service.ApplicationService
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
@@ -47,6 +49,13 @@ class UserController(
         @Valid @RequestBody request: UserSetupProfileRequest,
         @CurrentUser user: User,
     ): UserDetailResponse = userService.setupProfile(request, user)
+
+    @Operation(summary = "사용자 프로필 이미지 업로드용 Presigned URL 생성")
+    @PostMapping("/me/profile-image/presigned-url")
+    fun generateProfileImagePresignedUrl(
+        @Valid @RequestBody request: PresignedUrlRequest,
+        @CurrentUser user: User,
+    ): PresignedUrlResponse = userService.generateProfileImagePresignedUrl(request, user)
 
     @Operation(summary = "사용자명 사용 가능 여부 조회")
     @GetMapping("/check")

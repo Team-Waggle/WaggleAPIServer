@@ -3,6 +3,8 @@ package io.waggle.waggleapiserver.domain.team
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.CurrentUser
+import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
+import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreateRequest
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.service.ApplicationService
@@ -53,6 +55,13 @@ class TeamController(
         @Valid @RequestBody request: ApplicationCreateRequest,
         @CurrentUser user: User,
     ): ApplicationResponse = applicationService.applyToTeam(teamId, request, user)
+
+    @Operation(summary = "팀 프로필 이미지 업로드용 Presigned URL 생성")
+    @PostMapping("/profile-image/presigned-url")
+    fun generateProfileImagePresignedUrl(
+        @Valid @RequestBody request: PresignedUrlRequest,
+        @CurrentUser user: User,
+    ): PresignedUrlResponse = teamService.generateProfileImagePresignedUrl(request)
 
     @Operation(summary = "팀 상세 조회")
     @GetMapping("/{teamId}")
