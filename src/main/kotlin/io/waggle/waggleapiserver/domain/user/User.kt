@@ -62,12 +62,14 @@ class User(
         username: String,
         position: Position,
         bio: String?,
+        profileImageUrl: String?,
         skills: Set<Skill>,
         portfolioUrls: List<String>,
     ) {
         this.username = username
         this.position = position
         this.bio = bio
+        this.profileImageUrl = profileImageUrl
         this.skills.clear()
         this.skills.addAll(skills)
         this.portfolioUrls.clear()

@@ -40,7 +40,7 @@ class UserService(
             throw BusinessException(ErrorCode.INVALID_STATE, "Profile already set up")
         }
 
-        val (username, position, bio, skills, portfolioUrls) = request
+        val (username, position, bio, profileImageUrl, skills, portfolioUrls) = request
 
         if (userRepository.existsByUsername(username)) {
             throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "$username exists already")
@@ -50,6 +50,7 @@ class UserService(
             username = username,
             position = position,
             bio = bio,
+            profileImageUrl = profileImageUrl,
             skills = skills,
             portfolioUrls = portfolioUrls,
         )

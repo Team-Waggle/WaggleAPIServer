@@ -19,6 +19,8 @@ data class UserSetupProfileRequest(
     @Schema(description = "본인 소개")
     @field:Size(max = 1000)
     val bio: String?,
+    @Schema(description = "프로필 이미지 URL")
+    val profileImageUrl: String?,
     @Schema(description = "기술 스택", example = "[\"KOTLIN\", \"SPRING\"]")
     @field:NotNull
     val skills: Set<Skill>,
