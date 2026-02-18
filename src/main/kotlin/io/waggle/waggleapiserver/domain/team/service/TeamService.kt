@@ -132,9 +132,8 @@ class TeamService(
             }
         }
 
-        val oldProfileImageUrl = team.profileImageUrl
-        if (oldProfileImageUrl != null && oldProfileImageUrl != profileImageUrl) {
-            eventPublisher.publishEvent(ImageDeleteEvent(oldProfileImageUrl))
+        team.profileImageUrl?.takeIf { it != profileImageUrl }?.let {
+            eventPublisher.publishEvent(ImageDeleteEvent(it))
         }
 
         team.update(
@@ -177,6 +176,10 @@ class TeamService(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Team not found: $teamId",
                 )
+
+        team.profileImageUrl?.let {
+            eventPublisher.publishEvent(ImageDeleteEvent(it))
+        }
 
         team.delete()
     }

@@ -99,9 +99,8 @@ class UserService(
     ): UserDetailResponse {
         val (position, bio, profileImageUrl, skills, portfolioUrls) = request
 
-        val oldProfileImageUrl = user.profileImageUrl
-        if (oldProfileImageUrl != null && oldProfileImageUrl != profileImageUrl) {
-            eventPublisher.publishEvent(ImageDeleteEvent(oldProfileImageUrl))
+        user.profileImageUrl?.takeIf { it != profileImageUrl }?.let {
+            eventPublisher.publishEvent(ImageDeleteEvent(it))
         }
 
         user.update(
