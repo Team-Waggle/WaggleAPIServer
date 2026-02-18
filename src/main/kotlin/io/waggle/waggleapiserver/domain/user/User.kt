@@ -7,6 +7,7 @@ import io.waggle.waggleapiserver.domain.user.enums.Skill
 import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
 import jakarta.persistence.ElementCollection
+import jakarta.persistence.FetchType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -44,13 +45,13 @@ class User(
     @Column(columnDefinition = "VARCHAR(20)")
     var position: Position? = null
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_skills", joinColumns = [JoinColumn(name = "user_id")])
     @Enumerated(EnumType.STRING)
     @Column(name = "skill", nullable = false, columnDefinition = "VARCHAR(50)")
     val skills: MutableSet<Skill> = mutableSetOf()
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_portfolios", joinColumns = [JoinColumn(name = "user_id")])
     @Column(name = "portfolio_url", nullable = false, columnDefinition = "VARCHAR(2048)")
     val portfolioUrls: MutableList<String> = mutableListOf()
@@ -62,12 +63,14 @@ class User(
         username: String,
         position: Position,
         bio: String?,
+        profileImageUrl: String?,
         skills: Set<Skill>,
         portfolioUrls: List<String>,
     ) {
         this.username = username
         this.position = position
         this.bio = bio
+        this.profileImageUrl = profileImageUrl
         this.skills.clear()
         this.skills.addAll(skills)
         this.portfolioUrls.clear()
@@ -77,11 +80,13 @@ class User(
     fun update(
         position: Position,
         bio: String?,
+        profileImageUrl: String?,
         skills: Set<Skill>,
         portfolioUrls: List<String>,
     ) {
         this.position = position
         this.bio = bio
+        this.profileImageUrl = profileImageUrl
         this.skills.clear()
         this.skills.addAll(skills)
         this.portfolioUrls.clear()

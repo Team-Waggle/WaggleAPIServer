@@ -15,6 +15,8 @@ data class UserUpdateRequest(
     @Schema(description = "본인 소개")
     @field:Size(max = 1000)
     val bio: String?,
+    @Schema(description = "프로필 이미지 URL")
+    val profileImageUrl: String?,
     @Schema(description = "기술 스택", example = "[\"KOTLIN\", \"SPRING\"]")
     @field:NotNull
     val skills: Set<Skill>,
@@ -22,6 +24,5 @@ data class UserUpdateRequest(
         description = "포트폴리오 URL 목록",
         example = "[\"https://github.com/user\", \"https://blog.example.com\"]",
     )
-    @field:NotNull
-    val portfolioUrls: List<@URL String>,
+    val portfolioUrls: List<@URL String> = emptyList(),
 )

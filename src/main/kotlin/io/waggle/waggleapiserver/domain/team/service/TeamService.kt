@@ -2,6 +2,10 @@ package io.waggle.waggleapiserver.domain.team.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.storage.ImageDeleteEvent
+import io.waggle.waggleapiserver.common.storage.StorageClient
+import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
+import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.domain.member.Member
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
@@ -12,6 +16,7 @@ import io.waggle.waggleapiserver.domain.team.dto.response.TeamDetailResponse
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class TeamService(
+    private val eventPublisher: ApplicationEventPublisher,
+    private val storageClient: StorageClient,
     private val memberRepository: MemberRepository,
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
@@ -59,6 +66,15 @@ class TeamService(
         val savedMember = memberRepository.save(member)
 
         return TeamDetailResponse.of(savedTeam, listOf(MemberResponse.of(savedMember, user)))
+    }
+
+    fun generateProfileImagePresignedUrl(request: PresignedUrlRequest): PresignedUrlResponse {
+        val presignedUploadUrl =
+            storageClient.generateUploadUrl(
+                "teams",
+                request.contentType,
+            )
+        return PresignedUrlResponse.from(presignedUploadUrl)
     }
 
     fun getTeam(teamId: Long): TeamDetailResponse {
@@ -116,6 +132,10 @@ class TeamService(
             }
         }
 
+        team.profileImageUrl?.takeIf { it != profileImageUrl }?.let {
+            eventPublisher.publishEvent(ImageDeleteEvent(it))
+        }
+
         team.update(
             name = name,
             description = description,
@@ -156,6 +176,10 @@ class TeamService(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Team not found: $teamId",
                 )
+
+        team.profileImageUrl?.let {
+            eventPublisher.publishEvent(ImageDeleteEvent(it))
+        }
 
         team.delete()
     }
