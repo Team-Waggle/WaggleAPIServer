@@ -16,7 +16,7 @@ import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.ModelAttribute
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -43,7 +43,7 @@ class PostController(
     @Operation(summary = "모집글 목록 페이지네이션 조회")
     @GetMapping
     fun getPosts(
-        @ModelAttribute query: PostGetQuery,
+        @ParameterObject query: PostGetQuery,
         @CurrentUser user: User?,
         @PageableDefault(
             size = 15,

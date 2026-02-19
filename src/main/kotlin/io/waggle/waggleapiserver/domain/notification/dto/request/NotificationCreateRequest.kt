@@ -11,7 +11,7 @@ data class NotificationCreateRequest(
     @field:NotNull
     val type: NotificationType,
     @Schema(description = "팀 ID", example = "1")
-    val teamId: Long?,
+    val teamId: Long? = null,
     @Schema(description = "알림 대상 ID", example = "550e8400-e29b-41d4-a716-446655440000")
     @field:NotNull
     val userId: UUID,
