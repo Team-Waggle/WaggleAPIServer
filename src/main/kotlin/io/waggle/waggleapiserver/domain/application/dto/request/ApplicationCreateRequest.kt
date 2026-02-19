@@ -13,7 +13,7 @@ data class ApplicationCreateRequest(
     @field:NotNull
     val postId: Long,
     @Schema(description = "지원 직무")
-    @field:NotBlank
+    @field:NotNull
     val position: Position,
     @Schema(description = "팀 지원 동기")
     @field:Size(max = 1000)

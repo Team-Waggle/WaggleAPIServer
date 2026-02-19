@@ -3,6 +3,7 @@ package io.waggle.waggleapiserver.domain.team.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.team.WorkMode
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 
 @Schema(description = "팀 생성/수정 요청 DTO")
 data class TeamUpsertRequest(
@@ -13,7 +14,7 @@ data class TeamUpsertRequest(
     @field:NotBlank
     val description: String,
     @Schema(description = "업무 진행 방식")
-    @field:NotBlank
+    @field:NotNull
     val workMode: WorkMode,
     @Schema(description = "팀 프로필 이미지 URL")
     val profileImageUrl: String? = null,
