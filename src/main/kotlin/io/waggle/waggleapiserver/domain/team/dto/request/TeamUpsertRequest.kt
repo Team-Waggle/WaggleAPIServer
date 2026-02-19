@@ -16,5 +16,5 @@ data class TeamUpsertRequest(
     @field:NotBlank
     val workMode: WorkMode,
     @Schema(description = "팀 프로필 이미지 URL")
-    val profileImageUrl: String?,
+    val profileImageUrl: String? = null,
 )

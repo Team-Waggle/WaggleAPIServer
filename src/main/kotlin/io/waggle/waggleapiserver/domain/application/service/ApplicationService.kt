@@ -74,7 +74,7 @@ class ApplicationService(
                 userId = user.id,
                 detail = detail,
             )
-        portfolioUrls?.let { application.portfolioUrls.addAll(it) }
+        application.portfolioUrls.addAll(portfolioUrls)
         val savedApplication = applicationRepository.save(application)
 
         return ApplicationResponse.from(savedApplication)

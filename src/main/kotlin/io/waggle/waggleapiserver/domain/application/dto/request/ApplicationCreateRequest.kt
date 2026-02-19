@@ -17,10 +17,10 @@ data class ApplicationCreateRequest(
     val position: Position,
     @Schema(description = "팀 지원 동기")
     @field:Size(max = 1000)
-    val detail: String?,
+    val detail: String? = null,
     @Schema(
         description = "포트폴리오 URL 목록",
         example = "[\"https://github.com/user\", \"https://blog.example.com\"]",
     )
-    val portfolioUrls: List<@URL String>?,
+    val portfolioUrls: List<@URL String> = emptyList(),
 )

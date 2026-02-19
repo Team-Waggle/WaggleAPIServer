@@ -7,5 +7,6 @@ import jakarta.validation.constraints.NotNull
 @Schema(description = "멤버 수정 요청 DTO")
 data class MemberUpdateRoleRequest(
     @Schema(description = "멤버 역할", example = "MANAGER")
-    @field:NotNull val role: MemberRole,
+    @field:NotNull
+    val role: MemberRole,
 )
