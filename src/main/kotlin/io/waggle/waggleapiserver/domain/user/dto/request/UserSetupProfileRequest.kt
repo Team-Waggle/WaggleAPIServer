@@ -27,6 +27,7 @@ data class UserSetupProfileRequest(
     @Schema(
         description = "포트폴리오 URL 목록",
         example = "[\"https://github.com/user\", \"https://blog.example.com\"]",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
     )
     val portfolioUrls: List<@URL String> = emptyList(),
 )
