@@ -81,6 +81,12 @@ class UserController(
         @PathVariable userId: UUID,
     ): List<TeamSimpleResponse> = userService.getUserTeams(userId)
 
+    @Operation(summary = "본인 프로필 조회")
+    @GetMapping("/me")
+    fun getMe(
+        @CurrentUser user: User,
+    ): UserDetailResponse = userService.getUser(user.id)
+
     @Operation(summary = "본인 지원 목록 조회")
     @GetMapping("/me/applications")
     fun getMyApplications(
