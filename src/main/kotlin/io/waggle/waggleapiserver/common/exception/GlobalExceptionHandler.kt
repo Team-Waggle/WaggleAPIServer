@@ -1,12 +1,16 @@
 package io.waggle.waggleapiserver.common.exception
 
-import io.waggle.waggleapiserver.common.util.logger
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.context.request.WebRequest
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 
 data class ErrorResponse(
     val status: Int,
@@ -16,7 +20,7 @@ data class ErrorResponse(
 )
 
 @RestControllerAdvice
-class GlobalExceptionHandler {
+class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(BusinessException::class)
     fun handleBusinessException(e: BusinessException): ResponseEntity<ErrorResponse> {
         logger.warn("Business exception occurred: ${e.errorCode}", e)
@@ -29,27 +33,6 @@ class GlobalExceptionHandler {
             )
         return ResponseEntity
             .status(e.errorCode.status)
-            .body(errorResponse)
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleMethodArgumentNotValidException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
-        logger.warn("Validation exception occurred", e)
-        val errors =
-            e.bindingResult.allErrors.joinToString(", ") { error ->
-                val fieldName = (error as? FieldError)?.field ?: "unknown"
-                val errorMessage = error.defaultMessage ?: "validation failed"
-                "$fieldName: $errorMessage"
-            }
-        val errorResponse =
-            ErrorResponse(
-                status = ErrorCode.INVALID_INPUT_VALUE.status.value(),
-                code = ErrorCode.INVALID_INPUT_VALUE.name,
-                message = ErrorCode.INVALID_INPUT_VALUE.message,
-                detail = errors,
-            )
-        return ResponseEntity
-            .status(ErrorCode.INVALID_INPUT_VALUE.status)
             .body(errorResponse)
     }
 
@@ -82,6 +65,52 @@ class GlobalExceptionHandler {
             )
         return ResponseEntity
             .status(ErrorCode.INTERNAL_SERVER_ERROR.status)
+            .body(errorResponse)
+    }
+
+    override fun handleMethodArgumentNotValid(
+        e: MethodArgumentNotValidException,
+        headers: HttpHeaders,
+        status: HttpStatusCode,
+        request: WebRequest,
+    ): ResponseEntity<Any> {
+        logger.warn("Validation exception occurred", e)
+        val errors =
+            e.bindingResult.allErrors.joinToString(", ") { error ->
+                val fieldName = (error as? FieldError)?.field ?: "unknown"
+                val errorMessage = error.defaultMessage ?: "validation failed"
+                "$fieldName: $errorMessage"
+            }
+        val errorResponse =
+            ErrorResponse(
+                status = ErrorCode.INVALID_INPUT_VALUE.status.value(),
+                code = ErrorCode.INVALID_INPUT_VALUE.name,
+                message = ErrorCode.INVALID_INPUT_VALUE.message,
+                detail = errors,
+            )
+        return ResponseEntity
+            .status(ErrorCode.INVALID_INPUT_VALUE.status)
+            .body(errorResponse)
+    }
+
+    override fun handleExceptionInternal(
+        e: Exception,
+        body: Any?,
+        headers: HttpHeaders,
+        statusCode: HttpStatusCode,
+        request: WebRequest,
+    ): ResponseEntity<Any> {
+        logger.warn("Spring MVC exception occurred: ${e.javaClass.simpleName}", e)
+        val code = (statusCode as? HttpStatus)?.name ?: statusCode.value().toString()
+        val errorResponse =
+            ErrorResponse(
+                status = statusCode.value(),
+                code = code,
+                message = e.message ?: "Request processing failed",
+            )
+        return ResponseEntity
+            .status(statusCode)
+            .headers(headers)
             .body(errorResponse)
     }
 }
