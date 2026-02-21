@@ -54,8 +54,9 @@ class UserService(
             skills = skills,
             portfolioUrls = portfolioUrls,
         )
+        val savedUser = userRepository.save(user)
 
-        return UserDetailResponse.from(user)
+        return UserDetailResponse.from(savedUser)
     }
 
     fun generateProfileImagePresignedUrl(
@@ -111,7 +112,8 @@ class UserService(
             skills = skills,
             portfolioUrls = portfolioUrls,
         )
+        val savedUser = userRepository.save(user)
 
-        return UserDetailResponse.from(user)
+        return UserDetailResponse.from(savedUser)
     }
 }
