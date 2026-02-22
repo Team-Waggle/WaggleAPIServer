@@ -21,6 +21,11 @@ import org.springframework.web.method.support.ModelAndViewContainer
 @Parameter(hidden = true)
 annotation class CurrentUser
 
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class AllowIncompleteProfile
+
 @Component
 class CurrentUserArgumentResolver(
     private val userRepository: UserRepository,
@@ -38,7 +43,14 @@ class CurrentUserArgumentResolver(
         val authentication = SecurityContextHolder.getContext().authentication
         val userPrincipal = authentication?.principal as? UserPrincipal ?: return null
 
-        return userRepository.findByIdOrNull(userPrincipal.userId)
-            ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: ${userPrincipal.userId}")
+        val user =
+            userRepository.findByIdOrNull(userPrincipal.userId)
+                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: ${userPrincipal.userId}")
+
+        if (!parameter.hasMethodAnnotation(AllowIncompleteProfile::class.java)) {
+            user.checkProfileComplete()
+        }
+
+        return user
     }
 }

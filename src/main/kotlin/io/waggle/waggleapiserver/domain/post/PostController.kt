@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.post
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.AllowIncompleteProfile
 import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.CurrentUser
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
 import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
@@ -40,6 +41,7 @@ class PostController(
         @CurrentUser user: User,
     ): PostDetailResponse = postService.createPost(request, user)
 
+    @AllowIncompleteProfile
     @Operation(summary = "모집글 목록 페이지네이션 조회")
     @GetMapping
     fun getPosts(
@@ -52,6 +54,7 @@ class PostController(
         ) pageable: Pageable,
     ): Page<PostDetailResponse> = postService.getPosts(query, user, pageable)
 
+    @AllowIncompleteProfile
     @Operation(summary = "모집글 상세 조회")
     @GetMapping("/{postId}")
     fun getPost(

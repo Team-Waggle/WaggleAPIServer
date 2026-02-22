@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.team
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.AllowIncompleteProfile
 import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.CurrentUser
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
@@ -79,6 +80,7 @@ class TeamController(
         @CurrentUser user: User,
     ): List<ApplicationResponse> = applicationService.getTeamApplications(teamId, user)
 
+    @AllowIncompleteProfile
     @Operation(summary = "팀 모집글 목록 조회")
     @GetMapping("/{teamId}/posts")
     fun getTeamPosts(

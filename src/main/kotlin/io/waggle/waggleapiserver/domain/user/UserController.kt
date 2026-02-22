@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.user
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.AllowIncompleteProfile
 import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.CurrentUser
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
@@ -47,6 +48,7 @@ class UserController(
     private val notificationService: NotificationService,
     private val userService: UserService,
 ) {
+    @AllowIncompleteProfile
     @Operation(summary = "사용자 프로필 초기 설정")
     @PostMapping("/me/profile")
     fun setupProfile(
@@ -54,6 +56,7 @@ class UserController(
         @CurrentUser user: User,
     ): UserDetailResponse = userService.setupProfile(request, user)
 
+    @AllowIncompleteProfile
     @Operation(summary = "사용자 프로필 이미지 업로드용 Presigned URL 생성")
     @PostMapping("/me/profile-image/presigned-url")
     fun generateProfileImagePresignedUrl(
@@ -91,11 +94,12 @@ class UserController(
         @PathVariable userId: UUID,
     ): List<TeamSimpleResponse> = userService.getUserTeams(userId)
 
+    @AllowIncompleteProfile
     @Operation(summary = "본인 프로필 조회")
     @GetMapping("/me")
     fun getMe(
         @CurrentUser user: User,
-    ): UserDetailResponse = userService.getUser(user.id)
+    ): UserDetailResponse = UserDetailResponse.from(user)
 
     @Operation(summary = "본인 지원 목록 조회")
     @GetMapping("/me/applications")
@@ -139,6 +143,7 @@ class UserController(
         @CurrentUser user: User,
     ): List<NotificationResponse> = notificationService.getUserNotifications(user)
 
+    @AllowIncompleteProfile
     @Operation(summary = "프로필 완성 여부 조회")
     @GetMapping("/me/profile-completion")
     fun getMyProfileCompletion(
