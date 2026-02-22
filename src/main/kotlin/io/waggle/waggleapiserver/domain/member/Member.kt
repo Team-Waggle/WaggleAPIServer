@@ -39,8 +39,8 @@ class Member(
         this.role = role
     }
 
-    fun checkMemberRole(role: MemberRole) {
-        if (this.role.level < role.level) {
+    fun checkMemberRole(requiredRole: MemberRole) {
+        if (role.level < requiredRole.level) {
             throw BusinessException(ErrorCode.ACCESS_DENIED, "Do not have the authority")
         }
     }
