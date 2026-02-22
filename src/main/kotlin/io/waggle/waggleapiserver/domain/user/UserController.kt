@@ -94,7 +94,6 @@ class UserController(
         @PathVariable userId: UUID,
     ): List<TeamSimpleResponse> = userService.getUserTeams(userId)
 
-    @AllowIncompleteProfile
     @Operation(summary = "본인 프로필 조회")
     @GetMapping("/me")
     fun getMe(
