@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
 import io.waggle.waggleapiserver.domain.team.Team
+import io.waggle.waggleapiserver.domain.team.enums.TeamStatus
 import java.time.Instant
 
 @Schema(description = "팀 상세 응답 DTO")
@@ -14,6 +15,8 @@ data class TeamDetailResponse(
     val name: String,
     @Schema(description = "팀 설명")
     val description: String,
+    @Schema(description = "팀 상태", example = "ACTIVE")
+    val status: TeamStatus,
     @Schema(description = "팀 멤버 목록")
     val members: List<MemberResponse>,
     @Schema(description = "팀 생성 일시", example = "2025-11-16T12:30:45.123456Z")
@@ -29,6 +32,7 @@ data class TeamDetailResponse(
             teamId = team.id,
             name = team.name,
             description = team.description,
+            status = team.status,
             members = members,
             createdAt = team.createdAt,
             updatedAt = team.updatedAt,

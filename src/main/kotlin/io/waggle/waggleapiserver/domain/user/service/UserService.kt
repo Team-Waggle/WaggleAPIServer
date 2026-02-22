@@ -77,6 +77,9 @@ class UserService(
         val user =
             userRepository.findByIdOrNull(userId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
+
+        user.checkProfileComplete()
+
         return UserDetailResponse.from(user)
     }
 

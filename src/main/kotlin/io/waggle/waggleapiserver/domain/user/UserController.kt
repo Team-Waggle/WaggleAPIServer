@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.user
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.AllowIncompleteProfile
 import io.waggle.waggleapiserver.common.infrastructure.persistence.resolver.CurrentUser
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
@@ -12,6 +13,9 @@ import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.bookmark.service.BookmarkService
 import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountResponse
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
+import io.waggle.waggleapiserver.domain.memberreview.dto.response.MemberReviewResponse
+import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewQueryType
+import io.waggle.waggleapiserver.domain.memberreview.service.MemberReviewService
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.service.NotificationService
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamSimpleResponse
@@ -40,9 +44,11 @@ class UserController(
     private val applicationService: ApplicationService,
     private val bookmarkService: BookmarkService,
     private val followService: FollowService,
+    private val memberReviewService: MemberReviewService,
     private val notificationService: NotificationService,
     private val userService: UserService,
 ) {
+    @AllowIncompleteProfile
     @Operation(summary = "사용자 프로필 초기 설정")
     @PostMapping("/me/profile")
     fun setupProfile(
@@ -50,6 +56,7 @@ class UserController(
         @CurrentUser user: User,
     ): UserDetailResponse = userService.setupProfile(request, user)
 
+    @AllowIncompleteProfile
     @Operation(summary = "사용자 프로필 이미지 업로드용 Presigned URL 생성")
     @PostMapping("/me/profile-image/presigned-url")
     fun generateProfileImagePresignedUrl(
@@ -75,6 +82,12 @@ class UserController(
         @PathVariable userId: UUID,
     ): FollowCountResponse = followService.getUserFollowCount(userId)
 
+    @Operation(summary = "사용자가 받은 리뷰 목록 조회")
+    @GetMapping("/{userId}/reviews")
+    fun getUserReviews(
+        @PathVariable userId: UUID,
+    ): List<MemberReviewResponse> = memberReviewService.getReceivedReviews(userId)
+
     @Operation(summary = "사용자 참여 팀 목록 조회")
     @GetMapping("/{userId}/teams")
     fun getUserTeams(
@@ -85,13 +98,24 @@ class UserController(
     @GetMapping("/me")
     fun getMe(
         @CurrentUser user: User,
-    ): UserDetailResponse = userService.getUser(user.id)
+    ): UserDetailResponse = UserDetailResponse.from(user)
 
     @Operation(summary = "본인 지원 목록 조회")
     @GetMapping("/me/applications")
     fun getMyApplications(
         @CurrentUser user: User,
     ): List<ApplicationResponse> = applicationService.getUserApplications(user)
+
+    @Operation(summary = "본인 리뷰 목록 조회")
+    @GetMapping("/me/reviews")
+    fun getMyReviews(
+        @RequestParam type: ReviewQueryType,
+        @CurrentUser user: User,
+    ): List<MemberReviewResponse> =
+        when (type) {
+            ReviewQueryType.RECEIVED -> memberReviewService.getReceivedReviews(user.id)
+            ReviewQueryType.WRITTEN -> memberReviewService.getWrittenReviews(user.id)
+        }
 
     @Operation(summary = "본인 북마크 목록 조회")
     @GetMapping("/me/bookmarks")
@@ -118,6 +142,7 @@ class UserController(
         @CurrentUser user: User,
     ): List<NotificationResponse> = notificationService.getUserNotifications(user)
 
+    @AllowIncompleteProfile
     @Operation(summary = "프로필 완성 여부 조회")
     @GetMapping("/me/profile-completion")
     fun getMyProfileCompletion(

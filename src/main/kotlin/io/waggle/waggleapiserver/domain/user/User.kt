@@ -2,6 +2,8 @@ package io.waggle.waggleapiserver.domain.user
 
 import com.github.f4b6a3.uuid.UuidCreator
 import io.waggle.waggleapiserver.common.AuditingEntity
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.enums.Position
 import io.waggle.waggleapiserver.domain.user.enums.Skill
 import jakarta.persistence.CollectionTable
@@ -94,4 +96,10 @@ class User(
     }
 
     fun isProfileComplete(): Boolean = this.username != null && this.position != null
+
+    fun checkProfileComplete() {
+        if (!isProfileComplete()) {
+            throw BusinessException(ErrorCode.INVALID_STATE, "Profile is not set up yet")
+        }
+    }
 }

@@ -105,9 +105,7 @@ class MemberService(
         val leader =
             memberRepository.findByUserIdAndTeamId(user.id, team.id)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
-        if (!leader.isLeader) {
-            throw BusinessException(ErrorCode.ACCESS_DENIED, "Only leader can remove member")
-        }
+        leader.checkMemberRole(MemberRole.LEADER)
 
         member.delete()
     }
@@ -116,9 +114,7 @@ class MemberService(
         oldLeader: Member,
         newLeader: Member,
     ) {
-        if (!oldLeader.isLeader) {
-            throw BusinessException(ErrorCode.ACCESS_DENIED, "Only leader can delegate authority")
-        }
+        oldLeader.checkMemberRole(MemberRole.LEADER)
         if (newLeader.teamId != oldLeader.teamId) {
             throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Not in the same team")
         }
