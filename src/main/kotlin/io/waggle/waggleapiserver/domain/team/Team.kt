@@ -1,8 +1,11 @@
 package io.waggle.waggleapiserver.domain.team
 
 import io.waggle.waggleapiserver.common.AuditingEntity
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.Bookmarkable
+import io.waggle.waggleapiserver.domain.team.enums.TeamStatus
 import jakarta.persistence.Access
 import jakarta.persistence.AccessType
 import jakarta.persistence.Column
@@ -38,12 +41,17 @@ class Team(
     var leaderId: UUID,
     @Column(name = "creator_id", nullable = false, updatable = false)
     val creatorId: UUID,
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
+    var status: TeamStatus = TeamStatus.ACTIVE,
 ) : AuditingEntity(),
     Bookmarkable {
     override val targetId: Long
         get() = id
     override val type: BookmarkType
         get() = BookmarkType.TEAM
+    val isCompleted: Boolean
+        get() = status == TeamStatus.COMPLETED
 
     fun update(
         name: String,
@@ -57,5 +65,10 @@ class Team(
         this.profileImageUrl = profileImageUrl
     }
 
-    fun isLeader(userId: UUID) = leaderId == userId
+    fun checkCompleted() {
+        if (!isCompleted) {
+            throw BusinessException(ErrorCode.INVALID_STATE, "Team is not completed yet")
+        }
+    }
+
 }
