@@ -12,6 +12,9 @@ import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.bookmark.service.BookmarkService
 import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountResponse
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
+import io.waggle.waggleapiserver.domain.memberreview.dto.response.MemberReviewResponse
+import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewQueryType
+import io.waggle.waggleapiserver.domain.memberreview.service.MemberReviewService
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.service.NotificationService
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamSimpleResponse
@@ -40,6 +43,7 @@ class UserController(
     private val applicationService: ApplicationService,
     private val bookmarkService: BookmarkService,
     private val followService: FollowService,
+    private val memberReviewService: MemberReviewService,
     private val notificationService: NotificationService,
     private val userService: UserService,
 ) {
@@ -75,6 +79,12 @@ class UserController(
         @PathVariable userId: UUID,
     ): FollowCountResponse = followService.getUserFollowCount(userId)
 
+    @Operation(summary = "사용자가 받은 리뷰 목록 조회")
+    @GetMapping("/{userId}/reviews")
+    fun getUserReviews(
+        @PathVariable userId: UUID,
+    ): List<MemberReviewResponse> = memberReviewService.getReceivedReviews(userId)
+
     @Operation(summary = "사용자 참여 팀 목록 조회")
     @GetMapping("/{userId}/teams")
     fun getUserTeams(
@@ -92,6 +102,17 @@ class UserController(
     fun getMyApplications(
         @CurrentUser user: User,
     ): List<ApplicationResponse> = applicationService.getUserApplications(user)
+
+    @Operation(summary = "본인 리뷰 목록 조회")
+    @GetMapping("/me/reviews")
+    fun getMyReviews(
+        @RequestParam type: ReviewQueryType,
+        @CurrentUser user: User,
+    ): List<MemberReviewResponse> =
+        when (type) {
+            ReviewQueryType.RECEIVED -> memberReviewService.getReceivedReviews(user.id)
+            ReviewQueryType.WRITTEN -> memberReviewService.getWrittenReviews(user.id)
+        }
 
     @Operation(summary = "본인 북마크 목록 조회")
     @GetMapping("/me/bookmarks")
