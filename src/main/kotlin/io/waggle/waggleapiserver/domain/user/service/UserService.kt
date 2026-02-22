@@ -78,9 +78,7 @@ class UserService(
             userRepository.findByIdOrNull(userId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
 
-        if (!user.isProfileComplete()) {
-            throw BusinessException(ErrorCode.INVALID_STATE, "Profile is not set up yet")
-        }
+        user.checkProfileComplete()
 
         return UserDetailResponse.from(user)
     }
