@@ -36,7 +36,7 @@ class PostService(
         request: PostUpsertRequest,
         user: User,
     ): PostDetailResponse {
-        val (teamId, title, content, recruitments) = request
+        val (teamId, title, content, recruitments, skills) = request
 
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, teamId)
@@ -52,6 +52,7 @@ class PostService(
                 content = content,
                 userId = user.id,
                 teamId = teamId,
+                skills = skills.toMutableSet(),
             )
         val savedPost = postRepository.save(post)
 
@@ -208,14 +209,14 @@ class PostService(
         request: PostUpsertRequest,
         user: User,
     ): PostDetailResponse {
-        val (teamId, title, content, recruitments) = request
+        val (teamId, title, content, recruitments, skills) = request
 
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
 
         post.checkOwnership(user.id)
-        post.update(title, content, teamId)
+        post.update(title, content, teamId, skills)
 
         val existingRecruitments = recruitmentRepository.findByPostId(postId)
         recruitmentRepository.deleteAll(existingRecruitments)
