@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.post.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.recruitment.dto.request.RecruitmentUpsertRequest
+import io.waggle.waggleapiserver.domain.user.enums.Skill
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 
@@ -19,4 +20,6 @@ data class PostUpsertRequest(
     @Schema(description = "모집 정보")
     @field:NotNull
     val recruitments: List<RecruitmentUpsertRequest>,
+    @Schema(description = "필요 스킬 목록", example = "[\"JAVA\", \"SPRING\"]")
+    val skills: Set<Skill> = emptySet(),
 )
