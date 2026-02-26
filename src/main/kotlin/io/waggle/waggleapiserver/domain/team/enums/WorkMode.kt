@@ -1,4 +1,4 @@
-package io.waggle.waggleapiserver.domain.team
+package io.waggle.waggleapiserver.domain.team.eums
 
 enum class WorkMode {
     ONLINE,

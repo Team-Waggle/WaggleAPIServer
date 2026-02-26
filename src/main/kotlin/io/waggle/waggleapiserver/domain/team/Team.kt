@@ -6,6 +6,7 @@ import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.Bookmarkable
 import io.waggle.waggleapiserver.domain.team.enums.TeamStatus
+import io.waggle.waggleapiserver.domain.team.enums.WorkMode
 import jakarta.persistence.Access
 import jakarta.persistence.AccessType
 import jakarta.persistence.Column
@@ -35,7 +36,7 @@ class Team(
     @Enumerated(EnumType.STRING)
     @Column(name = "work_mode", nullable = false, columnDefinition = "VARCHAR(20)")
     var workMode: WorkMode,
-    @Column(name = "profile_image_url")
+    @Column(name = "profile_image_url", columnDefinition = "VARCHAR(2083)")
     var profileImageUrl: String? = null,
     @Column(name = "leader_id", nullable = false)
     var leaderId: UUID,
