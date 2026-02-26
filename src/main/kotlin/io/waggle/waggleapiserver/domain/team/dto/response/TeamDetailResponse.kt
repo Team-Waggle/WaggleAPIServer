@@ -27,9 +27,9 @@ data class TeamDetailResponse(
     val profileImageUrl: String?,
     @Schema(description = "팀 멤버 목록")
     val members: List<MemberResponse>,
-    @Schema(description = "팀 생성 일시", example = "2025-11-16T12:30:45.123456Z")
+    @Schema(description = "팀 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
-    @Schema(description = "팀 수정 일시", example = "2025-11-16T12:30:45.123456Z")
+    @Schema(description = "팀 수정일시", example = "2025-11-16T12:30:45.123456Z")
     val updatedAt: Instant,
 ) : BookmarkResponse {
     companion object {

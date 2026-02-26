@@ -28,8 +28,10 @@ data class ApplicationResponse(
         example = "[\"https://github.com/user\", \"https://blog.example.com\"]",
     )
     val portfolioUrls: List<String>,
-    @Schema(description = "지원 일시", example = "2025-11-16T12:30:45.123456Z")
+    @Schema(description = "지원일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
+    @Schema(description = "지원 수정일시", example = "2025-11-16T12:30:45.123456Z")
+    val updatedAt: Instant,
 ) {
     companion object {
         fun from(application: Application): ApplicationResponse =
@@ -43,6 +45,7 @@ data class ApplicationResponse(
                 detail = application.detail,
                 portfolioUrls = application.portfolioUrls.toList(),
                 createdAt = application.createdAt,
+                updatedAt = application.updatedAt,
             )
     }
 }

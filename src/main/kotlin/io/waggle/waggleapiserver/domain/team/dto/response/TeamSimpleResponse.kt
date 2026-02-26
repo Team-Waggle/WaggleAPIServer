@@ -21,9 +21,9 @@ data class TeamSimpleResponse(
         example = "https://waggle-server.s3.ap-northeast-2.amazonaws.com/prod/teams/6df573f0-9e2e-46b5-ba7f-7d2d2873684b.png",
     )
     val profileImageUrl: String?,
-    @Schema(description = "팀 생성 일시", example = "2025-11-16T12:30:45.123456Z")
+    @Schema(description = "팀 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
-    @Schema(description = "팀 수정 일시", example = "2025-11-16T12:30:45.123456Z")
+    @Schema(description = "팀 수정일시", example = "2025-11-16T12:30:45.123456Z")
     val updatedAt: Instant,
 ) : BookmarkResponse {
     companion object {

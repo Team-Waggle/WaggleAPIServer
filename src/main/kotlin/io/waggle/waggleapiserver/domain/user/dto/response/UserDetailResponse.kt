@@ -3,6 +3,7 @@ package io.waggle.waggleapiserver.domain.user.dto.response
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.enums.Position
+import java.time.Instant
 import java.util.UUID
 
 @Schema(description = "사용자 상세 응답 DTO")
@@ -24,6 +25,10 @@ data class UserDetailResponse(
     val bio: String?,
     @Schema(description = "포트폴리오 URL 목록", example = "[\"https://github.com/user\"]")
     val portfolioUrls: List<String>,
+    @Schema(description = "사용자 생성일시", example = "2025-11-16T12:30:45.123456Z")
+    val createdAt: Instant,
+    @Schema(description = "사용자 수정일시", example = "2025-11-16T12:30:45.123456Z")
+    val updatedAt: Instant,
 ) {
     companion object {
         fun from(user: User): UserDetailResponse =
@@ -35,6 +40,8 @@ data class UserDetailResponse(
                 user.position,
                 user.bio,
                 user.portfolioUrls,
+                user.createdAt,
+                user.updatedAt,
             )
     }
 }

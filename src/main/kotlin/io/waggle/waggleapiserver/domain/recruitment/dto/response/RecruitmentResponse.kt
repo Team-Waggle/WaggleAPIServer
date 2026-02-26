@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
 import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
 import io.waggle.waggleapiserver.domain.user.enums.Position
+import java.time.Instant
 
 @Schema(description = "모집 정보 응답 DTO")
 class RecruitmentResponse(
@@ -15,6 +16,10 @@ class RecruitmentResponse(
     val recruitingCount: Int,
     @Schema(description = "모집 상태", example = "RECRUITING")
     val status: RecruitmentStatus,
+    @Schema(description = "모집 생성일시", example = "2025-11-16T12:30:45.123456Z")
+    val createdAt: Instant,
+    @Schema(description = "모집 수정일시", example = "2025-11-16T12:30:45.123456Z")
+    val updatedAt: Instant,
 ) {
     companion object {
         fun from(recruitment: Recruitment): RecruitmentResponse =
@@ -23,6 +28,8 @@ class RecruitmentResponse(
                 position = recruitment.position,
                 recruitingCount = recruitment.recruitingCount,
                 status = recruitment.status,
+                createdAt = recruitment.createdAt,
+                updatedAt = recruitment.updatedAt,
             )
     }
 }

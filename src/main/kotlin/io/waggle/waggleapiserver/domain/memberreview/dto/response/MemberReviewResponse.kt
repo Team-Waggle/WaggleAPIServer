@@ -21,9 +21,9 @@ data class MemberReviewResponse(
     val reviewType: ReviewType,
     @Schema(description = "리뷰 태그 목록")
     val tags: Set<ReviewTag>,
-    @Schema(description = "리뷰 생성 일시")
+    @Schema(description = "리뷰 생성일시")
     val createdAt: Instant,
-    @Schema(description = "리뷰 수정 일시")
+    @Schema(description = "리뷰 수정일시")
     val updatedAt: Instant,
 ) {
     companion object {
