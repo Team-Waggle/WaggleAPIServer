@@ -24,8 +24,10 @@ data class MemberResponse(
         example = "https://avatars.githubusercontent.com/u/112466204?s=80&v=4",
     )
     val profileImageUrl: String?,
-    @Schema(description = "멤버 합류 일시", example = "2025-11-16T12:30:45.123456Z")
+    @Schema(description = "멤버 합류일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
+    @Schema(description = "멤버 수정일시", example = "2025-11-16T12:30:45.123456Z")
+    val updatedAt: Instant,
 ) {
     companion object {
         fun of(
@@ -40,6 +42,7 @@ data class MemberResponse(
                 username = user.username!!,
                 profileImageUrl = user.profileImageUrl,
                 createdAt = member.createdAt,
+                updatedAt = member.updatedAt,
             )
     }
 }

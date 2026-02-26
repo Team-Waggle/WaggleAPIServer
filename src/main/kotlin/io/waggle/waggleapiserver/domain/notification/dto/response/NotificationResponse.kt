@@ -14,9 +14,9 @@ data class NotificationResponse(
     val type: NotificationType,
     @Schema(description = "팀 정보")
     val team: TeamSimpleResponse?,
-    @Schema(description = "알림 확인 일시", example = "false")
+    @Schema(description = "알림 확인일시", example = "false")
     val readAt: Instant?,
-    @Schema(description = "알림 생성 일시", example = "2025-11-16T12:30:45.123456Z")
+    @Schema(description = "알림 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) {
     companion object {

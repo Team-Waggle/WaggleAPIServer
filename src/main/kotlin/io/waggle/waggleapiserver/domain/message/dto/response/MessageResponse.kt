@@ -15,9 +15,9 @@ data class MessageResponse(
     val receiverId: UUID,
     @Schema(description = "메시지 내용", example = "Hello, World!")
     val content: String,
-    @Schema(description = "발송 일시", example = "2025-11-16T12:30:45.123456Z")
+    @Schema(description = "발송일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
-    @Schema(description = "확인 일시", example = "2025-11-30T12:30:45.123456Z")
+    @Schema(description = "확인일시", example = "2025-11-30T12:30:45.123456Z")
     val readAt: Instant?,
 ) {
     companion object {
