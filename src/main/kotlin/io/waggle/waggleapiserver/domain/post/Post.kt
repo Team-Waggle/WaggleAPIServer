@@ -40,7 +40,7 @@ class Post(
     val userId: UUID,
     @Column(name = "team_id", nullable = false)
     var teamId: Long,
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "post_skills", joinColumns = [JoinColumn(name = "post_id")])
     @Enumerated(EnumType.STRING)
     @Column(name = "skill", nullable = false, columnDefinition = "VARCHAR(30)")
