@@ -1,7 +1,7 @@
 package io.waggle.waggleapiserver.domain.team.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
-import io.waggle.waggleapiserver.domain.team.WorkMode
+import io.waggle.waggleapiserver.domain.team.enums.WorkMode
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 

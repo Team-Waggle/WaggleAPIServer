@@ -35,7 +35,7 @@ class User(
     val providerId: String,
     @Column(nullable = false)
     val email: String,
-    @Column(name = "profile_image_url")
+    @Column(name = "profile_image_url", columnDefinition = "VARCHAR(2083)")
     var profileImageUrl: String?,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(10)")
