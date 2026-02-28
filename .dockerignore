@@ -3,7 +3,6 @@
 .idea
 *.md
 .env*
-!.env.docker
 docker-compose*.yml
 nginx.conf
 tmp.html
