@@ -4,14 +4,19 @@ import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.enums.Position
+import io.waggle.waggleapiserver.domain.user.enums.Skill
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 
@@ -34,6 +39,11 @@ class Recruitment(
     var status: RecruitmentStatus = RecruitmentStatus.RECRUITING,
     @Column(name = "post_id", nullable = false, updatable = false)
     val postId: Long,
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "recruitment_skills", joinColumns = [JoinColumn(name = "recruitment_id")])
+    @Enumerated(EnumType.STRING)
+    @Column(name = "skill", nullable = false, columnDefinition = "VARCHAR(30)")
+    val skills: MutableSet<Skill> = mutableSetOf(),
 ) : AuditingEntity() {
     fun isRecruiting(): Boolean = status == RecruitmentStatus.RECRUITING
 
