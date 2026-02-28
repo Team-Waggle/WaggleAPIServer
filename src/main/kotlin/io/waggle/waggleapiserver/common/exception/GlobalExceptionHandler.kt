@@ -1,5 +1,9 @@
 package io.waggle.waggleapiserver.common.exception
 
+import io.waggle.waggleapiserver.common.infrastructure.discord.DiscordErrorContext
+import io.waggle.waggleapiserver.common.infrastructure.discord.DiscordWebhookClient
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
@@ -20,7 +24,11 @@ data class ErrorResponse(
 )
 
 @RestControllerAdvice
-class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
+class GlobalExceptionHandler(
+    discordWebhookClientProvider: ObjectProvider<DiscordWebhookClient>,
+) : ResponseEntityExceptionHandler() {
+    private val discordWebhookClient = discordWebhookClientProvider.getIfAvailable()
+
     @ExceptionHandler(BusinessException::class)
     fun handleBusinessException(e: BusinessException): ResponseEntity<ErrorResponse> {
         logger.warn("Business exception occurred: ${e.errorCode}", e)
@@ -54,8 +62,12 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
     }
 
     @ExceptionHandler(Exception::class)
-    fun handleException(e: Exception): ResponseEntity<ErrorResponse> {
+    fun handleException(
+        e: Exception,
+        request: HttpServletRequest,
+    ): ResponseEntity<ErrorResponse> {
         logger.error("Unexpected exception occurred", e)
+        discordWebhookClient?.send(DiscordErrorContext.from(request, e))
         val errorResponse =
             ErrorResponse(
                 status = ErrorCode.INTERNAL_SERVER_ERROR.status.value(),

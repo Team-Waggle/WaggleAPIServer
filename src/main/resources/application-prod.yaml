@@ -1,38 +1,42 @@
+app:
+  discord:
+    webhook-url: ${DISCORD_WEBHOOK_URL:}
+
+logging:
+  level:
+    io.waggle: INFO
+    org.hibernate.SQL: WARN
+    org.springframework.security: WARN
+    root: WARN
+
 server:
-  port: ${SERVER_PORT:8080}
   forward-headers-strategy: native
+  port: ${SERVER_PORT:8080}
 
 spring:
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
+      port: ${REDIS_PORT:6379}
+
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:waggle}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
+      connection-timeout: 30000
       maximum-pool-size: 20
       minimum-idle: 5
-      connection-timeout: 30000
+    password: ${DB_PASSWORD}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:waggle}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
 
   jpa:
     hibernate:
       ddl-auto: update
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
-    show-sql: false
     properties:
       hibernate:
-        format_sql: false
         dialect: org.hibernate.dialect.MySQLDialect
-
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD}
-
-logging:
-  level:
-    root: WARN
-    io.waggle: INFO
-    org.hibernate.SQL: WARN
-    org.springframework.security: WARN
+        format_sql: false
+    show-sql: false

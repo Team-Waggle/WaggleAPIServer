@@ -1,15 +1,30 @@
 app:
-  s3:
-    bucket: ${S3_BUCKET}
-    region: ${AWS_REGION:ap-northeast-2}
-    base-url: ${S3_BASE_URL}
-    presigned-url-expiration: 600
   cookie:
-    secure: ${COOKIE_SECURE:false}
-    same-site: ${COOKIE_SAME_SITE:Lax}
     domain: ${COOKIE_DOMAIN}
+    same-site: ${COOKIE_SAME_SITE:Lax}
+    secure: ${COOKIE_SECURE:false}
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI}
+  s3:
+    base-url: ${S3_BASE_URL}
+    bucket: ${S3_BUCKET}
+    presigned-url-expiration: 600
+    region: ${AWS_REGION:ap-northeast-2}
+
+jwt:
+  access-token-ttl: 3600000
+  refresh-token-ttl: 604800000
+  secret: ${JWT_SECRET}
+
+management:
+  endpoint:
+    health:
+      show-details: never
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health
 
 server:
   shutdown: graceful
@@ -18,8 +33,15 @@ spring:
   application:
     name: WaggleAPIServer
 
-  lifecycle:
-    timeout-per-shutdown-phase: 30s
+#  flyway:
+#    enabled: true
+#    baseline-on-migrate: true
+#    locations: classpath:db/migration
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Asia/Seoul
 
   jpa:
     open-in-view: false
@@ -31,65 +53,41 @@ spring:
           order_inserts: true
           order_updates: true
 
-  #  flyway:
-  #    enabled: true
-  #    baseline-on-migrate: true
-  #    locations: classpath:db/migration
-
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false
-    time-zone: Asia/Seoul
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
   security:
     oauth2:
       client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope:
-              - email
-              - profile
-            redirect-uri: "{baseUrl}/login/oauth2/code/google"
-
-          kakao:
-            client-id: ${KAKAO_CLIENT_ID}
-            client-secret: ${KAKAO_CLIENT_SECRET}
-            client-authentication-method: client_secret_post
-            authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
-            scope:
-              - profile_nickname
-              - account_email
-            client-name: kakao
-
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
-
-jwt:
-  secret: ${JWT_SECRET}
-  access-token-ttl: 3600000
-  refresh-token-ttl: 604800000
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            scope:
+              - email
+              - profile
+          kakao:
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+            client-id: ${KAKAO_CLIENT_ID}
+            client-name: kakao
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            scope:
+              - profile_nickname
+              - account_email
 
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
+    operations-sorter: alpha
     path: /swagger-ui.html
     tags-sorter: alpha
-    operations-sorter: alpha
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
-      base-path: /actuator
-  endpoint:
-    health:
-      show-details: never
