@@ -75,7 +75,7 @@ class MemberReviewService(
                             reviewerId = user.id,
                             revieweeId = revieweeMember.userId,
                             teamId = teamId,
-                            reviewType = type,
+                            type = type,
                         ),
                     ).also { it.tags.addAll(tags) }
             }
