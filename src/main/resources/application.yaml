@@ -11,9 +11,15 @@ app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI}
 
+server:
+  shutdown: graceful
+
 spring:
   application:
     name: WaggleAPIServer
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
   jpa:
     open-in-view: false
