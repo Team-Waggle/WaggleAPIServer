@@ -3,7 +3,8 @@ package io.waggle.waggleapiserver.common.infrastructure.discord
 import jakarta.servlet.http.HttpServletRequest
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 data class DiscordErrorContext(
@@ -39,7 +40,7 @@ data class DiscordErrorContext(
                 forwardedFor = request.getHeader("X-Forwarded-For"),
                 host = request.getHeader("Host"),
                 stackTrace = stackLines,
-                timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT),
+                timestamp = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).format(TIMESTAMP_FORMAT),
             )
         }
     }
