@@ -15,6 +15,8 @@ import org.springframework.web.client.RestTemplate
 class DiscordWebhookClient(
     @Value("\${app.discord.webhook-url:}")
     private val webhookUrl: String,
+    @Value("\${app.discord.mention-role-id:}")
+    private val mentionRoleId: String,
 ) {
     private val restTemplate = RestTemplate()
 
@@ -41,6 +43,7 @@ class DiscordWebhookClient(
     private fun buildMessage(context: DiscordErrorContext): String {
         return buildString {
             appendLine("## 🚨 서버 에러 발생")
+            mentionRoleId.takeIf { it.isNotBlank() }?.let { appendLine("<@&$it>") }
             appendLine("**시각**: ${context.timestamp}")
             appendLine("**예외**: `${context.exceptionClass}`")
             appendLine("**메시지**: ${context.message}")
