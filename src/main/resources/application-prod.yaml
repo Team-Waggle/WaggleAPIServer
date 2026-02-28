@@ -1,6 +1,7 @@
 app:
   discord:
     webhook-url: ${DISCORD_WEBHOOK_URL:}
+    mention-role-id: ${DISCORD_MENTION_ROLE_ID:}
 
 logging:
   level:

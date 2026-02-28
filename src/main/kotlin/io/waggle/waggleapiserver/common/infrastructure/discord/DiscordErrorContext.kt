@@ -22,7 +22,7 @@ data class DiscordErrorContext(
 ) {
     companion object {
         private const val STACK_TRACE_LINE_LIMIT = 15
-        private val TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        private val TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
 
         fun from(request: HttpServletRequest, exception: Exception): DiscordErrorContext {
             val sw = StringWriter()
