@@ -16,6 +16,7 @@ enum class ImageContentType(
     companion object {
         private val MEDIA_TYPE_MAP = entries.associateBy { it.mediaType }
 
+        @JvmStatic
         @JsonCreator
         fun from(mediaType: String): ImageContentType =
             MEDIA_TYPE_MAP[mediaType]
