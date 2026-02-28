@@ -48,8 +48,7 @@ class DiscordWebhookClient(
             appendLine("**예외**: `${context.exceptionClass}`")
             appendLine("**메시지**: ${context.message}")
             appendLine()
-            appendLine("**요청**: `${context.httpMethod} ${context.requestUri}`")
-            context.queryString?.let { appendLine("**쿼리**: `$it`") }
+            appendLine("**요청**: `${context.httpMethod} ${context.queryString?.let { "${context.requestUri}?$it" } ?: context.requestUri}`")
             appendLine()
             appendLine("**Headers**")
             context.host?.let { appendLine("- Host: `$it`") }
