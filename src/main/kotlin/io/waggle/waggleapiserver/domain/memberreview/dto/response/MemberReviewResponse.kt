@@ -18,7 +18,7 @@ data class MemberReviewResponse(
     @Schema(description = "팀 ID", example = "1")
     val teamId: Long,
     @Schema(description = "리뷰 타입", example = "LIKE")
-    val reviewType: ReviewType,
+    val type: ReviewType,
     @Schema(description = "리뷰 태그 목록")
     val tags: Set<ReviewTag>,
     @Schema(description = "리뷰 생성일시")
@@ -35,7 +35,7 @@ data class MemberReviewResponse(
             revieweeId = review.revieweeId,
             revieweeUsername = revieweeUsername,
             teamId = review.teamId,
-            reviewType = review.reviewType,
+            type = review.type,
             tags = review.tags.toSet(),
             createdAt = review.createdAt,
             updatedAt = review.updatedAt,

@@ -43,19 +43,22 @@ class MemberReview(
     @Column(name = "team_id", nullable = false, updatable = false)
     val teamId: Long,
     @Enumerated(EnumType.STRING)
-    @Column(name = "review_type", nullable = false, columnDefinition = "VARCHAR(10)")
-    var reviewType: ReviewType,
+    @Column(nullable = false, columnDefinition = "VARCHAR(10)")
+    var type: ReviewType,
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "member_review_tags", joinColumns = [JoinColumn(name = "member_review_id")])
+    @CollectionTable(
+        name = "member_review_tags",
+        joinColumns = [JoinColumn(name = "member_review_id")],
+    )
     @Enumerated(EnumType.STRING)
     @Column(name = "tag", nullable = false, columnDefinition = "VARCHAR(30)")
     val tags: MutableSet<ReviewTag> = mutableSetOf(),
 ) : AuditingEntity() {
     fun update(
-        reviewType: ReviewType,
+        type: ReviewType,
         tags: Set<ReviewTag>,
     ) {
-        this.reviewType = reviewType
+        this.type = type
         this.tags.clear()
         this.tags.addAll(tags)
     }

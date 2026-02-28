@@ -6,6 +6,7 @@ import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.memberreview.MemberReview
 import io.waggle.waggleapiserver.domain.memberreview.dto.request.MemberReviewUpsertRequest
 import io.waggle.waggleapiserver.domain.memberreview.dto.response.MemberReviewResponse
+import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewTag
 import io.waggle.waggleapiserver.domain.memberreview.repository.MemberReviewRepository
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
@@ -59,11 +60,13 @@ class MemberReviewService(
                 teamId,
             )
 
-        val (reviewType, tags) = request
+        val (type, tags) = request
+
+        ReviewTag.validateTags(type, tags)
 
         val review =
             if (existingReview != null) {
-                existingReview.update(reviewType, tags)
+                existingReview.update(type, tags)
                 existingReview
             } else {
                 memberReviewRepository
@@ -72,7 +75,7 @@ class MemberReviewService(
                             reviewerId = user.id,
                             revieweeId = revieweeMember.userId,
                             teamId = teamId,
-                            reviewType = reviewType,
+                            type = type,
                         ),
                     ).also { it.tags.addAll(tags) }
             }

@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Size
 data class MemberReviewUpsertRequest(
     @Schema(description = "리뷰 타입", example = "LIKE")
     @field:NotNull
-    val reviewType: ReviewType,
+    val type: ReviewType,
     @Schema(description = "리뷰 태그 (최소 1개, 최대 3개)")
     @field:Size(min = 1, max = 3)
     val tags: Set<ReviewTag>,
