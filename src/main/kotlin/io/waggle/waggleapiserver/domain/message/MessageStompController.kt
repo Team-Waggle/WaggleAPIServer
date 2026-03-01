@@ -7,11 +7,12 @@ import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.stereotype.Controller
 import java.util.UUID
 
-@MessageMapping("/message.send")
+@MessageMapping("/message")
 @Controller
 class MessageStompController(
     private val messageService: MessageService,
 ) {
+    @MessageMapping(".send")
     fun send(
         @Header("simpleSessionAttributes") attributes: Map<String, Any>,
         request: MessageSendRequest,
