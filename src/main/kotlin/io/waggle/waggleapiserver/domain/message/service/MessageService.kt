@@ -1,11 +1,15 @@
 package io.waggle.waggleapiserver.domain.message.service
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.message.Message
 import io.waggle.waggleapiserver.domain.message.adapter.MessageEvent
 import io.waggle.waggleapiserver.domain.message.adapter.MessagePublisher
+import io.waggle.waggleapiserver.domain.message.dto.request.MessageSendRequest
 import io.waggle.waggleapiserver.domain.message.dto.response.MessageResponse
 import io.waggle.waggleapiserver.domain.message.repository.MessageRepository
 import io.waggle.waggleapiserver.domain.user.User
+import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -14,13 +18,19 @@ import java.util.UUID
 class MessageService(
     private val messagePublisher: MessagePublisher,
     private val messageRepository: MessageRepository,
+    private val userRepository: UserRepository,
 ) {
     @Transactional
     fun sendMessage(
         senderId: UUID,
-        receiverId: UUID,
-        content: String,
+        request: MessageSendRequest,
     ) {
+        val (receiverId, content) = request
+
+        if (!userRepository.existsById(receiverId)) {
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Receiver not found: $receiverId")
+        }
+
         val message =
             Message(
                 senderId = senderId,
