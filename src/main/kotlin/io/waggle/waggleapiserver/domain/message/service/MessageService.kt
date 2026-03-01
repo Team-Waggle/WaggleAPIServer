@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.message.service
 
+import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
+import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.message.Message
@@ -10,6 +12,7 @@ import io.waggle.waggleapiserver.domain.message.dto.response.MessageResponse
 import io.waggle.waggleapiserver.domain.message.repository.MessageRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -51,5 +54,28 @@ class MessageService(
     fun getMessageHistory(
         partnerId: UUID,
         user: User,
-    ): List<MessageResponse> = messageRepository.findMessageHistory(user.id, partnerId).map { MessageResponse.from(it) }
+        query: CursorGetQuery,
+    ): CursorResponse<MessageResponse> {
+        val (cursor, size) = query
+
+        val messages =
+            messageRepository.findMessageHistoryByCursor(
+                user.id,
+                partnerId,
+                cursor,
+                PageRequest.of(0, size + 1),
+            )
+
+        val hasNext = messages.size > size
+        val data =
+            (if (hasNext) messages.dropLast(1) else messages)
+                .map { MessageResponse.from(it) }
+        val nextCursor = if (hasNext) data.last().messageId else null
+
+        return CursorResponse(
+            data = data,
+            nextCursor = nextCursor,
+            hasNext = hasNext,
+        )
+    }
 }
