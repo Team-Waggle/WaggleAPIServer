@@ -13,7 +13,7 @@ class MessageStompController(
     private val messageService: MessageService,
 ) {
     fun send(
-        @Header("simpleSessionAttribute") attributes: Map<String, Any>,
+        @Header("simpleSessionAttributes") attributes: Map<String, Any>,
         request: MessageSendRequest,
     ) {
         val senderId = attributes["userId"] as UUID
