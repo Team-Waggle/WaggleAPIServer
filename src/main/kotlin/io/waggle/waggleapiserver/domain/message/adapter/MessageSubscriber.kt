@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.message.adapter
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.waggle.waggleapiserver.common.util.logger
 import io.waggle.waggleapiserver.domain.message.dto.response.MessageResponse
 import io.waggle.waggleapiserver.domain.message.repository.MessageRepository
 import org.springframework.data.redis.connection.MessageListener
@@ -18,17 +19,26 @@ class MessageSubscriber(
         redisMessage: RedisMessage,
         pattern: ByteArray?,
     ) {
-        val payload = String(redisMessage.body)
-        val event = objectMapper.readValue(payload, MessageEvent::class.java)
+        try {
+            val payload = String(redisMessage.body)
+            val event = objectMapper.readValue(payload, MessageEvent::class.java)
 
-        val message = messageRepository.findById(event.messageId).orElse(null) ?: return
+            val message =
+                messageRepository.findById(event.messageId).orElse(null)
+                    ?: run {
+                        logger.warn("Message not found: ${event.messageId}")
+                        return
+                    }
 
-        val response = MessageResponse.from(message)
+            val response = MessageResponse.from(message)
 
-        messagingTemplate.convertAndSendToUser(
-            event.receiverId.toString(),
-            "/queue/messages",
-            response,
-        )
+            messagingTemplate.convertAndSendToUser(
+                event.receiverId.toString(),
+                "/queue/messages",
+                response,
+            )
+        } catch (e: Exception) {
+            logger.error("Failed to process message event", e)
+        }
     }
 }
