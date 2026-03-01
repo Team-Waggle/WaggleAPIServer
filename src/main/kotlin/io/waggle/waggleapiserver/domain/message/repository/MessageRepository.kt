@@ -10,7 +10,7 @@ interface MessageRepository : JpaRepository<Message, Long> {
         """
         SELECT m FROM Message m
         WHERE (m.senderId = :userId AND m.receiverId = :partnerId)
-        OR (m.senderId = :partnerId AND m.senderId = :userId)
+        OR (m.senderId = :partnerId AND m.receiverId = :userId)
         ORDER BY m.createdAt
     """,
     )
