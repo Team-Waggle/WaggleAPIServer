@@ -20,7 +20,7 @@ interface PostRepository : JpaRepository<Post, Long> {
             SELECT r2.postId FROM Recruitment r2 JOIN r2.skills s WHERE s IN :skills
         ))
         ORDER BY p.id DESC
-    """,
+        """,
     )
     fun findWithFilter(
         cursor: Long?,
