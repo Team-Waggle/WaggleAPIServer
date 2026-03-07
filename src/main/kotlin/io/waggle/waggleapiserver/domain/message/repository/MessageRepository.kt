@@ -12,7 +12,7 @@ interface MessageRepository : JpaRepository<Message, Long> {
         WHERE (m.senderId = :userId AND m.receiverId = :partnerId)
         OR (m.senderId = :partnerId AND m.senderId = :userId)
         ORDER BY m.createdAt
-    """,
+        """,
     )
     fun findMessageHistory(
         userId: UUID,

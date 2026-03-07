@@ -20,7 +20,7 @@ data class UserSimpleResponse(
     )
     val profileImageUrl: String?,
     @Schema(description = "직무", example = "BACKEND")
-    val position: Position?,
+    val position: Position,
     @Schema(description = "사용자 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
     @Schema(description = "사용자 수정일시", example = "2025-11-16T12:30:45.123456Z")
@@ -33,7 +33,7 @@ data class UserSimpleResponse(
                 user.username!!,
                 user.email,
                 user.profileImageUrl,
-                user.position,
+                user.position!!,
                 user.createdAt,
                 user.updatedAt,
             )

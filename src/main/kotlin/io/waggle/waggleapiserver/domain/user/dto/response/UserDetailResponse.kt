@@ -20,7 +20,7 @@ data class UserDetailResponse(
     )
     val profileImageUrl: String?,
     @Schema(description = "직무", example = "BACKEND")
-    val position: Position?,
+    val position: Position,
     @Schema(description = "자기소개")
     val bio: String?,
     @Schema(description = "포트폴리오 URL 목록", example = "[\"https://github.com/user\"]")
@@ -37,7 +37,7 @@ data class UserDetailResponse(
                 user.username!!,
                 user.email,
                 user.profileImageUrl,
-                user.position,
+                user.position!!,
                 user.bio,
                 user.portfolioUrls,
                 user.createdAt,
