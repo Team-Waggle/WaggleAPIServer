@@ -42,11 +42,11 @@ class BookmarkService(
             )
         return if (bookmarkRepository.existsById(bookmarkId)) {
             bookmarkRepository.deleteById(bookmarkId)
-            BookmarkToggleResponse(false)
+            BookmarkToggleResponse(isBookmarked = false)
         } else {
             val bookmark = Bookmark(bookmarkId)
             bookmarkRepository.save(bookmark)
-            BookmarkToggleResponse(true)
+            BookmarkToggleResponse(isBookmarked = true)
         }
     }
 
