@@ -67,7 +67,7 @@ class PostService(
                 recruitments.map {
                     Recruitment(
                         position = it.position,
-                        recruitingCount = it.recruitingCount,
+                        count = it.count,
                         postId = savedPost.id,
                         skills = it.skills.toMutableSet(),
                     )
@@ -271,7 +271,7 @@ class PostService(
                 recruitments.map {
                     Recruitment(
                         position = it.position,
-                        recruitingCount = it.recruitingCount,
+                        count = it.count,
                         postId = postId,
                         skills = it.skills.toMutableSet(),
                     )
