@@ -49,7 +49,12 @@ data class NotificationResponse(
                 notificationId = notification.id,
                 type = notification.type,
                 team = team,
-                triggeredBy = triggeredBy,
+                triggeredBy = when (notification.type) {
+                    NotificationType.APPLICATION_RECEIVED,
+                    NotificationType.MEMBER_JOINED,
+                    NotificationType.MEMBER_LEFT -> triggeredBy
+                    else -> null
+                },
                 readAt = notification.readAt,
                 createdAt = notification.createdAt,
             )
