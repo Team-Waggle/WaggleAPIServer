@@ -2,7 +2,9 @@ package io.waggle.waggleapiserver.domain.team.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
-import io.waggle.waggleapiserver.common.storage.ImageDeleteEvent
+import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
+import io.waggle.waggleapiserver.domain.notification.event.TeamCompletedEvent
+import io.waggle.waggleapiserver.domain.team.enums.TeamStatus
 import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
@@ -190,6 +192,10 @@ class TeamService(
                 )
 
         team.updateStatus(request.status)
+
+        if (request.status == TeamStatus.COMPLETED) {
+            eventPublisher.publishEvent(TeamCompletedEvent(teamId))
+        }
 
         val memberCount = memberRepository.countByTeamId(teamId)
 
