@@ -1,10 +1,6 @@
 package io.waggle.waggleapiserver.domain.notification.service
 
-import io.waggle.waggleapiserver.common.exception.BusinessException
-import io.waggle.waggleapiserver.common.exception.ErrorCode
-import io.waggle.waggleapiserver.domain.notification.Notification
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
-import io.waggle.waggleapiserver.domain.notification.dto.request.NotificationCreateRequest
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
@@ -22,28 +18,6 @@ class NotificationService(
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
 ) {
-    @Transactional
-    fun createNotification(request: NotificationCreateRequest) {
-        val (type, teamId, userId) = request
-
-        if (!userRepository.existsById(userId)) {
-            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
-        }
-
-        if (teamId != null && !teamRepository.existsById(teamId)) {
-            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Team not found: $teamId")
-        }
-
-        val notification =
-            Notification(
-                type = type,
-                teamId = teamId,
-                userId = userId,
-            )
-
-        notificationRepository.save(notification)
-    }
-
     fun getUserNotifications(user: User): List<NotificationResponse> {
         val notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.id)
 
