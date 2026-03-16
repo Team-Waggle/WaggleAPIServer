@@ -14,7 +14,7 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         WHERE c.userId = :userId
         AND (:cursor IS NULL OR c.lastMessageId < :cursor)
         ORDER BY c.lastMessageId DESC
-    """,
+        """,
     )
     fun findByUserId(
         userId: UUID,
@@ -29,7 +29,7 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         SET c.lastMessageId = :messageId,
             c.unreadCount = c.unreadCount + 1
         WHERE c.userId = :userId AND c.partnerId = :partnerId
-    """,
+        """,
     )
     fun updateLastMessageAndIncrementUnreadCount(
         userId: UUID,
@@ -43,7 +43,7 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         UPDATE Conversation c
         SET c.lastMessageId = :messageId
         WHERE c.userId = :userId AND c.partnerId = :partnerId
-    """,
+        """,
     )
     fun updateLastMessageId(
         userId: UUID,
@@ -58,7 +58,7 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         SET c.unreadCount = 0,
             c.lastReadMessageId = :lastReadMessageId
         WHERE c.userId = :userId AND c.partnerId = :partnerId
-    """,
+        """,
     )
     fun markAsRead(
         userId: UUID,
