@@ -32,24 +32,24 @@ class ConversationService(
         val conversations = conversationRepository.findByUserId(user.id, cursor, pageable)
 
         val hasNext = conversations.size > size
-        val trimmed = if (hasNext) conversations.dropLast(1) else conversations
+        val slicedConversations = if (hasNext) conversations.take(size) else conversations
 
-        val partnerIds = trimmed.map { it.partnerId }
-        val partners = userRepository.findAllById(partnerIds).associateBy { it.id }
+        val partnerIds = slicedConversations.map { it.partnerId }
+        val partnerById = userRepository.findAllById(partnerIds).associateBy { it.id }
 
-        val lastMessageIds = trimmed.map { it.lastMessageId }
+        val lastMessageIds = slicedConversations.map { it.lastMessageId }
         val messages = messageRepository.findAllById(lastMessageIds).associateBy { it.id }
 
         val data =
-            trimmed.map { conv ->
+            slicedConversations.map { conv ->
                 ConversationResponse.of(
                     conversation = conv,
-                    partner = partners[conv.partnerId],
+                    partner = partnerById[conv.partnerId],
                     lastMessage = messages[conv.lastMessageId]!!,
                 )
             }
 
-        val nextCursor = if (hasNext) data.last().lastMessage.messageId else null
+        val nextCursor = if (hasNext) slicedConversations.last().lastMessageId else null
 
         return CursorResponse(
             data = data,
