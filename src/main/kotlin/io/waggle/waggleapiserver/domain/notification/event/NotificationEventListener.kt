@@ -30,8 +30,8 @@ class NotificationEventListener(
             members.map {
                 Notification(
                     type = NotificationType.APPLICATION_RECEIVED,
-                    teamId = event.teamId,
                     userId = it.userId,
+                    teamId = event.teamId,
                     triggeredBy = event.triggeredBy,
                 )
             }
@@ -45,8 +45,8 @@ class NotificationEventListener(
         notificationRepository.save(
             Notification(
                 type = NotificationType.APPLICATION_ACCEPTED,
-                teamId = event.teamId,
                 userId = event.applicantUserId,
+                teamId = event.teamId,
                 triggeredBy = event.triggeredBy,
             ),
         )
@@ -59,8 +59,8 @@ class NotificationEventListener(
         notificationRepository.save(
             Notification(
                 type = NotificationType.APPLICATION_REJECTED,
-                teamId = event.teamId,
                 userId = event.applicantUserId,
+                teamId = event.teamId,
                 triggeredBy = event.triggeredBy,
             ),
         )
@@ -75,8 +75,8 @@ class NotificationEventListener(
             members.map {
                 Notification(
                     type = NotificationType.MEMBER_JOINED,
-                    teamId = event.teamId,
                     userId = it.userId,
+                    teamId = event.teamId,
                     triggeredBy = event.triggeredBy,
                 )
             }
@@ -92,8 +92,8 @@ class NotificationEventListener(
             members.map {
                 Notification(
                     type = NotificationType.MEMBER_LEFT,
-                    teamId = event.teamId,
                     userId = it.userId,
+                    teamId = event.teamId,
                     triggeredBy = event.triggeredBy,
                 )
             }
@@ -107,9 +107,22 @@ class NotificationEventListener(
         notificationRepository.save(
             Notification(
                 type = NotificationType.MEMBER_REMOVED,
-                teamId = event.teamId,
                 userId = event.removedUserId,
+                teamId = event.teamId,
                 triggeredBy = event.triggeredBy,
+            ),
+        )
+    }
+
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun handleReviewReceived(event: ReviewReceivedEvent) {
+        notificationRepository.save(
+            Notification(
+                type = NotificationType.REVIEW_RECEIVED,
+                userId = event.revieweeId,
+                teamId = event.teamId,
             ),
         )
     }
@@ -123,8 +136,8 @@ class NotificationEventListener(
             members.map {
                 Notification(
                     type = NotificationType.REVIEW_REQUESTED,
-                    teamId = event.teamId,
                     userId = it.userId,
+                    teamId = event.teamId,
                 )
             }
         notificationRepository.saveAll(notifications)

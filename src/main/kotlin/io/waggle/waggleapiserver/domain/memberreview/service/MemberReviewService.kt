@@ -9,10 +9,12 @@ import io.waggle.waggleapiserver.domain.memberreview.dto.response.MemberReviewRe
 import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewTag
 import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewType
 import io.waggle.waggleapiserver.domain.memberreview.repository.MemberReviewRepository
+import io.waggle.waggleapiserver.domain.notification.event.ReviewReceivedEvent
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.TemperatureCalculator
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,6 +23,7 @@ import java.util.UUID
 @Service
 @Transactional(readOnly = true)
 class MemberReviewService(
+    private val eventPublisher: ApplicationEventPublisher,
     private val memberRepository: MemberRepository,
     private val memberReviewRepository: MemberReviewRepository,
     private val teamRepository: TeamRepository,
@@ -81,6 +84,14 @@ class MemberReviewService(
                             type = type,
                         ),
                     ).also { it.tags.addAll(tags) }
+                    .also {
+                        eventPublisher.publishEvent(
+                            ReviewReceivedEvent(
+                                teamId = teamId,
+                                revieweeId = revieweeMember.userId,
+                            ),
+                        )
+                    }
             }
 
         val revieweeUser =
