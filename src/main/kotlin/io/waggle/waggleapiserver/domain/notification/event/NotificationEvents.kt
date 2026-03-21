@@ -38,3 +38,8 @@ data class MemberRemovedEvent(
 data class TeamCompletedEvent(
     val teamId: Long,
 )
+
+data class ReviewReceivedEvent(
+    val teamId: Long,
+    val revieweeId: UUID,
+)
