@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.security.oauth2
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.domain.follow.repository.FollowRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class CustomOAuth2UserService(
+    private val followRepository: FollowRepository,
     private val userRepository: UserRepository,
 ) : DefaultOAuth2UserService() {
     @Transactional
@@ -21,8 +23,13 @@ class CustomOAuth2UserService(
         val userInfo =
             when (val registrationId = request.clientRegistration.registrationId) {
                 "google" -> GoogleUserInfo(oauth2User.attributes)
+
                 "kakao" -> KakaoUserInfo(oauth2User.attributes)
-                else -> throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Unsupported provider: $registrationId")
+
+                else -> throw BusinessException(
+                    ErrorCode.INVALID_INPUT_VALUE,
+                    "Unsupported provider: $registrationId",
+                )
             }
 
         val user =
@@ -30,17 +37,33 @@ class CustomOAuth2UserService(
                 userInfo.provider,
                 userInfo.providerId,
             ) ?: run {
-                if (userRepository.existsByEmail(userInfo.email)) {
-                    throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Already existing email: ${userInfo.email}")
+                val deletedUser =
+                    userRepository.findByProviderAndProviderIdAndDeletedAtIsNotNull(
+                        userInfo.provider,
+                        userInfo.providerId,
+                    )
+                if (deletedUser != null) {
+                    deletedUser.reactivate()
+                    followRepository.updateDeletedAtNullByFollowerIdOrFolloweeIdAndDeletedAtIsNotNull(
+                        deletedUser.id,
+                    )
+                    userRepository.save(deletedUser)
+                } else {
+                    if (userRepository.existsByEmail(userInfo.email)) {
+                        throw BusinessException(
+                            ErrorCode.DUPLICATE_RESOURCE,
+                            "Already existing email: ${userInfo.email}",
+                        )
+                    }
+                    userRepository.save(
+                        User(
+                            provider = userInfo.provider,
+                            providerId = userInfo.providerId,
+                            email = userInfo.email,
+                            profileImageUrl = userInfo.profileImageUrl,
+                        ),
+                    )
                 }
-                userRepository.save(
-                    User(
-                        provider = userInfo.provider,
-                        providerId = userInfo.providerId,
-                        email = userInfo.email,
-                        profileImageUrl = userInfo.profileImageUrl,
-                    ),
-                )
             }
 
         val attributes =
