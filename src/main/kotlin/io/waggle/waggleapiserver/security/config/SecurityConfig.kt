@@ -53,6 +53,8 @@ class SecurityConfig(
                     "/oauth2/**",
                     "/login/oauth2/**",
                     "/auth/refresh",
+                    "/ws",
+                    "/ws-sockjs/**",
                 ).permitAll()
 
             if (isLocal) {
