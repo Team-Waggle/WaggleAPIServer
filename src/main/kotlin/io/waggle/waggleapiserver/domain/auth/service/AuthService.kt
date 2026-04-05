@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.auth.AuthCookieManager
 import io.waggle.waggleapiserver.domain.auth.dto.response.AccessTokenResponse
+import io.waggle.waggleapiserver.domain.auth.dto.response.WsTokenResponse
 import io.waggle.waggleapiserver.domain.user.UserRole
 import io.waggle.waggleapiserver.security.jwt.JwtProvider
 import jakarta.servlet.http.HttpServletResponse
@@ -71,7 +72,28 @@ class AuthService(
         authCookieManager.expireRefreshTokenCookie(response)
     }
 
+    fun issueWsToken(userId: UUID): WsTokenResponse {
+        val token = UUID.randomUUID().toString()
+        redisTemplate.opsForValue().set(
+            "ws-token:$token",
+            userId.toString(),
+            Duration.ofMinutes(1),
+        )
+        return WsTokenResponse(token)
+    }
+
     fun deleteRefreshToken(userId: UUID) {
         redisTemplate.delete("refresh-token:$userId")
+    }
+
+    fun validateAndConsumeWsToken(token: String): UUID {
+        val key = "ws-token:$token"
+        val userId =
+            redisTemplate.opsForValue().getAndDelete(key)
+                ?: throw BusinessException(
+                    ErrorCode.INVALID_TOKEN,
+                    "Invalid or expired WebSocket token",
+                )
+        return UUID.fromString(userId)
     }
 }

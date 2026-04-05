@@ -2,8 +2,11 @@ package io.waggle.waggleapiserver.domain.auth
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
 import io.waggle.waggleapiserver.domain.auth.dto.response.AccessTokenResponse
+import io.waggle.waggleapiserver.domain.auth.dto.response.WsTokenResponse
 import io.waggle.waggleapiserver.domain.auth.service.AuthService
+import io.waggle.waggleapiserver.domain.user.User
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.PostMapping
@@ -36,4 +39,13 @@ class AuthController(
     ) {
         authService.logout(refreshToken, response)
     }
+
+    @Operation(
+        summary = "WebSocket 연결 토큰 발급",
+        description = "일회용 WebSocket 연결 토큰을 발급함 (1분 유효)",
+    )
+    @PostMapping("/ws-token")
+    fun issueWsToken(
+        @CurrentUser user: User,
+    ): WsTokenResponse = authService.issueWsToken(user.id)
 }
