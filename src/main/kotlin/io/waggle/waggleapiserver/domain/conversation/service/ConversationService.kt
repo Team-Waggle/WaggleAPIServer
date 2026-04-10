@@ -3,6 +3,7 @@ package io.waggle.waggleapiserver.domain.conversation.service
 import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.domain.conversation.Conversation
+import io.waggle.waggleapiserver.domain.conversation.dto.response.ConversationPartnerResponse
 import io.waggle.waggleapiserver.domain.conversation.dto.response.ConversationResponse
 import io.waggle.waggleapiserver.domain.conversation.repository.ConversationRepository
 import io.waggle.waggleapiserver.domain.message.Message
@@ -23,13 +24,19 @@ class ConversationService(
 ) {
     @Transactional(readOnly = true)
     fun getConversations(
+        q: String?,
         cursorQuery: CursorGetQuery,
         user: User,
     ): CursorResponse<ConversationResponse> {
         val (cursor, size) = cursorQuery
-        val pageable = PageRequest.of(0, size + 1)
 
-        val conversations = conversationRepository.findByUserId(user.id, cursor, pageable)
+        val conversations =
+            if (q.isNullOrBlank()) {
+                val pageable = PageRequest.of(0, size + 1)
+                conversationRepository.findByUserId(user.id, cursor, pageable)
+            } else {
+                conversationRepository.searchByUsernameOrContent(user.id, q, cursor, size + 1)
+            }
 
         val hasNext = conversations.size > size
         val slicedConversations = if (hasNext) conversations.take(size) else conversations
@@ -40,12 +47,34 @@ class ConversationService(
         val lastMessageIds = slicedConversations.map { it.lastMessageId }
         val messageById = messageRepository.findAllById(lastMessageIds).associateBy { it.id }
 
+        val searchedMessageByPartnerId =
+            if (!q.isNullOrBlank()) {
+                val searchedMessages = messageRepository.searchByContent(user.id, q, size)
+                searchedMessages.associateBy { message ->
+                    if (message.senderId == user.id) message.receiverId else message.senderId
+                }
+            } else {
+                emptyMap()
+            }
+
         val data =
-            slicedConversations.map { conv ->
-                ConversationResponse.of(
-                    conversation = conv,
-                    partner = partnerById[conv.partnerId],
-                    lastMessage = messageById[conv.lastMessageId]!!,
+            slicedConversations.map { conversation ->
+                val lastMessage =
+                    searchedMessageByPartnerId[conversation.partnerId]
+                        ?: messageById[conversation.lastMessageId]!!
+                ConversationResponse(
+                    partner =
+                        partnerById[conversation.partnerId]?.let {
+                            ConversationPartnerResponse.from(it)
+                        }
+                            ?: ConversationPartnerResponse(
+                                userId = conversation.partnerId,
+                                username = null,
+                                profileImageUrl = null,
+                            ),
+                    unreadCount = conversation.unreadCount,
+                    lastReadMessageId = conversation.lastReadMessageId,
+                    lastMessage = ConversationResponse.LastMessage.from(lastMessage),
                 )
             }
 
@@ -81,10 +110,11 @@ class ConversationService(
             readAt = Instant.now(),
         )
 
-        val lastReadMessageId = messageRepository.findLastReadMessageId(
-            senderId = partnerId,
-            receiverId = user.id,
-        ) ?: return
+        val lastReadMessageId =
+            messageRepository.findLastReadMessageId(
+                senderId = partnerId,
+                receiverId = user.id,
+            ) ?: return
 
         conversationRepository.markAsRead(
             userId = user.id,

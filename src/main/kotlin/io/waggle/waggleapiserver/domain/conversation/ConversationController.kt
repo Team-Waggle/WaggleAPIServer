@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
@@ -27,9 +28,10 @@ class ConversationController(
     @Operation(summary = "대화방 목록 조회")
     @GetMapping
     fun getConversations(
+        @RequestParam q: String?,
         @ParameterObject cursorQuery: CursorGetQuery,
         @CurrentUser user: User,
-    ): CursorResponse<ConversationResponse> = conversationService.getConversations(cursorQuery, user)
+    ): CursorResponse<ConversationResponse> = conversationService.getConversations(q, cursorQuery, user)
 
     @Operation(summary = "대화방 읽음 처리")
     @PatchMapping("/{partnerId}/read")
