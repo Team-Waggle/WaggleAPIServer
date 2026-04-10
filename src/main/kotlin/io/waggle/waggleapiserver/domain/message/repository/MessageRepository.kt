@@ -53,6 +53,27 @@ interface MessageRepository : JpaRepository<Message, Long> {
         pageable: Pageable,
     ): List<Message>
 
+    @Query(
+        value = """
+            SELECT m.* FROM messages m
+            INNER JOIN (
+                SELECT MAX(m2.id) AS max_id
+                FROM messages m2
+                WHERE (m2.sender_id = :userId OR m2.receiver_id = :userId)
+                AND MATCH(m2.content) AGAINST(:q IN BOOLEAN MODE)
+                GROUP BY IF(m2.sender_id = :userId, m2.receiver_id, m2.sender_id)
+            ) latest ON m.id = latest.max_id
+            ORDER BY m.id DESC
+            LIMIT :limit
+        """,
+        nativeQuery = true,
+    )
+    fun searchByContent(
+        userId: UUID,
+        q: String,
+        limit: Int,
+    ): List<Message>
+
     @Modifying
     @Query(
         """

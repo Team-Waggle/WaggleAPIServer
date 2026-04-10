@@ -22,6 +22,33 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         pageable: Pageable,
     ): List<Conversation>
 
+    @Query(
+        value = """
+            SELECT c.* FROM conversations c
+            JOIN users u ON u.id = c.partner_id
+            WHERE c.user_id = :userId
+            AND (
+                u.username LIKE CONCAT('%', :q, '%')
+                OR c.partner_id IN (
+                    SELECT IF(m.sender_id = :userId, m.receiver_id, m.sender_id)
+                    FROM messages m
+                    WHERE (m.sender_id = :userId OR m.receiver_id = :userId)
+                    AND MATCH(m.content) AGAINST(:q IN BOOLEAN MODE)
+                )
+            )
+            AND (:cursor IS NULL OR c.last_message_id < :cursor)
+            ORDER BY c.last_message_id DESC
+            LIMIT :limit
+        """,
+        nativeQuery = true,
+    )
+    fun searchByUsernameOrContent(
+        userId: UUID,
+        q: String,
+        cursor: Long?,
+        limit: Int,
+    ): List<Conversation>
+
     @Modifying
     @Query(
         """
