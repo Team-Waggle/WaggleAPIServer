@@ -192,9 +192,10 @@ create table waggle.notifications
         primary key,
     read_at      datetime(6) null,
     user_id      binary(16)  not null,
-    type         varchar(32) not null,
-    team_id      bigint      null,
-    triggered_by binary(16)  null
+    type           varchar(32) not null,
+    team_id        bigint      null,
+    triggered_by   binary(16)  null,
+    application_id bigint      null
 );
 
 create index idx_notifications_user_read_created
