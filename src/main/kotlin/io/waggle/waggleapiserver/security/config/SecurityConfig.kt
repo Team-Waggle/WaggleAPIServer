@@ -40,10 +40,6 @@ class SecurityConfig(
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
 
-        if (isLocal) {
-            http.headers { it.frameOptions { frame -> frame.sameOrigin() } }
-        }
-
         http.authorizeHttpRequests { authorize ->
             authorize
                 .requestMatchers(
@@ -58,7 +54,7 @@ class SecurityConfig(
                 ).permitAll()
 
             if (isLocal) {
-                authorize.requestMatchers("/h2-console/**", "/ws-test.html").permitAll()
+                authorize.requestMatchers("/ws-test.html").permitAll()
             }
 
             authorize

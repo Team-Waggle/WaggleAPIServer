@@ -57,6 +57,7 @@ services:
   database:
     image: mysql:8.0
     container_name: waggle-db
+    command: --ngram-token-size=2
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
