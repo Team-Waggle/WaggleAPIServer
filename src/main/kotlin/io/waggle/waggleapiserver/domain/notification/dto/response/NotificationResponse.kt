@@ -4,20 +4,21 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.notification.Notification
 import io.waggle.waggleapiserver.domain.notification.NotificationType
-import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
+import io.waggle.waggleapiserver.domain.team.dto.response.NotificationTeamResponse
 import io.waggle.waggleapiserver.domain.user.User
 import java.time.Instant
 import java.util.UUID
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "알림 응답 DTO")
 data class NotificationResponse(
     @Schema(description = "알림 ID", example = "1")
     val notificationId: Long,
     @Schema(description = "알림 타입", example = "APPLICATION_RECEIVED")
     val type: NotificationType,
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "팀 정보")
-    val team: TeamResponse?,
+    val team: NotificationTeamResponse?,
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "관련 사용자 정보")
     val triggeredBy: TriggeredByResponse?,
     @Schema(description = "알림 확인일시")
@@ -44,7 +45,7 @@ data class NotificationResponse(
     companion object {
         fun of(
             notification: Notification,
-            team: TeamResponse?,
+            team: NotificationTeamResponse?,
             triggeredBy: TriggeredByResponse?,
         ): NotificationResponse =
             NotificationResponse(
