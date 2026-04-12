@@ -6,8 +6,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
-import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
-import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.infrastructure.persistence.AllowIncompleteProfile
 import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
@@ -22,10 +20,6 @@ import io.waggle.waggleapiserver.domain.follow.service.FollowService
 import io.waggle.waggleapiserver.domain.memberreview.dto.response.MemberReviewResponse
 import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewQueryType
 import io.waggle.waggleapiserver.domain.memberreview.service.MemberReviewService
-import io.waggle.waggleapiserver.domain.notification.dto.request.ReadNotificationsRequest
-import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationCountResponse
-import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
-import io.waggle.waggleapiserver.domain.notification.service.NotificationService
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
 import io.waggle.waggleapiserver.domain.team.dto.response.UserTeamResponse
@@ -39,7 +33,6 @@ import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.service.UserService
 import jakarta.validation.Valid
-import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -62,7 +55,6 @@ class UserController(
     private val bookmarkService: BookmarkService,
     private val followService: FollowService,
     private val memberReviewService: MemberReviewService,
-    private val notificationService: NotificationService,
     private val userService: UserService,
 ) {
     @AllowIncompleteProfile
@@ -179,19 +171,6 @@ class UserController(
         @CurrentUser user: User,
     ): List<UserSimpleResponse> = followService.getUserFollowers(user.id)
 
-    @Operation(summary = "본인 알림 목록 조회")
-    @GetMapping("/me/notifications")
-    fun getMyNotifications(
-        @ParameterObject cursorQuery: CursorGetQuery,
-        @CurrentUser user: User,
-    ): CursorResponse<NotificationResponse> = notificationService.getUserNotifications(cursorQuery, user)
-
-    @Operation(summary = "본인 알림 개수 조회")
-    @GetMapping("/me/notifications/count")
-    fun getMyNotificationCount(
-        @CurrentUser user: User,
-    ): NotificationCountResponse = notificationService.getNotificationCount(user)
-
     @AllowIncompleteProfile
     @Operation(summary = "프로필 완성 여부 조회")
     @GetMapping("/me/profile-completion")
@@ -213,21 +192,6 @@ class UserController(
         @Valid @RequestBody request: MemberUpdateVisibilityRequest,
         @CurrentUser user: User,
     ) = userService.updateTeamVisibility(user.id, teamId, request)
-
-    @Operation(summary = "본인 알림 읽음 처리")
-    @PatchMapping("/me/notifications/read")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun readMyNotifications(
-        @Valid @RequestBody request: ReadNotificationsRequest,
-        @CurrentUser user: User,
-    ) = notificationService.readNotifications(user, request.notificationIds)
-
-    @Operation(summary = "본인 알림 전체 읽음 처리")
-    @PatchMapping("/me/notifications/read-all")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun readAllMyNotifications(
-        @CurrentUser user: User,
-    ) = notificationService.readAllNotifications(user)
 
     @Operation(summary = "본인 프로필 수정")
     @PutMapping("/me")

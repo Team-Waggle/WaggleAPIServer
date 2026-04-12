@@ -209,7 +209,38 @@ class ApplicationService(
     }
 
     @Transactional
-    fun approveApplication(
+    fun updateApplicationStatus(
+        applicationId: Long,
+        status: ApplicationStatus,
+        user: User,
+    ) {
+        when (status) {
+            ApplicationStatus.APPROVED -> approveApplication(applicationId, user)
+
+            ApplicationStatus.REJECTED -> rejectApplication(applicationId, user)
+
+            else -> throw BusinessException(
+                ErrorCode.INVALID_INPUT_VALUE,
+                "Cannot change status to $status",
+            )
+        }
+    }
+
+    @Transactional
+    fun deleteApplication(
+        applicationId: Long,
+        user: User,
+    ) {
+        val application =
+            applicationRepository.findByIdAndUserId(applicationId, user.id)
+                ?: throw BusinessException(
+                    ErrorCode.ENTITY_NOT_FOUND,
+                    "Application not found: $applicationId",
+                )
+        application.delete()
+    }
+
+    private fun approveApplication(
         applicationId: Long,
         user: User,
     ) {
@@ -253,8 +284,7 @@ class ApplicationService(
         )
     }
 
-    @Transactional
-    fun rejectApplication(
+    private fun rejectApplication(
         applicationId: Long,
         user: User,
     ) {
@@ -279,19 +309,5 @@ class ApplicationService(
                 triggeredBy = user.id,
             ),
         )
-    }
-
-    @Transactional
-    fun deleteApplication(
-        applicationId: Long,
-        user: User,
-    ) {
-        val application =
-            applicationRepository.findByIdAndUserId(applicationId, user.id)
-                ?: throw BusinessException(
-                    ErrorCode.ENTITY_NOT_FOUND,
-                    "Application not found: $applicationId",
-                )
-        application.delete()
     }
 }
