@@ -1,6 +1,5 @@
 package io.waggle.waggleapiserver.domain.member.dto.response
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.member.Member
 import io.waggle.waggleapiserver.domain.member.MemberRole
@@ -10,7 +9,6 @@ import io.waggle.waggleapiserver.domain.user.enums.Skill
 import java.time.Instant
 import java.util.UUID
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "멤버 응답 DTO")
 data class MemberResponse(
     @Schema(description = "멤버 ID", example = "1")

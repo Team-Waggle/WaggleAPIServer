@@ -9,7 +9,6 @@ import io.waggle.waggleapiserver.domain.user.enums.Position
 import java.time.Instant
 import java.util.UUID
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "지원 응답 DTO")
 data class ApplicationResponse(
     @Schema(description = "지원 ID", example = "1")
@@ -22,8 +21,10 @@ data class ApplicationResponse(
     val teamId: Long,
     @Schema(description = "모집글 ID", example = "1")
     val postId: Long,
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "지원자 정보 (팀 조회 시에만 포함)")
     val user: ApplicantResponse? = null,
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "읽음 여부 (팀 조회 시에만 포함)", example = "true")
     val isRead: Boolean? = null,
     @Schema(description = "지원 동기")
