@@ -3,14 +3,17 @@ package io.waggle.waggleapiserver.domain.application
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
+import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationUpdateStatusRequest
 import io.waggle.waggleapiserver.domain.application.dto.response.TeamApplicationResponse
 import io.waggle.waggleapiserver.domain.application.service.ApplicationService
 import io.waggle.waggleapiserver.domain.user.User
 import org.springframework.http.HttpStatus
+import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -32,26 +35,16 @@ class ApplicationController(
     ): TeamApplicationResponse = applicationService.markApplicationAsRead(applicationId, user)
 
     @Operation(
-        summary = "팀 지원 승인",
-        description = "팀 관리자가 지원자를 승인함",
+        summary = "팀 지원 상태 변경",
+        description = "팀 관리자가 지원 상태를 변경함 (승인/거절)",
     )
-    @PatchMapping("/{applicationId}/approve")
+    @PatchMapping("/{applicationId}/status")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun approveApplication(
+    fun updateApplicationStatus(
         @PathVariable applicationId: Long,
+        @Valid @RequestBody request: ApplicationUpdateStatusRequest,
         @CurrentUser user: User,
-    ) = applicationService.approveApplication(applicationId, user)
-
-    @Operation(
-        summary = "팀 지원 거절",
-        description = "팀 관리자가 지원자를 거절함",
-    )
-    @PatchMapping("/{applicationId}/reject")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun rejectApplication(
-        @PathVariable applicationId: Long,
-        @CurrentUser user: User,
-    ) = applicationService.rejectApplication(applicationId, user)
+    ) = applicationService.updateApplicationStatus(applicationId, request.status, user)
 
     @Operation(
         summary = "팀 지원 삭제",
