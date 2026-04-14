@@ -12,7 +12,10 @@ data class ConversationResponse(
     val partner: ConversationPartnerResponse,
     @Schema(description = "안 읽은 메시지 수", example = "3")
     val unreadCount: Long,
-    @Schema(description = "마지막으로 읽은 메시지 ID (메시지 내역 조회 시 커서로 사용)", example = "147")
+    @Schema(
+        description = "마지막으로 읽은 메시지 ID (메시지 내역 조회 시 커서로 사용)",
+        example = "147",
+    )
     val lastReadMessageId: Long?,
     @Schema(description = "마지막 메시지 정보")
     val lastMessage: LastMessage,

@@ -3,7 +3,9 @@ package io.waggle.waggleapiserver.domain.memberreview.enums
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 
-enum class ReviewTag(val type: ReviewType) {
+enum class ReviewTag(
+    val type: ReviewType,
+) {
     // LIKE
     PUNCTUAL(ReviewType.LIKE),
     SKILLED(ReviewType.LIKE),
@@ -25,7 +27,10 @@ enum class ReviewTag(val type: ReviewType) {
     ;
 
     companion object {
-        fun validateTags(type: ReviewType, tags: Collection<ReviewTag>) {
+        fun validateTags(
+            type: ReviewType,
+            tags: Collection<ReviewTag>,
+        ) {
             val invalidTags = tags.filter { it.type != type }
             if (invalidTags.isNotEmpty()) {
                 throw BusinessException(

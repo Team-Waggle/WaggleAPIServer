@@ -43,8 +43,11 @@ class CurrentUserArgumentResolver(
         val authentication = SecurityContextHolder.getContext().authentication
         val userPrincipal =
             authentication?.principal as? UserPrincipal
-                ?: if (parameter.isOptional) return null
-                else throw BusinessException(ErrorCode.UNAUTHORIZED)
+                ?: if (parameter.isOptional) {
+                    return null
+                } else {
+                    throw BusinessException(ErrorCode.UNAUTHORIZED)
+                }
 
         val user =
             userRepository.findByIdOrNull(userPrincipal.userId)

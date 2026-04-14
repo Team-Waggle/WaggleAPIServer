@@ -39,7 +39,9 @@ class GlobalExceptionHandler(
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
-    fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
+    fun handleMethodArgumentTypeMismatchException(
+        e: MethodArgumentTypeMismatchException,
+    ): ResponseEntity<ErrorResponse> {
         logger.warn("Type mismatch exception occurred", e)
         val detail =
             "Invalid type for parameter '${e.name}': expected ${e.requiredType?.simpleName}"

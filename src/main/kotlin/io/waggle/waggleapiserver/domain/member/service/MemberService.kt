@@ -5,7 +5,6 @@ import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.member.Member
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.dto.request.MemberUpdateRoleRequest
-import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.notification.event.MemberLeftEvent
 import io.waggle.waggleapiserver.domain.notification.event.MemberRemovedEvent
@@ -61,7 +60,6 @@ class MemberService(
                 delegateLeader(member, targetMember)
             }
         }
-
     }
 
     @Transactional

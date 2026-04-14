@@ -96,7 +96,8 @@ class TeamController(
         @RequestParam(required = false) postId: Long?,
         @ParameterObject cursorQuery: CursorGetQuery,
         @CurrentUser user: User,
-    ): CursorResponse<TeamApplicationResponse> = applicationService.getTeamApplications(teamId, postId, cursorQuery, user)
+    ): CursorResponse<TeamApplicationResponse> =
+        applicationService.getTeamApplications(teamId, postId, cursorQuery, user)
 
     @AllowIncompleteProfile
     @Operation(summary = "팀 모집글 목록 조회")
@@ -135,7 +136,7 @@ class TeamController(
 
     @Operation(
         summary = "팀 이탈",
-        description = "멤버가 본인 혼자일 때는 이탈 불가, 본인이 리더일 때는 리더 위임 후 이탈",
+        description = "혼자일 때는 이탈 불가, 리더일 때는 위임 후 이탈",
     )
     @DeleteMapping("/{teamId}/members")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -12,7 +12,10 @@ class SoftDeleteFilterAspect(
     private val entityManager: EntityManager,
 ) {
     @Before(
-        "@within(org.springframework.transaction.annotation.Transactional) || @annotation(org.springframework.transaction.annotation.Transactional)",
+        """
+        @within(org.springframework.transaction.annotation.Transactional)
+        || @annotation(org.springframework.transaction.annotation.Transactional)
+        """,
     )
     fun applySoftDeleteFilter() {
         val session = entityManager.unwrap(Session::class.java)

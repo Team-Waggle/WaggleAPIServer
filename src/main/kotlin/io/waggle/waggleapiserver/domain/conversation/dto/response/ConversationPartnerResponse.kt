@@ -1,8 +1,8 @@
 package io.waggle.waggleapiserver.domain.conversation.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
-import io.waggle.waggleapiserver.domain.user.enums.Position
 import io.waggle.waggleapiserver.domain.user.User
+import io.waggle.waggleapiserver.domain.user.enums.Position
 import java.util.UUID
 
 @Schema(description = "대화 상대 정보")
@@ -13,7 +13,7 @@ data class ConversationPartnerResponse(
     val username: String?,
     @Schema(description = "직무", example = "BACKEND")
     val position: Position?,
-    @Schema(description = "프로필 이미지 URL", example = "https://example.com/image.png")
+    @Schema(description = "프로필 이미지 URL", example = "https://example.com.png")
     val profileImageUrl: String?,
 ) {
     companion object {

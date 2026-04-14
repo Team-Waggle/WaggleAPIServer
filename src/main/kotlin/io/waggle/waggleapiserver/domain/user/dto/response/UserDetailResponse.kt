@@ -19,7 +19,7 @@ data class UserDetailResponse(
     val temperature: Double,
     @Schema(
         description = "프로필 이미지 URL",
-        example = "https://avatars.githubusercontent.com/u/112466204?s=80&v=4",
+        example = "https://example.com.png",
     )
     val profileImageUrl: String?,
     @Schema(description = "직무", example = "BACKEND")
