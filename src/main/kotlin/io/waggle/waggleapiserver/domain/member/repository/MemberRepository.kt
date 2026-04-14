@@ -5,7 +5,6 @@ import io.waggle.waggleapiserver.domain.member.MemberRole
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
 import java.util.UUID
 
 interface MemberRepository : JpaRepository<Member, Long> {
@@ -24,9 +23,7 @@ interface MemberRepository : JpaRepository<Member, Long> {
         GROUP BY m.teamId
         """,
     )
-    fun countByTeamIds(
-        @Param("teamIds") teamIds: List<Long>,
-    ): List<TeamMemberCount>
+    fun countByTeamIds(teamIds: List<Long>): List<TeamMemberCount>
 
     fun findByUserIdAndTeamId(
         userId: UUID,
@@ -41,8 +38,8 @@ interface MemberRepository : JpaRepository<Member, Long> {
         nativeQuery = true,
     )
     fun findByUserIdAndTeamIdAndDeletedAtIsNotNull(
-        @Param("userId") userId: UUID,
-        @Param("teamId") teamId: Long,
+        userId: UUID,
+        teamId: Long,
     ): Member?
 
     fun findByTeamId(teamId: Long): List<Member>
@@ -76,21 +73,17 @@ interface MemberRepository : JpaRepository<Member, Long> {
         """,
         nativeQuery = true,
     )
-    fun findByTeamIdAndDeletedAtIsNotNullOrderByRoleAscCreatedAtAsc(
-        @Param("teamId") teamId: Long,
-    ): List<Member>
+    fun findByTeamIdAndDeletedAtIsNotNullOrderByRoleAscCreatedAtAsc(teamId: Long): List<Member>
 
     @Modifying
     @Query(
         """
-        UPDATE members SET deleted_at = CURRENT_TIMESTAMP
+        UPDATE members SET deleted_at = UTC_TIMESTAMP(6)
         WHERE user_id = :userId AND deleted_at IS NULL
         """,
         nativeQuery = true,
     )
-    fun updateDeletedAtByUserIdAndDeletedAtIsNull(
-        @Param("userId") userId: UUID,
-    )
+    fun updateDeletedAtByUserIdAndDeletedAtIsNull(userId: UUID)
 }
 
 interface TeamMemberCount {
