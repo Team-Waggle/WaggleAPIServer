@@ -34,13 +34,18 @@ interface ApplicationRepository : JpaRepository<Application, Long> {
         """
         SELECT a FROM Application a
         WHERE a.teamId = :teamId
-        AND (:cursor IS NULL OR a.id < :cursor)
-        ORDER BY a.id DESC
+        AND (
+            :cursor IS NULL
+            OR a.statusPriority > :cursorStatusPriority
+            OR (a.statusPriority = :cursorStatusPriority AND a.id < :cursor)
+        )
+        ORDER BY a.statusPriority, a.id DESC
         """,
     )
     fun findByTeamIdWithCursor(
         teamId: Long,
         cursor: Long?,
+        cursorStatusPriority: Int?,
         pageable: Pageable,
     ): List<Application>
 
@@ -48,13 +53,18 @@ interface ApplicationRepository : JpaRepository<Application, Long> {
         """
         SELECT a FROM Application a
         WHERE a.postId = :postId
-        AND (:cursor IS NULL OR a.id < :cursor)
-        ORDER BY a.id DESC
+        AND (
+            :cursor IS NULL
+            OR a.statusPriority > :cursorStatusPriority
+            OR (a.statusPriority = :cursorStatusPriority AND a.id < :cursor)
+        )
+        ORDER BY a.statusPriority, a.id DESC
         """,
     )
     fun findByPostIdWithCursor(
         postId: Long,
         cursor: Long?,
+        cursorStatusPriority: Int?,
         pageable: Pageable,
     ): List<Application>
 
