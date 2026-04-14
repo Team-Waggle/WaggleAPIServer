@@ -17,7 +17,6 @@ import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.bookmark.service.BookmarkService
 import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountResponse
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
-import io.waggle.waggleapiserver.domain.memberreview.service.MemberReviewService
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
 import io.waggle.waggleapiserver.domain.team.dto.response.UserTeamResponse
