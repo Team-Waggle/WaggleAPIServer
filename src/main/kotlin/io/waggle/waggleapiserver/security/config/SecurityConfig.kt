@@ -40,40 +40,41 @@ class SecurityConfig(
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
 
-        http.authorizeHttpRequests { authorize ->
-            authorize
-                .requestMatchers(
-                    "/actuator/health",
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**",
-                    "/oauth2/**",
-                    "/login/oauth2/**",
-                    "/auth/refresh",
-                    "/ws",
-                    "/ws-sockjs/**",
-                ).permitAll()
+        http
+            .authorizeHttpRequests { authorize ->
+                authorize
+                    .requestMatchers(
+                        "/actuator/health",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/oauth2/**",
+                        "/login/oauth2/**",
+                        "/auth/refresh",
+                        "/ws",
+                        "/ws-sockjs/**",
+                    ).permitAll()
 
-            if (isLocal) {
-                authorize.requestMatchers("/ws-test.html").permitAll()
-            }
+                if (isLocal) {
+                    authorize.requestMatchers("/ws-test.html").permitAll()
+                }
 
-            authorize
-                .requestMatchers(HttpMethod.GET, "/posts/**", "/teams/**", "/users/**")
-                .permitAll()
-                .anyRequest()
-                .authenticated()
-        }.oauth2Login { oauth2 ->
-            oauth2
-                .userInfoEndpoint { it.userService(customOAuth2UserService) }
-                .successHandler(oAuth2LoginSuccessHandler)
-                .failureHandler(oAuth2LoginFailureHandler)
-        }.addFilterBefore(
-            rateLimitFilter,
-            UsernamePasswordAuthenticationFilter::class.java,
-        ).addFilterBefore(
-            jwtAuthenticationFilter,
-            UsernamePasswordAuthenticationFilter::class.java,
-        )
+                authorize
+                    .requestMatchers(HttpMethod.GET, "/posts/**", "/teams/**", "/users/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated()
+            }.oauth2Login { oauth2 ->
+                oauth2
+                    .userInfoEndpoint { it.userService(customOAuth2UserService) }
+                    .successHandler(oAuth2LoginSuccessHandler)
+                    .failureHandler(oAuth2LoginFailureHandler)
+            }.addFilterBefore(
+                rateLimitFilter,
+                UsernamePasswordAuthenticationFilter::class.java,
+            ).addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter::class.java,
+            )
 
         return http.build()
     }

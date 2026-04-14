@@ -13,7 +13,7 @@ data class MessagePartnerResponse(
     val username: String?,
     @Schema(description = "포지션", example = "BACKEND")
     val position: Position?,
-    @Schema(description = "프로필 이미지 URL", example = "https://example.com/image.png")
+    @Schema(description = "프로필 이미지 URL", example = "https://example.com.png")
     val profileImageUrl: String?,
 ) {
     companion object {

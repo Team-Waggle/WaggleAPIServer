@@ -17,8 +17,6 @@ import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.bookmark.service.BookmarkService
 import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountResponse
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
-import io.waggle.waggleapiserver.domain.memberreview.dto.response.MemberReviewResponse
-import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewQueryType
 import io.waggle.waggleapiserver.domain.memberreview.service.MemberReviewService
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
@@ -54,7 +52,6 @@ class UserController(
     private val applicationService: ApplicationService,
     private val bookmarkService: BookmarkService,
     private val followService: FollowService,
-    private val memberReviewService: MemberReviewService,
     private val userService: UserService,
 ) {
     @AllowIncompleteProfile
@@ -91,21 +88,6 @@ class UserController(
         @PathVariable userId: UUID,
     ): FollowCountResponse = followService.getUserFollowCount(userId)
 
-    @Deprecated(
-        message = "사용자 프로필 조회 API(GET /users/{userId})에서 온도와 상위 태그를 제공합니다.",
-        replaceWith = ReplaceWith("getUser(userId)"),
-        level = DeprecationLevel.WARNING,
-    )
-    @Operation(
-        summary = "사용자가 받은 리뷰 목록 조회",
-        deprecated = true,
-        description = "⚠️ Deprecated: 사용자 프로필 조회 API를 사용하세요",
-    )
-    @GetMapping("/{userId}/reviews")
-    fun getUserReviews(
-        @PathVariable userId: UUID,
-    ): List<MemberReviewResponse> = memberReviewService.getReceivedReviews(userId)
-
     @Operation(summary = "사용자 참여 팀 목록 조회")
     @GetMapping("/{userId}/teams")
     fun getUserTeams(
@@ -124,32 +106,16 @@ class UserController(
         @CurrentUser user: User,
     ): List<ApplicationResponse> = applicationService.getUserApplications(user)
 
-    @Deprecated(
-        message = "본인 프로필 조회 API(GET /users/me)에서 온도와 상위 태그를 제공합니다.",
-        replaceWith = ReplaceWith("getMyProfile(user)"),
-        level = DeprecationLevel.WARNING,
-    )
-    @Operation(
-        summary = "본인 리뷰 목록 조회",
-        deprecated = true,
-        description = "⚠️ Deprecated: 본인 프로필 조회 API를 사용하세요",
-    )
-    @GetMapping("/me/reviews")
-    fun getMyReviews(
-        @RequestParam type: ReviewQueryType,
-        @CurrentUser user: User,
-    ): List<MemberReviewResponse> =
-        when (type) {
-            ReviewQueryType.RECEIVED -> memberReviewService.getReceivedReviews(user.id)
-            ReviewQueryType.WRITTEN -> memberReviewService.getWrittenReviews(user.id)
-        }
-
     @Operation(
         summary = "본인 북마크 목록 조회",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                content = [Content(array = ArraySchema(schema = Schema(oneOf = [PostSimpleResponse::class, TeamResponse::class])))],
+                content = [
+                    Content(
+                        array = ArraySchema(schema = Schema(oneOf = [PostSimpleResponse::class, TeamResponse::class])),
+                    ),
+                ],
             ),
         ],
     )

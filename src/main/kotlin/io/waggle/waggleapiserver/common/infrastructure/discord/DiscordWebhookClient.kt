@@ -2,11 +2,11 @@ package io.waggle.waggleapiserver.common.infrastructure.discord
 
 import io.waggle.waggleapiserver.common.util.logger
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.scheduling.annotation.Async
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
 
@@ -28,9 +28,10 @@ class DiscordWebhookClient(
 
         try {
             val message = buildMessage(context)
-            val headers = HttpHeaders().apply {
-                contentType = MediaType.APPLICATION_JSON
-            }
+            val headers =
+                HttpHeaders().apply {
+                    contentType = MediaType.APPLICATION_JSON
+                }
             val body = mapOf("content" to message.take(2000))
             val request = HttpEntity(body, headers)
 
@@ -40,15 +41,19 @@ class DiscordWebhookClient(
         }
     }
 
-    private fun buildMessage(context: DiscordErrorContext): String {
-        return buildString {
+    private fun buildMessage(context: DiscordErrorContext): String =
+        buildString {
             appendLine("## 🚨 서버 에러 발생")
             mentionRoleId.takeIf { it.isNotBlank() }?.let { appendLine("<@&$it>") }
             appendLine("**시각**: ${context.timestamp}")
             appendLine("**예외**: `${context.exceptionClass}`")
             appendLine("**메시지**: ${context.message}")
             appendLine()
-            appendLine("**요청**: `${context.httpMethod} ${context.queryString?.let { "${context.requestUri}?$it" } ?: context.requestUri}`")
+            appendLine(
+                "**요청**: `${context.httpMethod} ${
+                    context.queryString?.let { "${context.requestUri}?$it" } ?: context.requestUri
+                }`",
+            )
             appendLine()
             appendLine("**Headers**")
             context.host?.let { appendLine("- Host: `$it`") }
@@ -61,5 +66,4 @@ class DiscordWebhookClient(
             appendLine(context.stackTrace)
             appendLine("```")
         }
-    }
 }

@@ -13,13 +13,15 @@ class S3Config(
 ) {
     @Bean
     fun s3Client(): S3Client =
-        S3Client.builder()
+        S3Client
+            .builder()
             .region(Region.of(region))
             .build()
 
     @Bean
     fun s3Presigner(): S3Presigner =
-        S3Presigner.builder()
+        S3Presigner
+            .builder()
             .region(Region.of(region))
             .build()
 }

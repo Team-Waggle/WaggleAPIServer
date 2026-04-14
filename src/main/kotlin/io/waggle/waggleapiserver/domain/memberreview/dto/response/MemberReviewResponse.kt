@@ -40,6 +40,5 @@ data class MemberReviewResponse(
             createdAt = review.createdAt,
             updatedAt = review.updatedAt,
         )
-
     }
 }

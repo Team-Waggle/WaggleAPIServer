@@ -24,10 +24,18 @@ data class DiscordErrorContext(
         private const val STACK_TRACE_LINE_LIMIT = 15
         private val TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
 
-        fun from(request: HttpServletRequest, exception: Exception): DiscordErrorContext {
+        fun from(
+            request: HttpServletRequest,
+            exception: Exception,
+        ): DiscordErrorContext {
             val sw = StringWriter()
             exception.printStackTrace(PrintWriter(sw))
-            val stackLines = sw.toString().lineSequence().take(STACK_TRACE_LINE_LIMIT).joinToString("\n")
+            val stackLines =
+                sw
+                    .toString()
+                    .lineSequence()
+                    .take(STACK_TRACE_LINE_LIMIT)
+                    .joinToString("\n")
 
             return DiscordErrorContext(
                 exceptionClass = exception.javaClass.name,

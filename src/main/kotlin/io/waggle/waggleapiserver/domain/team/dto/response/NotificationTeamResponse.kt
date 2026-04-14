@@ -11,7 +11,7 @@ data class NotificationTeamResponse(
     val name: String,
     @Schema(
         description = "프로필 이미지 URL",
-        example = "https://waggle-server.s3.ap-northeast-2.amazonaws.com/prod/teams/6df573f0-9e2e-46b5-ba7f-7d2d2873684b.png",
+        example = "https://example.com.png",
     )
     val profileImageUrl: String?,
 ) {

@@ -68,7 +68,12 @@ interface ApplicationRepository : JpaRepository<Application, Long> {
         pageable: Pageable,
     ): List<Application>
 
-    @Query("SELECT a.postId AS postId, COUNT(a) AS applicantCount FROM Application a WHERE a.postId IN :postIds GROUP BY a.postId")
+    @Query(
+        """
+        SELECT a.postId AS postId, COUNT(a) AS applicantCount
+        FROM Application a WHERE a.postId IN :postIds GROUP BY a.postId
+        """,
+    )
     fun countApplicantsGroupByPostId(postIds: List<Long>): List<PostApplicantCount>
 
     @Query(
