@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.notification
 
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -30,12 +31,9 @@ class Notification(
     val type: NotificationType,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
-    @Column(name = "team_id")
-    val teamId: Long?,
-    @Column(name = "application_id", updatable = false)
-    val applicationId: Long? = null,
-    @Column(name = "triggered_by", updatable = false)
-    val triggeredBy: UUID? = null,
+    @Convert(converter = NotificationMetadataConverter::class)
+    @Column(columnDefinition = "JSON")
+    val metadata: Map<String, Any?> = emptyMap(),
 ) {
     @Column(name = "read_at")
     var readAt: Instant? = null

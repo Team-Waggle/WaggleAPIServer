@@ -6,14 +6,10 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import java.time.Instant
 import java.util.UUID
 
 interface NotificationRepository : JpaRepository<Notification, Long> {
-    fun findByApplicationIdInAndType(
-        applicationIds: List<Long>,
-        type: NotificationType,
-    ): List<Notification>
-
     fun countByUserId(userId: UUID): Long
 
     fun countByUserIdAndReadAtIsNull(userId: UUID): Long
@@ -30,6 +26,20 @@ interface NotificationRepository : JpaRepository<Notification, Long> {
         userId: UUID,
         cursor: Long?,
         pageable: Pageable,
+    ): List<Notification>
+
+    @Query(
+        """
+        SELECT n FROM Notification n
+        WHERE n.userId IN :userIds
+        AND n.type = :type
+        AND n.createdAt >= :since
+        """,
+    )
+    fun findByUserIdInAndTypeAndCreatedAtAfter(
+        userIds: List<UUID>,
+        type: NotificationType,
+        since: Instant,
     ): List<Notification>
 
     @Modifying

@@ -13,6 +13,7 @@ import io.waggle.waggleapiserver.domain.follow.repository.FollowRepository
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewType
 import io.waggle.waggleapiserver.domain.memberreview.repository.MemberReviewRepository
+import io.waggle.waggleapiserver.domain.notification.event.MemberLeftEvent
 import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.team.dto.response.UserTeamResponse
@@ -182,6 +183,16 @@ class UserService(
 
     @Transactional
     fun deactivateUser(user: User) {
+        val members = memberRepository.findByUserIdOrderByRoleAscCreatedAtAsc(user.id)
+        members.forEach { member ->
+            eventPublisher.publishEvent(
+                MemberLeftEvent(
+                    teamId = member.teamId,
+                    triggeredBy = user.id,
+                ),
+            )
+        }
+
         memberRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
         applicationRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
         postRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)

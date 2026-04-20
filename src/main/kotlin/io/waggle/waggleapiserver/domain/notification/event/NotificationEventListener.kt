@@ -31,8 +31,12 @@ class NotificationEventListener(
                 Notification(
                     type = NotificationType.APPLICATION_RECEIVED,
                     userId = it.userId,
-                    teamId = event.teamId,
-                    triggeredBy = event.triggeredBy,
+                    metadata =
+                        mapOf(
+                            "teamId" to event.teamId,
+                            "postId" to event.postId,
+                            "triggeredBy" to event.triggeredBy.toString(),
+                        ),
                 )
             }
         notificationRepository.saveAll(notifications)
@@ -41,13 +45,16 @@ class NotificationEventListener(
     @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun handleApplicationApproved(event: ApplicationApprovedEvent) {
+    fun handleTeamJoined(event: TeamJoinedEvent) {
         notificationRepository.save(
             Notification(
-                type = NotificationType.APPLICATION_ACCEPTED,
-                userId = event.applicantUserId,
-                teamId = event.teamId,
-                triggeredBy = event.triggeredBy,
+                type = NotificationType.TEAM_JOINED,
+                userId = event.joinedUserId,
+                metadata =
+                    mapOf(
+                        "teamId" to event.teamId,
+                        "triggeredBy" to event.triggeredBy.toString(),
+                    ),
             ),
         )
     }
@@ -60,8 +67,11 @@ class NotificationEventListener(
             Notification(
                 type = NotificationType.APPLICATION_REJECTED,
                 userId = event.applicantUserId,
-                teamId = event.teamId,
-                triggeredBy = event.triggeredBy,
+                metadata =
+                    mapOf(
+                        "teamId" to event.teamId,
+                        "triggeredBy" to event.triggeredBy.toString(),
+                    ),
             ),
         )
     }
@@ -76,8 +86,11 @@ class NotificationEventListener(
                 Notification(
                     type = NotificationType.MEMBER_JOINED,
                     userId = it.userId,
-                    teamId = event.teamId,
-                    triggeredBy = event.triggeredBy,
+                    metadata =
+                        mapOf(
+                            "teamId" to event.teamId,
+                            "triggeredBy" to event.triggeredBy.toString(),
+                        ),
                 )
             }
         notificationRepository.saveAll(notifications)
@@ -93,8 +106,11 @@ class NotificationEventListener(
                 Notification(
                     type = NotificationType.MEMBER_LEFT,
                     userId = it.userId,
-                    teamId = event.teamId,
-                    triggeredBy = event.triggeredBy,
+                    metadata =
+                        mapOf(
+                            "teamId" to event.teamId,
+                            "triggeredBy" to event.triggeredBy.toString(),
+                        ),
                 )
             }
         notificationRepository.saveAll(notifications)
@@ -108,8 +124,11 @@ class NotificationEventListener(
             Notification(
                 type = NotificationType.MEMBER_REMOVED,
                 userId = event.removedUserId,
-                teamId = event.teamId,
-                triggeredBy = event.triggeredBy,
+                metadata =
+                    mapOf(
+                        "teamId" to event.teamId,
+                        "triggeredBy" to event.triggeredBy.toString(),
+                    ),
             ),
         )
     }
@@ -122,7 +141,7 @@ class NotificationEventListener(
             Notification(
                 type = NotificationType.REVIEW_RECEIVED,
                 userId = event.revieweeId,
-                teamId = event.teamId,
+                metadata = mapOf("teamId" to event.teamId),
             ),
         )
     }
@@ -137,7 +156,7 @@ class NotificationEventListener(
                 Notification(
                     type = NotificationType.REVIEW_REQUESTED,
                     userId = it.userId,
-                    teamId = event.teamId,
+                    metadata = mapOf("teamId" to event.teamId),
                 )
             }
         notificationRepository.saveAll(notifications)

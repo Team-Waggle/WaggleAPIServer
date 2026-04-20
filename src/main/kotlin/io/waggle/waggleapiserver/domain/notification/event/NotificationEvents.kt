@@ -4,18 +4,19 @@ import java.util.UUID
 
 data class ApplicationReceivedEvent(
     val teamId: Long,
-    val triggeredBy: UUID,
-)
-
-data class ApplicationApprovedEvent(
-    val teamId: Long,
-    val applicantUserId: UUID,
+    val postId: Long,
     val triggeredBy: UUID,
 )
 
 data class ApplicationRejectedEvent(
     val teamId: Long,
     val applicantUserId: UUID,
+    val triggeredBy: UUID,
+)
+
+data class TeamJoinedEvent(
+    val teamId: Long,
+    val joinedUserId: UUID,
     val triggeredBy: UUID,
 )
 
