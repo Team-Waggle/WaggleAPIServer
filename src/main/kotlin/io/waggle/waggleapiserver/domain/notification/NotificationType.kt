@@ -2,9 +2,9 @@ package io.waggle.waggleapiserver.domain.notification
 
 enum class NotificationType {
     APPLICATION_RECEIVED,
-    APPLICATION_ACCEPTED,
     APPLICATION_REJECTED,
     APPLICATION_REMIND,
+    TEAM_JOINED,
     MEMBER_JOINED,
     MEMBER_LEFT,
     MEMBER_REMOVED,

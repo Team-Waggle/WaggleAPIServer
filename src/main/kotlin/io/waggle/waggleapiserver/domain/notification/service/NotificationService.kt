@@ -2,21 +2,24 @@ package io.waggle.waggleapiserver.domain.notification.service
 
 import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
+import io.waggle.waggleapiserver.domain.notification.NotificationType
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationCountResponse
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
 import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
-import io.waggle.waggleapiserver.domain.team.dto.response.NotificationTeamResponse
+import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 @Transactional(readOnly = true)
 class NotificationService(
     private val notificationRepository: NotificationRepository,
+    private val postRepository: PostRepository,
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
 ) {
@@ -32,34 +35,55 @@ class NotificationService(
         val slicedNotifications =
             if (hasNext) notifications.take(cursorQuery.size) else notifications
 
-        val teamIds = slicedNotifications.mapNotNull { it.teamId }.distinct()
+        val teamIds =
+            slicedNotifications
+                .mapNotNull { (it.metadata["teamId"] as? Number)?.toLong() }
+                .distinct()
         val teamById = teamRepository.findAllById(teamIds).associateBy { it.id }
 
-        val triggeredByUserIds = slicedNotifications.mapNotNull { it.triggeredBy }
+        val postIds =
+            slicedNotifications
+                .mapNotNull { (it.metadata["postId"] as? Number)?.toLong() }
+                .distinct()
+        val postById = postRepository.findAllById(postIds).associateBy { it.id }
+
+        val triggeredBys =
+            slicedNotifications
+                .mapNotNull {
+                    (it.metadata["triggeredBy"] as? String)?.let(UUID::fromString)
+                }.distinct()
         val triggeredByUserById =
-            userRepository.findAllById(triggeredByUserIds).associateBy { it.id }
+            userRepository.findAllById(triggeredBys).associateBy { it.id }
 
         val data =
             slicedNotifications.map { notification ->
+                val teamId = (notification.metadata["teamId"] as? Number)?.toLong()
                 val team =
-                    notification.teamId?.let { teamById[it] }?.let {
-                        NotificationTeamResponse.from(it)
-                    }
+                    teamId?.let { teamById[it] }?.let { NotificationResponse.TeamResponse.from(it) }
 
+                val postId = (notification.metadata["postId"] as? Number)?.toLong()
+                val post =
+                    postId?.let { postById[it] }?.let { NotificationResponse.PostResponse.from(it) }
+
+                val triggeredByUserId =
+                    (notification.metadata["triggeredBy"] as? String)
+                        ?.let(UUID::fromString)
                 val triggeredBy =
-                    notification.triggeredBy?.let {
-                        triggeredByUserById[it]?.let { user ->
-                            NotificationResponse.TriggeredByResponse.of(
-                                user,
-                            )
-                        }
-                    }
+                    triggeredByUserId
+                        ?.let { triggeredByUserById[it] }
+                        ?.let { NotificationResponse.TriggeredByResponse.of(it) }
 
-                NotificationResponse.of(
-                    notification = notification,
-                    team = team,
-                    triggeredBy = triggeredBy,
-                )
+                val metadata =
+                    buildMap<String, Any?> {
+                        putAll(notification.metadata.filterKeys { it !in HYDRATED_METADATA_KEYS })
+                        team?.let { put("team", it) }
+                        post?.let { put("post", it) }
+                        if (notification.type in TRIGGERED_BY_TYPES) {
+                            triggeredBy?.let { put("triggeredBy", it) }
+                        }
+                    }.ifEmpty { null }
+
+                NotificationResponse.of(notification = notification, metadata = metadata)
             }
 
         return CursorResponse(
@@ -86,5 +110,16 @@ class NotificationService(
     @Transactional
     fun readAllNotifications(user: User) {
         notificationRepository.markAllAsRead(user.id)
+    }
+
+    companion object {
+        private val TRIGGERED_BY_TYPES =
+            setOf(
+                NotificationType.APPLICATION_RECEIVED,
+                NotificationType.MEMBER_JOINED,
+                NotificationType.MEMBER_LEFT,
+            )
+
+        private val HYDRATED_METADATA_KEYS = setOf("teamId", "postId", "triggeredBy")
     }
 }

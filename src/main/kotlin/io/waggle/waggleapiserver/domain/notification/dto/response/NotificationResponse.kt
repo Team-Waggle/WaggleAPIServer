@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.notification.Notification
 import io.waggle.waggleapiserver.domain.notification.NotificationType
-import io.waggle.waggleapiserver.domain.team.dto.response.NotificationTeamResponse
+import io.waggle.waggleapiserver.domain.post.Post
+import io.waggle.waggleapiserver.domain.team.Team
 import io.waggle.waggleapiserver.domain.user.User
 import java.time.Instant
 import java.util.UUID
@@ -16,16 +17,51 @@ data class NotificationResponse(
     @Schema(description = "알림 타입", example = "APPLICATION_RECEIVED")
     val type: NotificationType,
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Schema(description = "팀 정보")
-    val team: NotificationTeamResponse?,
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Schema(description = "관련 사용자 정보")
-    val triggeredBy: TriggeredByResponse?,
+    @Schema(description = "타입별 부가 정보 (team, triggeredBy, post 등)")
+    val metadata: Map<String, Any?>?,
     @Schema(description = "알림 확인일시")
     val readAt: Instant?,
     @Schema(description = "알림 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) {
+    @Schema(description = "팀 정보")
+    data class TeamResponse(
+        @Schema(description = "팀 ID", example = "1")
+        val teamId: Long,
+        @Schema(description = "팀명", example = "Waggle")
+        val name: String,
+        @Schema(
+            description = "프로필 이미지 URL",
+            example = "https://example.com.png",
+        )
+        val profileImageUrl: String?,
+    ) {
+        companion object {
+            fun from(team: Team) =
+                TeamResponse(
+                    teamId = team.id,
+                    name = team.name,
+                    profileImageUrl = team.profileImageUrl,
+                )
+        }
+    }
+
+    @Schema(description = "모집글 정보")
+    data class PostResponse(
+        @Schema(description = "모집글 ID", example = "1")
+        val postId: Long,
+        @Schema(description = "모집글 제목", example = "백엔드 개발자 모집")
+        val title: String,
+    ) {
+        companion object {
+            fun from(post: Post) =
+                PostResponse(
+                    postId = post.id,
+                    title = post.title,
+                )
+        }
+    }
+
     @Schema(description = "관련 사용자 정보")
     data class TriggeredByResponse(
         @Schema(description = "사용자 ID")
@@ -45,23 +81,12 @@ data class NotificationResponse(
     companion object {
         fun of(
             notification: Notification,
-            team: NotificationTeamResponse?,
-            triggeredBy: TriggeredByResponse?,
+            metadata: Map<String, Any?>?,
         ): NotificationResponse =
             NotificationResponse(
                 notificationId = notification.id,
                 type = notification.type,
-                team = team,
-                triggeredBy =
-                    when (notification.type) {
-                        NotificationType.APPLICATION_RECEIVED,
-                        NotificationType.APPLICATION_REMIND,
-                        NotificationType.MEMBER_JOINED,
-                        NotificationType.MEMBER_LEFT,
-                        -> triggeredBy
-
-                        else -> null
-                    },
+                metadata = metadata,
                 readAt = notification.readAt,
                 createdAt = notification.createdAt,
             )

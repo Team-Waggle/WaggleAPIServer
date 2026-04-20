@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 @Component
 class NotificationScheduler(
@@ -41,14 +42,14 @@ class NotificationScheduler(
         if (pendingApplications.isEmpty()) return
 
         val postIds = pendingApplications.map { it.postId }.distinct()
-        val recruitingPostIds =
+        val recruitingPostIdSet =
             recruitmentRepository
                 .findByPostIdIn(postIds)
                 .filter { it.status == RecruitmentStatus.RECRUITING }
                 .map { it.postId }
                 .toSet()
 
-        val targetApplications = pendingApplications.filter { it.postId in recruitingPostIds }
+        val targetApplications = pendingApplications.filter { it.postId in recruitingPostIdSet }
 
         if (targetApplications.isEmpty()) return
 
@@ -75,29 +76,42 @@ class NotificationScheduler(
                 .map { it.userId to it.applicationId }
                 .toSet()
 
-        val userIdToRemindedApplicationIdSet =
+        val userIdToRemindedTeamIdSet =
             notificationRepository
-                .findByApplicationIdInAndType(applicationIds, NotificationType.APPLICATION_REMIND)
-                .map { it.userId to it.applicationId }
-                .toSet()
+                .findByUserIdInAndTypeAndCreatedAtAfter(
+                    memberUserIds,
+                    NotificationType.APPLICATION_REMIND,
+                    threeDaysAgo,
+                ).map { notification ->
+                    notification.userId to (notification.metadata["teamId"] as? Number)?.toLong()
+                }.toSet()
+
+        val unreadCountByUserIdToTeamId = mutableMapOf<Pair<UUID, Long>, Int>()
+
+        for (application in targetApplications) {
+            val members = membersByTeamId[application.teamId] ?: continue
+            for (member in members) {
+                if ((member.userId to application.id) in userIdToReadApplicationIdSet) continue
+                val userIdToTeamId = member.userId to application.teamId
+                unreadCountByUserIdToTeamId[userIdToTeamId] =
+                    (unreadCountByUserIdToTeamId[userIdToTeamId] ?: 0) + 1
+            }
+        }
 
         val notifications =
-            targetApplications.flatMap { application ->
-                val members = membersByTeamId[application.teamId] ?: emptyList()
-                members
-                    .filter { member ->
-                        (member.userId to application.id) !in userIdToReadApplicationIdSet &&
-                            (member.userId to application.id) !in userIdToRemindedApplicationIdSet
-                    }.map { member ->
-                        Notification(
-                            type = NotificationType.APPLICATION_REMIND,
-                            userId = member.userId,
-                            teamId = application.teamId,
-                            applicationId = application.id,
-                            triggeredBy = application.userId,
-                        )
-                    }
-            }
+            unreadCountByUserIdToTeamId
+                .filter { (userIdToTeamId, _) -> userIdToTeamId !in userIdToRemindedTeamIdSet }
+                .map { (userIdToTeamId, count) ->
+                    Notification(
+                        type = NotificationType.APPLICATION_REMIND,
+                        userId = userIdToTeamId.first,
+                        metadata =
+                            mapOf(
+                                "teamId" to userIdToTeamId.second,
+                                "unreadApplicationCount" to count,
+                            ),
+                    )
+                }
 
         notificationRepository.saveAll(notifications)
     }

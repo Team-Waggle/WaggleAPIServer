@@ -1,0 +1,1 @@
+ALTER TABLE members ADD COLUMN admitted_by BINARY(16) NULL;

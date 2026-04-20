@@ -37,6 +37,8 @@ class Member(
     var role: MemberRole = MemberRole.MEMBER,
     @Column(name = "is_visible", nullable = false)
     var visible: Boolean = true,
+    @Column(name = "admitted_by", updatable = false)
+    val admittedBy: UUID? = null,
 ) : AuditingEntity() {
     @Column(name = "deleted_by")
     var deletedBy: UUID? = null

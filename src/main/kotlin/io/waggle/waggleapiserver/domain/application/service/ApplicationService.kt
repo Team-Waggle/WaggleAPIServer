@@ -15,10 +15,10 @@ import io.waggle.waggleapiserver.domain.application.repository.ApplicationReposi
 import io.waggle.waggleapiserver.domain.member.Member
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
-import io.waggle.waggleapiserver.domain.notification.event.ApplicationApprovedEvent
 import io.waggle.waggleapiserver.domain.notification.event.ApplicationReceivedEvent
 import io.waggle.waggleapiserver.domain.notification.event.ApplicationRejectedEvent
 import io.waggle.waggleapiserver.domain.notification.event.MemberJoinedEvent
+import io.waggle.waggleapiserver.domain.notification.event.TeamJoinedEvent
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.user.User
@@ -96,6 +96,7 @@ class ApplicationService(
         eventPublisher.publishEvent(
             ApplicationReceivedEvent(
                 teamId = teamId,
+                postId = post.id,
                 triggeredBy = user.id,
             ),
         )
@@ -283,14 +284,15 @@ class ApplicationService(
                     teamId = application.teamId,
                     position = application.position,
                     role = MemberRole.MEMBER,
+                    admittedBy = user.id,
                 )
             memberRepository.save(member)
         }
 
         eventPublisher.publishEvent(
-            ApplicationApprovedEvent(
+            TeamJoinedEvent(
                 teamId = application.teamId,
-                applicantUserId = application.userId,
+                joinedUserId = application.userId,
                 triggeredBy = user.id,
             ),
         )
