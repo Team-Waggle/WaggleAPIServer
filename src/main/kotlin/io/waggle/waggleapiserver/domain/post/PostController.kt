@@ -47,16 +47,14 @@ class PostController(
     fun getPosts(
         @ParameterObject query: PostGetQuery,
         @ParameterObject cursorQuery: CursorGetQuery,
-        @CurrentUser user: User?,
-    ): CursorResponse<PostSimpleResponse> = postService.getPosts(query, cursorQuery, user)
+    ): CursorResponse<PostSimpleResponse> = postService.getPosts(query, cursorQuery)
 
     @AllowIncompleteProfile
     @Operation(summary = "모집글 상세 조회")
     @GetMapping("/{postId}")
     fun getPost(
         @PathVariable postId: Long,
-        @CurrentUser user: User?,
-    ): PostDetailResponse = postService.getPost(postId, user)
+    ): PostDetailResponse = postService.getPost(postId)
 
     @Operation(summary = "모집글 수정")
     @PutMapping("/{postId}")

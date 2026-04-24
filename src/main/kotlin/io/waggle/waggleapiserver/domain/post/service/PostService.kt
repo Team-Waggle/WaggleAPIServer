@@ -92,7 +92,6 @@ class PostService(
     fun getPosts(
         query: PostGetQuery,
         cursorQuery: CursorGetQuery,
-        user: User?,
     ): CursorResponse<PostSimpleResponse> {
         val direction =
             when (query.sort) {
@@ -147,10 +146,7 @@ class PostService(
         )
     }
 
-    fun getPost(
-        postId: Long,
-        user: User?,
-    ): PostDetailResponse {
+    fun getPost(postId: Long): PostDetailResponse {
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
