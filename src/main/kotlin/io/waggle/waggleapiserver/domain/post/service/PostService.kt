@@ -84,7 +84,7 @@ class PostService(
         return PostDetailResponse.of(
             savedPost,
             UserSimpleResponse.from(user),
-            TeamResponse.of(team, memberCount),
+            TeamResponse.of(team, memberCount, isMember = true),
             savedRecruitments.map { RecruitmentResponse.from(it) },
         )
     }
@@ -146,7 +146,10 @@ class PostService(
         )
     }
 
-    fun getPost(postId: Long): PostDetailResponse {
+    fun getPost(
+        postId: Long,
+        user: User?,
+    ): PostDetailResponse {
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
@@ -167,11 +170,19 @@ class PostService(
 
         val memberCount = memberRepository.countByTeamId(team.id)
 
+        val isTeamMember =
+            user?.let { memberRepository.existsByUserIdAndTeamId(it.id, post.teamId) } ?: false
+        val appliedPositionSet =
+            user?.let {
+                applicationRepository.findPositionsByPostIdAndUserId(postId, it.id).toSet()
+            } ?: emptySet()
+
         return PostDetailResponse.of(
             post,
             UserSimpleResponse.from(author),
-            TeamResponse.of(team, memberCount),
+            TeamResponse.of(team, memberCount, isTeamMember),
             recruitments,
+            appliedPositionSet,
         )
     }
 
@@ -297,7 +308,7 @@ class PostService(
         return PostDetailResponse.of(
             post,
             UserSimpleResponse.from(user),
-            TeamResponse.of(team, memberCount),
+            TeamResponse.of(team, memberCount, isMember = true),
             savedRecruitments.map { RecruitmentResponse.from(it) },
         )
     }

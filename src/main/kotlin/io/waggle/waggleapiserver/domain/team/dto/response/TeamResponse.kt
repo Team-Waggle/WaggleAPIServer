@@ -26,6 +26,8 @@ data class TeamResponse(
     val profileImageUrl: String?,
     @Schema(description = "팀 멤버 수", example = "5")
     val memberCount: Int,
+    @Schema(description = "현재 사용자가 팀 멤버인지 여부")
+    val isMember: Boolean,
     @Schema(description = "팀 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
     @Schema(description = "팀 수정일시", example = "2025-11-16T12:30:45.123456Z")
@@ -35,6 +37,7 @@ data class TeamResponse(
         fun of(
             team: Team,
             memberCount: Int,
+            isMember: Boolean,
         ) = TeamResponse(
             teamId = team.id,
             name = team.name,
@@ -43,6 +46,7 @@ data class TeamResponse(
             workMode = team.workMode,
             profileImageUrl = team.profileImageUrl,
             memberCount = memberCount,
+            isMember = isMember,
             createdAt = team.createdAt,
             updatedAt = team.updatedAt,
         )

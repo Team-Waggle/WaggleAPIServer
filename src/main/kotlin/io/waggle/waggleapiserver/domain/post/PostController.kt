@@ -54,7 +54,8 @@ class PostController(
     @GetMapping("/{postId}")
     fun getPost(
         @PathVariable postId: Long,
-    ): PostDetailResponse = postService.getPost(postId)
+        @CurrentUser user: User?,
+    ): PostDetailResponse = postService.getPost(postId, user)
 
     @Operation(summary = "모집글 수정")
     @PutMapping("/{postId}")

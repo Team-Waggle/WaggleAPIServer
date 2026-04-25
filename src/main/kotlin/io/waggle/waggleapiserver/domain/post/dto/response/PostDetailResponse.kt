@@ -7,6 +7,7 @@ import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
 import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
+import io.waggle.waggleapiserver.domain.user.enums.Position
 import java.time.Instant
 
 @Schema(description = "모집글 상세 응답 DTO")
@@ -25,6 +26,8 @@ data class PostDetailResponse(
     val isRecruiting: Boolean,
     @Schema(description = "모집 정보 목록")
     val recruitments: List<RecruitmentResponse>,
+    @Schema(description = "현재 사용자가 이 모집글에 지원한 포지션 목록")
+    val appliedPositions: Set<Position>,
     @Schema(description = "모집글 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
     @Schema(description = "모집글 수정일시", example = "2025-11-16T12:30:45.123456Z")
@@ -36,6 +39,7 @@ data class PostDetailResponse(
             user: UserSimpleResponse,
             team: TeamResponse,
             recruitments: List<RecruitmentResponse> = emptyList(),
+            appliedPositions: Set<Position> = emptySet(),
         ): PostDetailResponse =
             PostDetailResponse(
                 postId = post.id,
@@ -45,6 +49,7 @@ data class PostDetailResponse(
                 team = team,
                 isRecruiting = recruitments.any { it.status == RecruitmentStatus.RECRUITING },
                 recruitments = recruitments,
+                appliedPositions = appliedPositions,
                 createdAt = post.createdAt,
                 updatedAt = post.updatedAt,
             )
