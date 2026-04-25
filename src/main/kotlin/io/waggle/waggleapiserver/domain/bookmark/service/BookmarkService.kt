@@ -93,11 +93,20 @@ class BookmarkService(
 
             BookmarkType.TEAM -> {
                 val teams = teamRepository.findByIdInOrderByCreatedAtDesc(targetIds)
+                val teamIds = teams.map { it.id }
                 val memberCountByTeamId =
                     memberRepository
-                        .countByTeamIds(teams.map { it.id })
+                        .countByTeamIds(teamIds)
                         .associate { it.teamId to it.count.toInt() }
-                teams.map { TeamResponse.of(it, memberCountByTeamId[it.id] ?: 0) }
+                val memberTeamIdSet =
+                    memberRepository.findMemberTeamIdsByUserIdAndTeamIdIn(user.id, teamIds).toSet()
+                teams.map {
+                    TeamResponse.of(
+                        it,
+                        memberCountByTeamId[it.id] ?: 0,
+                        isMember = it.id in memberTeamIdSet,
+                    )
+                }
             }
         }
     }

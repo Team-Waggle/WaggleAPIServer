@@ -16,19 +16,18 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.Table
-import jakarta.persistence.UniqueConstraint
 import java.util.UUID
 
 @Entity
 @Table(
     name = "applications",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["team_id", "user_id", "position"])],
     indexes = [
         Index(name = "idx_applications_user", columnList = "user_id"),
         Index(name = "idx_applications_team_status", columnList = "team_id, status"),
         Index(name = "idx_applications_post", columnList = "post_id"),
         Index(name = "idx_applications_team_priority_id", columnList = "team_id, status_priority, id DESC"),
         Index(name = "idx_applications_post_priority_id", columnList = "post_id, status_priority, id DESC"),
+        Index(name = "idx_applications_post_user_position", columnList = "post_id, user_id, position"),
     ],
 )
 class Application(

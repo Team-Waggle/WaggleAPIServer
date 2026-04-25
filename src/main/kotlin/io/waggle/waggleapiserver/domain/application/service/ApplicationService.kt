@@ -59,8 +59,15 @@ class ApplicationService(
             )
         }
 
+        if (memberRepository.existsByUserIdAndTeamId(user.id, teamId)) {
+            throw BusinessException(
+                ErrorCode.DUPLICATE_RESOURCE,
+                "Already a member of team: $teamId",
+            )
+        }
+
         val recruitment =
-            recruitmentRepository.findByPostIdAndPosition(postId, position)
+            recruitmentRepository.findForUpdateByPostIdAndPosition(postId, position)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Recruitment not found: $postId, $position",
@@ -70,15 +77,15 @@ class ApplicationService(
             throw BusinessException(ErrorCode.INVALID_STATE, "$position is no longer recruiting")
         }
 
-        if (applicationRepository.existsByTeamIdAndUserIdAndPosition(
-                teamId,
+        if (applicationRepository.existsByPostIdAndUserIdAndPosition(
+                postId,
                 user.id,
                 position,
             )
         ) {
             throw BusinessException(
                 ErrorCode.DUPLICATE_RESOURCE,
-                "Already applied to team: $teamId",
+                "Already applied to post: $postId, position: $position",
             )
         }
 
@@ -277,16 +284,36 @@ class ApplicationService(
 
         application.updateStatus(ApplicationStatus.APPROVED)
 
-        if (!memberRepository.existsByUserIdAndTeamId(application.userId, application.teamId)) {
-            val member =
-                Member(
-                    userId = application.userId,
-                    teamId = application.teamId,
+        val existingMember =
+            memberRepository.findByUserIdAndTeamIdIncludingDeleted(
+                application.userId,
+                application.teamId,
+            )
+
+        when {
+            existingMember == null ->
+                memberRepository.save(
+                    Member(
+                        userId = application.userId,
+                        teamId = application.teamId,
+                        position = application.position,
+                        role = MemberRole.MEMBER,
+                        admittedBy = user.id,
+                    ),
+                )
+
+            existingMember.deletedAt != null ->
+                existingMember.reactivate(
                     position = application.position,
                     role = MemberRole.MEMBER,
                     admittedBy = user.id,
                 )
-            memberRepository.save(member)
+
+            else ->
+                throw BusinessException(
+                    ErrorCode.DUPLICATE_RESOURCE,
+                    "User is already a member of team: ${application.teamId}",
+                )
         }
 
         eventPublisher.publishEvent(

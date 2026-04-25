@@ -7,15 +7,22 @@ import org.springframework.data.jpa.repository.Query
 import java.util.UUID
 
 interface FollowRepository : JpaRepository<Follow, Long> {
-    fun existsByFollowerIdAndFolloweeId(
-        followerId: UUID,
-        followeeId: UUID,
-    ): Boolean
-
     fun deleteByFollowerIdAndFolloweeId(
         followerId: UUID,
         followeeId: UUID,
     )
+
+    @Query(
+        """
+        SELECT * FROM follows
+        WHERE follower_id = :followerId AND followee_id = :followeeId
+        """,
+        nativeQuery = true,
+    )
+    fun findByFollowerIdAndFolloweeIdIncludingDeleted(
+        followerId: UUID,
+        followeeId: UUID,
+    ): Follow?
 
     fun countByFollowerId(followerId: UUID): Long
 

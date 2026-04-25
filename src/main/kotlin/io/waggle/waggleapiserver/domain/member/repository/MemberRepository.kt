@@ -13,6 +13,12 @@ interface MemberRepository : JpaRepository<Member, Long> {
         teamId: Long,
     ): Boolean
 
+    @Query("SELECT m.teamId FROM Member m WHERE m.userId = :userId AND m.teamId IN :teamIds")
+    fun findMemberTeamIdsByUserIdAndTeamIdIn(
+        userId: UUID,
+        teamIds: List<Long>,
+    ): List<Long>
+
     fun countByTeamId(teamId: Long): Int
 
     @Query(
@@ -38,6 +44,18 @@ interface MemberRepository : JpaRepository<Member, Long> {
         nativeQuery = true,
     )
     fun findByUserIdAndTeamIdAndDeletedAtIsNotNull(
+        userId: UUID,
+        teamId: Long,
+    ): Member?
+
+    @Query(
+        """
+        SELECT * FROM members
+        WHERE user_id = :userId AND team_id = :teamId
+        """,
+        nativeQuery = true,
+    )
+    fun findByUserIdAndTeamIdIncludingDeleted(
         userId: UUID,
         teamId: Long,
     ): Member?
@@ -84,6 +102,19 @@ interface MemberRepository : JpaRepository<Member, Long> {
         nativeQuery = true,
     )
     fun updateDeletedAtByUserIdAndDeletedAtIsNull(userId: UUID)
+
+    @Modifying
+    @Query(
+        """
+        UPDATE members SET deleted_at = UTC_TIMESTAMP(6), deleted_by = :deletedBy
+        WHERE team_id = :teamId AND deleted_at IS NULL
+        """,
+        nativeQuery = true,
+    )
+    fun updateDeletedAtAndDeletedByByTeamIdAndDeletedAtIsNull(
+        teamId: Long,
+        deletedBy: UUID,
+    )
 }
 
 interface TeamMemberCount {

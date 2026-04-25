@@ -36,17 +36,28 @@ class FollowService(
             throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $followeeId")
         }
 
-        return if (followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)) {
-            followRepository.deleteByFollowerIdAndFolloweeId(followerId, followeeId)
-            FollowToggleResponse(isFollowing = false)
-        } else {
-            val follow =
-                Follow(
-                    followerId = followerId,
-                    followeeId = followeeId,
+        val existingFollow =
+            followRepository.findByFollowerIdAndFolloweeIdIncludingDeleted(followerId, followeeId)
+        return when {
+            existingFollow == null -> {
+                followRepository.save(
+                    Follow(
+                        followerId = followerId,
+                        followeeId = followeeId,
+                    ),
                 )
-            followRepository.save(follow)
-            FollowToggleResponse(isFollowing = true)
+                FollowToggleResponse(isFollowing = true)
+            }
+
+            existingFollow.deletedAt == null -> {
+                followRepository.deleteByFollowerIdAndFolloweeId(followerId, followeeId)
+                FollowToggleResponse(isFollowing = false)
+            }
+
+            else -> {
+                existingFollow.reactivate()
+                FollowToggleResponse(isFollowing = true)
+            }
         }
     }
 

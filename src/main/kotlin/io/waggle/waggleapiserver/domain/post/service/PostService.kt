@@ -84,7 +84,7 @@ class PostService(
         return PostDetailResponse.of(
             savedPost,
             UserSimpleResponse.from(user),
-            TeamResponse.of(team, memberCount),
+            TeamResponse.of(team, memberCount, isMember = true),
             savedRecruitments.map { RecruitmentResponse.from(it) },
         )
     }
@@ -92,7 +92,6 @@ class PostService(
     fun getPosts(
         query: PostGetQuery,
         cursorQuery: CursorGetQuery,
-        user: User?,
     ): CursorResponse<PostSimpleResponse> {
         val direction =
             when (query.sort) {
@@ -171,11 +170,19 @@ class PostService(
 
         val memberCount = memberRepository.countByTeamId(team.id)
 
+        val isTeamMember =
+            user?.let { memberRepository.existsByUserIdAndTeamId(it.id, post.teamId) } ?: false
+        val appliedPositionSet =
+            user?.let {
+                applicationRepository.findPositionsByPostIdAndUserId(postId, it.id).toSet()
+            } ?: emptySet()
+
         return PostDetailResponse.of(
             post,
             UserSimpleResponse.from(author),
-            TeamResponse.of(team, memberCount),
+            TeamResponse.of(team, memberCount, isTeamMember),
             recruitments,
+            appliedPositionSet,
         )
     }
 
@@ -256,20 +263,39 @@ class PostService(
         post.checkOwnership(user.id)
         post.update(title, content, teamId)
 
-        val existingRecruitments = recruitmentRepository.findByPostId(postId)
-        recruitmentRepository.deleteAll(existingRecruitments)
+        val existingRecruitmentByPosition = recruitmentRepository.findByPostId(postId).associateBy { it.position }
+        val requestedRecruitmentByPosition = recruitments.associateBy { it.position }
 
-        val savedRecruitments =
-            recruitmentRepository.saveAll(
-                recruitments.map {
-                    Recruitment(
-                        position = it.position,
-                        count = it.count,
-                        postId = postId,
-                        skills = it.skills.toMutableSet(),
+        val recruitmentsToDelete =
+            existingRecruitmentByPosition.filterKeys { it !in requestedRecruitmentByPosition }.values
+        recruitmentRepository.deleteAll(recruitmentsToDelete)
+
+        val updatedRecruitments =
+            requestedRecruitmentByPosition.mapNotNull { (position, requestedRecruitment) ->
+                existingRecruitmentByPosition[position]?.also {
+                    it.update(
+                        requestedRecruitment.count,
+                        requestedRecruitment.skills,
                     )
-                },
+                }
+            }
+
+        val insertedRecruitments =
+            recruitmentRepository.saveAll(
+                requestedRecruitmentByPosition
+                    .filterKeys { it !in existingRecruitmentByPosition }
+                    .values
+                    .map {
+                        Recruitment(
+                            position = it.position,
+                            count = it.count,
+                            postId = postId,
+                            skills = it.skills.toMutableSet(),
+                        )
+                    },
             )
+
+        val savedRecruitments = updatedRecruitments + insertedRecruitments
 
         val team =
             teamRepository.findByIdOrNull(post.teamId)
@@ -282,7 +308,7 @@ class PostService(
         return PostDetailResponse.of(
             post,
             UserSimpleResponse.from(user),
-            TeamResponse.of(team, memberCount),
+            TeamResponse.of(team, memberCount, isMember = true),
             savedRecruitments.map { RecruitmentResponse.from(it) },
         )
     }

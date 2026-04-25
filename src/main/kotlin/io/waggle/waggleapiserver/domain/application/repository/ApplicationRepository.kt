@@ -11,11 +11,17 @@ import java.time.Instant
 import java.util.UUID
 
 interface ApplicationRepository : JpaRepository<Application, Long> {
-    fun existsByTeamIdAndUserIdAndPosition(
-        teamId: Long,
+    fun existsByPostIdAndUserIdAndPosition(
+        postId: Long,
         userId: UUID,
         position: Position,
     ): Boolean
+
+    @Query("SELECT a.position FROM Application a WHERE a.postId = :postId AND a.userId = :userId")
+    fun findPositionsByPostIdAndUserId(
+        postId: Long,
+        userId: UUID,
+    ): List<Position>
 
     fun findByIdAndUserId(
         id: Long,
@@ -103,6 +109,16 @@ interface ApplicationRepository : JpaRepository<Application, Long> {
         nativeQuery = true,
     )
     fun updateDeletedAtByUserIdAndDeletedAtIsNull(userId: UUID)
+
+    @Modifying
+    @Query(
+        """
+        UPDATE applications SET deleted_at = UTC_TIMESTAMP(6)
+        WHERE team_id = :teamId AND deleted_at IS NULL
+        """,
+        nativeQuery = true,
+    )
+    fun updateDeletedAtByTeamIdAndDeletedAtIsNull(teamId: Long)
 }
 
 interface PostApplicantCount {

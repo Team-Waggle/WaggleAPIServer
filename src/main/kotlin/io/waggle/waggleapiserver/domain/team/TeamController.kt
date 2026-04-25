@@ -72,11 +72,13 @@ class TeamController(
         @CurrentUser user: User,
     ): PresignedUrlResponse = teamService.generateProfileImagePresignedUrl(request)
 
+    @AllowIncompleteProfile
     @Operation(summary = "팀 상세 조회")
     @GetMapping("/{teamId}")
     fun getTeam(
         @PathVariable teamId: Long,
-    ): TeamResponse = teamService.getTeam(teamId)
+        @CurrentUser user: User?,
+    ): TeamResponse = teamService.getTeam(teamId, user)
 
     @AllowIncompleteProfile
     @Operation(summary = "팀 멤버 목록 조회")

@@ -37,8 +37,8 @@ class Member(
     var role: MemberRole = MemberRole.MEMBER,
     @Column(name = "is_visible", nullable = false)
     var visible: Boolean = true,
-    @Column(name = "admitted_by", updatable = false)
-    val admittedBy: UUID? = null,
+    @Column(name = "admitted_by")
+    var admittedBy: UUID? = null,
 ) : AuditingEntity() {
     @Column(name = "deleted_by")
     var deletedBy: UUID? = null
@@ -63,5 +63,18 @@ class Member(
     fun deleteBy(deletedBy: UUID) {
         this.deletedBy = deletedBy
         delete()
+    }
+
+    fun reactivate(
+        position: Position,
+        role: MemberRole,
+        admittedBy: UUID,
+    ) {
+        this.deletedAt = null
+        this.deletedBy = null
+        this.position = position
+        this.role = role
+        this.visible = true
+        this.admittedBy = admittedBy
     }
 }
