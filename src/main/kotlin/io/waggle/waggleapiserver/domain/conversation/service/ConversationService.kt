@@ -2,7 +2,6 @@ package io.waggle.waggleapiserver.domain.conversation.service
 
 import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
-import io.waggle.waggleapiserver.domain.conversation.Conversation
 import io.waggle.waggleapiserver.domain.conversation.dto.response.ConversationResponse
 import io.waggle.waggleapiserver.domain.conversation.repository.ConversationRepository
 import io.waggle.waggleapiserver.domain.message.Message
@@ -112,39 +111,18 @@ class ConversationService(
     }
 
     private fun upsertSenderConversation(message: Message) {
-        val updated =
-            conversationRepository.updateLastMessageId(
-                userId = message.senderId,
-                partnerId = message.receiverId,
-                messageId = message.id,
-            )
-        if (updated == 0) {
-            conversationRepository.save(
-                Conversation(
-                    userId = message.senderId,
-                    partnerId = message.receiverId,
-                    lastMessageId = message.id,
-                ),
-            )
-        }
+        conversationRepository.upsertLastMessage(
+            userId = message.senderId,
+            partnerId = message.receiverId,
+            messageId = message.id,
+        )
     }
 
     private fun upsertReceiverConversation(message: Message) {
-        val updated =
-            conversationRepository.updateLastMessageAndIncrementUnreadCount(
-                userId = message.receiverId,
-                partnerId = message.senderId,
-                messageId = message.id,
-            )
-        if (updated == 0) {
-            val conversation =
-                Conversation(
-                    userId = message.receiverId,
-                    partnerId = message.senderId,
-                    lastMessageId = message.id,
-                )
-            conversation.unreadCount = 1
-            conversationRepository.save(conversation)
-        }
+        conversationRepository.upsertLastMessageAndIncrementUnreadCount(
+            userId = message.receiverId,
+            partnerId = message.senderId,
+            messageId = message.id,
+        )
     }
 }
