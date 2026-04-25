@@ -11,8 +11,8 @@ import java.time.Instant
 import java.util.UUID
 
 interface ApplicationRepository : JpaRepository<Application, Long> {
-    fun existsByTeamIdAndUserIdAndPosition(
-        teamId: Long,
+    fun existsByPostIdAndUserIdAndPosition(
+        postId: Long,
         userId: UUID,
         position: Position,
     ): Boolean

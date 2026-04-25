@@ -60,7 +60,7 @@ class ApplicationService(
         }
 
         val recruitment =
-            recruitmentRepository.findByPostIdAndPosition(postId, position)
+            recruitmentRepository.findForUpdateByPostIdAndPosition(postId, position)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Recruitment not found: $postId, $position",
@@ -70,15 +70,15 @@ class ApplicationService(
             throw BusinessException(ErrorCode.INVALID_STATE, "$position is no longer recruiting")
         }
 
-        if (applicationRepository.existsByTeamIdAndUserIdAndPosition(
-                teamId,
+        if (applicationRepository.existsByPostIdAndUserIdAndPosition(
+                postId,
                 user.id,
                 position,
             )
         ) {
             throw BusinessException(
                 ErrorCode.DUPLICATE_RESOURCE,
-                "Already applied to team: $teamId",
+                "Already applied to post: $postId, position: $position",
             )
         }
 
