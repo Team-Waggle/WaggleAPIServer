@@ -17,6 +17,12 @@ interface ApplicationRepository : JpaRepository<Application, Long> {
         position: Position,
     ): Boolean
 
+    @Query("SELECT a.position FROM Application a WHERE a.postId = :postId AND a.userId = :userId")
+    fun findPositionsByPostIdAndUserId(
+        postId: Long,
+        userId: UUID,
+    ): List<Position>
+
     fun findByIdAndUserId(
         id: Long,
         userId: UUID,
