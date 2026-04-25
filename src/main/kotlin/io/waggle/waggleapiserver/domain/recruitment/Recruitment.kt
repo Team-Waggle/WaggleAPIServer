@@ -33,7 +33,7 @@ class Recruitment(
     @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     val position: Position,
     @Column(nullable = false)
-    val count: Int,
+    var count: Int,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     var status: RecruitmentStatus = RecruitmentStatus.RECRUITING,
@@ -46,6 +46,15 @@ class Recruitment(
     val skills: MutableSet<Skill> = mutableSetOf(),
 ) : AuditingEntity() {
     fun isRecruiting(): Boolean = status == RecruitmentStatus.RECRUITING
+
+    fun update(
+        count: Int,
+        skills: Set<Skill>,
+    ) {
+        this.count = count
+        this.skills.clear()
+        this.skills.addAll(skills)
+    }
 
     fun updateStatus(newStatus: RecruitmentStatus) {
         if (status == newStatus) {
