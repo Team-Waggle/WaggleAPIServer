@@ -59,6 +59,13 @@ class ApplicationService(
             )
         }
 
+        if (memberRepository.existsByUserIdAndTeamId(user.id, teamId)) {
+            throw BusinessException(
+                ErrorCode.DUPLICATE_RESOURCE,
+                "Already a member of team: $teamId",
+            )
+        }
+
         val recruitment =
             recruitmentRepository.findForUpdateByPostIdAndPosition(postId, position)
                 ?: throw BusinessException(
