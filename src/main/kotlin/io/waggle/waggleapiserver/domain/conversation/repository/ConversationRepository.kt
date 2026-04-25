@@ -51,32 +51,42 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
 
     @Modifying
     @Query(
-        """
-        UPDATE Conversation c
-        SET c.lastMessageId = :messageId,
-            c.unreadCount = c.unreadCount + 1
-        WHERE c.userId = :userId AND c.partnerId = :partnerId
+        value = """
+            INSERT INTO conversations
+                (user_id, partner_id, last_message_id, unread_count, created_at, updated_at)
+            VALUES
+                (:userId, :partnerId, :messageId, 0, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+            ON DUPLICATE KEY UPDATE
+                last_message_id = GREATEST(last_message_id, VALUES(last_message_id)),
+                updated_at = UTC_TIMESTAMP(6)
         """,
+        nativeQuery = true,
     )
-    fun updateLastMessageAndIncrementUnreadCount(
+    fun upsertLastMessage(
         userId: UUID,
         partnerId: UUID,
         messageId: Long,
-    ): Int
+    )
 
     @Modifying
     @Query(
-        """
-        UPDATE Conversation c
-        SET c.lastMessageId = :messageId
-        WHERE c.userId = :userId AND c.partnerId = :partnerId
+        value = """
+            INSERT INTO conversations
+                (user_id, partner_id, last_message_id, unread_count, created_at, updated_at)
+            VALUES
+                (:userId, :partnerId, :messageId, 1, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+            ON DUPLICATE KEY UPDATE
+                last_message_id = GREATEST(last_message_id, VALUES(last_message_id)),
+                unread_count = unread_count + 1,
+                updated_at = UTC_TIMESTAMP(6)
         """,
+        nativeQuery = true,
     )
-    fun updateLastMessageId(
+    fun upsertLastMessageAndIncrementUnreadCount(
         userId: UUID,
         partnerId: UUID,
         messageId: Long,
-    ): Int
+    )
 
     @Modifying
     @Query(
