@@ -49,4 +49,14 @@ interface PostRepository : JpaRepository<Post, Long> {
         nativeQuery = true,
     )
     fun updateDeletedAtByUserIdAndDeletedAtIsNull(userId: UUID)
+
+    @Modifying
+    @Query(
+        """
+        UPDATE posts SET deleted_at = UTC_TIMESTAMP(6)
+        WHERE team_id = :teamId AND deleted_at IS NULL
+        """,
+        nativeQuery = true,
+    )
+    fun updateDeletedAtByTeamIdAndDeletedAtIsNull(teamId: Long)
 }

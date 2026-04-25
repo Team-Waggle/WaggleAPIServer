@@ -78,4 +78,13 @@ class Team(
             throw BusinessException(ErrorCode.INVALID_STATE, "Team is not completed yet")
         }
     }
+
+    override fun delete() {
+        this.name = "__deleted_${UUID.randomUUID()}_$name".take(NAME_MAX_LENGTH)
+        super.delete()
+    }
+
+    companion object {
+        private const val NAME_MAX_LENGTH = 255
+    }
 }

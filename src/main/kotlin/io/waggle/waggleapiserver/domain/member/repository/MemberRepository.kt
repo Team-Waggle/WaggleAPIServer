@@ -102,6 +102,19 @@ interface MemberRepository : JpaRepository<Member, Long> {
         nativeQuery = true,
     )
     fun updateDeletedAtByUserIdAndDeletedAtIsNull(userId: UUID)
+
+    @Modifying
+    @Query(
+        """
+        UPDATE members SET deleted_at = UTC_TIMESTAMP(6), deleted_by = :deletedBy
+        WHERE team_id = :teamId AND deleted_at IS NULL
+        """,
+        nativeQuery = true,
+    )
+    fun updateDeletedAtAndDeletedByByTeamIdAndDeletedAtIsNull(
+        teamId: Long,
+        deletedBy: UUID,
+    )
 }
 
 interface TeamMemberCount {
