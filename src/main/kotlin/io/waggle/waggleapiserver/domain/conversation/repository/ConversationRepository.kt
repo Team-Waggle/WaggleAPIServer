@@ -23,22 +23,22 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
     ): List<Conversation>
 
     @Query(
-        value = """
-            SELECT c.* FROM conversations c
-            JOIN users u ON u.id = c.partner_id
-            WHERE c.user_id = :userId
-            AND (
-                u.username LIKE CONCAT('%', :q, '%')
-                OR c.partner_id IN (
-                    SELECT IF(m.sender_id = :userId, m.receiver_id, m.sender_id)
-                    FROM messages m
-                    WHERE (m.sender_id = :userId OR m.receiver_id = :userId)
-                    AND MATCH(m.content) AGAINST(:q IN BOOLEAN MODE)
-                )
+        """
+        SELECT c.* FROM conversations c
+        JOIN users u ON u.id = c.partner_id
+        WHERE c.user_id = :userId
+        AND (
+            u.username LIKE CONCAT('%', :q, '%')
+            OR c.partner_id IN (
+                SELECT IF(m.sender_id = :userId, m.receiver_id, m.sender_id)
+                FROM messages m
+                WHERE (m.sender_id = :userId OR m.receiver_id = :userId)
+                AND MATCH(m.content) AGAINST(:q IN BOOLEAN MODE)
             )
-            AND (:cursor IS NULL OR c.last_message_id < :cursor)
-            ORDER BY c.last_message_id DESC
-            LIMIT :limit
+        )
+        AND (:cursor IS NULL OR c.last_message_id < :cursor)
+        ORDER BY c.last_message_id DESC
+        LIMIT :limit
         """,
         nativeQuery = true,
     )
@@ -51,14 +51,14 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
 
     @Modifying
     @Query(
-        value = """
-            INSERT INTO conversations
-                (user_id, partner_id, last_message_id, unread_count, created_at, updated_at)
-            VALUES
-                (:userId, :partnerId, :messageId, 0, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
-            ON DUPLICATE KEY UPDATE
-                last_message_id = GREATEST(last_message_id, VALUES(last_message_id)),
-                updated_at = UTC_TIMESTAMP(6)
+        """
+        INSERT INTO conversations
+            (user_id, partner_id, last_message_id, unread_count, created_at, updated_at)
+        VALUES
+            (:userId, :partnerId, :messageId, 0, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+        ON DUPLICATE KEY UPDATE
+            last_message_id = GREATEST(last_message_id, VALUES(last_message_id)),
+            updated_at = UTC_TIMESTAMP(6)
         """,
         nativeQuery = true,
     )
@@ -70,15 +70,15 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
 
     @Modifying
     @Query(
-        value = """
-            INSERT INTO conversations
-                (user_id, partner_id, last_message_id, unread_count, created_at, updated_at)
-            VALUES
-                (:userId, :partnerId, :messageId, 1, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
-            ON DUPLICATE KEY UPDATE
-                last_message_id = GREATEST(last_message_id, VALUES(last_message_id)),
-                unread_count = unread_count + 1,
-                updated_at = UTC_TIMESTAMP(6)
+        """
+        INSERT INTO conversations
+            (user_id, partner_id, last_message_id, unread_count, created_at, updated_at)
+        VALUES
+            (:userId, :partnerId, :messageId, 1, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+        ON DUPLICATE KEY UPDATE
+            last_message_id = GREATEST(last_message_id, VALUES(last_message_id)),
+            unread_count = unread_count + 1,
+            updated_at = UTC_TIMESTAMP(6)
         """,
         nativeQuery = true,
     )
