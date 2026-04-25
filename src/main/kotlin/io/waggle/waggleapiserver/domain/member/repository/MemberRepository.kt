@@ -42,6 +42,18 @@ interface MemberRepository : JpaRepository<Member, Long> {
         teamId: Long,
     ): Member?
 
+    @Query(
+        """
+        SELECT * FROM members
+        WHERE user_id = :userId AND team_id = :teamId
+        """,
+        nativeQuery = true,
+    )
+    fun findByUserIdAndTeamIdIncludingDeleted(
+        userId: UUID,
+        teamId: Long,
+    ): Member?
+
     fun findByTeamId(teamId: Long): List<Member>
 
     fun findByTeamIdAndUserIdNot(
