@@ -1,6 +1,5 @@
 package io.waggle.waggleapiserver.domain.recruitment
 
-import io.waggle.waggleapiserver.common.AuditingEntity
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.enums.Position
@@ -9,6 +8,7 @@ import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
 import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
+import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
@@ -19,8 +19,13 @@ import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
+import java.time.Instant
 
 @Entity
+@EntityListeners(AuditingEntityListener::class)
 @Table(
     name = "recruitments",
     uniqueConstraints = [UniqueConstraint(columnNames = ["post_id", "position"])],
@@ -44,7 +49,15 @@ class Recruitment(
     @Enumerated(EnumType.STRING)
     @Column(name = "skill", nullable = false, columnDefinition = "VARCHAR(30)")
     val skills: MutableSet<Skill> = mutableSetOf(),
-) : AuditingEntity() {
+) {
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    lateinit var createdAt: Instant
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    lateinit var updatedAt: Instant
+
     fun isRecruiting(): Boolean = status == RecruitmentStatus.RECRUITING
 
     fun update(
