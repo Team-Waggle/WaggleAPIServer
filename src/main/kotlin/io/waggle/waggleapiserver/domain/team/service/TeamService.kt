@@ -138,11 +138,10 @@ class TeamService(
 
         val userById = userRepository.findAllById(members.map { it.userId }).associateBy { it.id }
 
-        return members.map {
-            MemberResponse.of(
-                it,
-                userById[it.userId]!!,
-            )
+        return members.mapNotNull { member ->
+            userById[member.userId]?.let { user ->
+                MemberResponse.of(member, user)
+            }
         }
     }
 
