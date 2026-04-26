@@ -33,6 +33,10 @@ class MessageService(
     ) {
         val (receiverId, content) = request
 
+        if (receiverId == senderId) {
+            throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Cannot send a message to yourself")
+        }
+
         if (!userRepository.existsById(receiverId)) {
             throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Receiver not found: $receiverId")
         }
