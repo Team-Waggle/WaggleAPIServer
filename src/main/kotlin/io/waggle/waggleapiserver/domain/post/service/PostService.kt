@@ -5,6 +5,8 @@ import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
+import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
+import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.post.Post
@@ -34,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class PostService(
     private val applicationRepository: ApplicationRepository,
+    private val bookmarkRepository: BookmarkRepository,
     private val memberRepository: MemberRepository,
     private val postRepository: PostRepository,
     private val recruitmentRepository: RecruitmentRepository,
@@ -344,6 +347,10 @@ class PostService(
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
         post.checkOwnership(user.id)
+
+        recruitmentRepository.deleteByPostId(postId)
+        applicationRepository.updateDeletedAtByPostIdAndDeletedAtIsNull(postId)
+        bookmarkRepository.deleteByIdTargetIdAndIdType(postId, BookmarkType.POST)
 
         post.delete()
     }

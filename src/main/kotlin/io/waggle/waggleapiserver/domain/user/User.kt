@@ -108,6 +108,7 @@ class User(
 
     fun deactivate() {
         this.username = null
+        this.profileImageUrl = null
         delete()
     }
 

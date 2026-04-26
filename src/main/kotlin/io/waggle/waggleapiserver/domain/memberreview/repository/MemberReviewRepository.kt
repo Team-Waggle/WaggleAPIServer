@@ -15,10 +15,6 @@ interface MemberReviewRepository : JpaRepository<MemberReview, Long> {
         teamId: Long,
     ): MemberReview?
 
-    fun findByReviewerId(reviewerId: UUID): List<MemberReview>
-
-    fun findByRevieweeId(revieweeId: UUID): List<MemberReview>
-
     fun countByRevieweeIdAndType(
         revieweeId: UUID,
         type: ReviewType,

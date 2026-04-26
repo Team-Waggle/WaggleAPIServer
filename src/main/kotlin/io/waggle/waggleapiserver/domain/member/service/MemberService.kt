@@ -90,7 +90,7 @@ class MemberService(
         memberId: Long,
         user: User,
     ) {
-        val member =
+        val targetMember =
             memberRepository.findByIdOrNull(memberId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
@@ -98,23 +98,28 @@ class MemberService(
                 )
 
         val team =
-            teamRepository.findByIdOrNull(member.teamId)
+            teamRepository.findByIdOrNull(targetMember.teamId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
-                    "Team Not Found: ${member.teamId}",
+                    "Team Not Found: ${targetMember.teamId}",
                 )
 
-        val leader =
+        val member =
             memberRepository.findByUserIdAndTeamId(user.id, team.id)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
-        leader.checkMemberRole(MemberRole.LEADER)
+        if (targetMember.role.level >= member.role.level) {
+            throw BusinessException(
+                ErrorCode.ACCESS_DENIED,
+                "Cannot remove member with same or higher role",
+            )
+        }
 
-        member.deleteBy(user.id)
+        targetMember.deleteBy(user.id)
 
         eventPublisher.publishEvent(
             MemberRemovedEvent(
                 teamId = team.id,
-                removedUserId = member.userId,
+                removedUserId = targetMember.userId,
                 triggeredBy = user.id,
             ),
         )

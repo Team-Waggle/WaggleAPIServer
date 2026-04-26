@@ -119,6 +119,34 @@ interface ApplicationRepository : JpaRepository<Application, Long> {
         nativeQuery = true,
     )
     fun updateDeletedAtByTeamIdAndDeletedAtIsNull(teamId: Long)
+
+    @Modifying
+    @Query(
+        """
+        UPDATE applications SET deleted_at = UTC_TIMESTAMP(6)
+        WHERE post_id = :postId AND deleted_at IS NULL
+        """,
+        nativeQuery = true,
+    )
+    fun updateDeletedAtByPostIdAndDeletedAtIsNull(postId: Long)
+
+    @Modifying
+    @Query(
+        """
+        UPDATE applications SET deleted_at = UTC_TIMESTAMP(6)
+        WHERE user_id = :userId
+        AND team_id = :teamId
+        AND id <> :excludedId
+        AND status = 'PENDING'
+        AND deleted_at IS NULL
+        """,
+        nativeQuery = true,
+    )
+    fun updateDeletedAtByUserIdAndTeamIdAndIdNotAndStatusPendingAndDeletedAtIsNull(
+        userId: UUID,
+        teamId: Long,
+        excludedId: Long,
+    )
 }
 
 interface PostApplicantCount {

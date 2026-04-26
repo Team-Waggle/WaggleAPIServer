@@ -316,6 +316,12 @@ class ApplicationService(
                 )
         }
 
+        applicationRepository.updateDeletedAtByUserIdAndTeamIdAndIdNotAndStatusPendingAndDeletedAtIsNull(
+            userId = application.userId,
+            teamId = application.teamId,
+            excludedId = application.id,
+        )
+
         eventPublisher.publishEvent(
             TeamJoinedEvent(
                 teamId = application.teamId,

@@ -18,7 +18,6 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
 
 @Service
 @Transactional(readOnly = true)
@@ -108,25 +107,5 @@ class MemberReviewService(
         revieweeUser.temperature = temperatureCalculator.calculate(likeCount, dislikeCount)
 
         return MemberReviewResponse.of(review, revieweeUser.username!!)
-    }
-
-    fun getReceivedReviews(userId: UUID): List<MemberReviewResponse> {
-        val user =
-            userRepository.findByIdOrNull(userId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
-
-        val reviews = memberReviewRepository.findByRevieweeId(userId)
-        return reviews.map { MemberReviewResponse.of(it, user.username!!) }
-    }
-
-    fun getWrittenReviews(userId: UUID): List<MemberReviewResponse> {
-        val reviews = memberReviewRepository.findByReviewerId(userId)
-        val revieweeIds = reviews.map { it.revieweeId }.distinct()
-        val usernameById =
-            userRepository.findAllById(revieweeIds).associate { it.id to it.username!! }
-
-        return reviews.map { review ->
-            MemberReviewResponse.of(review, usernameById[review.revieweeId]!!)
-        }
     }
 }
