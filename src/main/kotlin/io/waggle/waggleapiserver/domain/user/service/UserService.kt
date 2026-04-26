@@ -202,6 +202,8 @@ class UserService(
 
         authService.deleteRefreshToken(user.id)
 
+        user.profileImageUrl?.let { eventPublisher.publishEvent(ImageDeleteEvent(it)) }
+
         user.deactivate()
 
         userRepository.save(user)
