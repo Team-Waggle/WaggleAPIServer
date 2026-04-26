@@ -33,4 +33,6 @@ interface RecruitmentRepository : JpaRepository<Recruitment, Long> {
         nativeQuery = true,
     )
     fun deleteByPostTeamId(teamId: Long)
+
+    fun deleteByPostId(postId: Long)
 }
