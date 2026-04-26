@@ -61,13 +61,11 @@ class UserController(
         @CurrentUser user: User,
     ): UserDetailResponse = userService.setupProfile(request, user)
 
-    @AllowIncompleteProfile
     @Operation(summary = "사용자 프로필 이미지 업로드용 Presigned URL 생성")
     @PostMapping("/me/profile-image/presigned-url")
     fun generateProfileImagePresignedUrl(
         @Valid @RequestBody request: PresignedUrlRequest,
-        @CurrentUser user: User,
-    ): PresignedUrlResponse = userService.generateProfileImagePresignedUrl(request, user)
+    ): PresignedUrlResponse = userService.generateProfileImagePresignedUrl(request)
 
     @Operation(summary = "사용자명 사용 가능 여부 조회")
     @GetMapping("/check")
