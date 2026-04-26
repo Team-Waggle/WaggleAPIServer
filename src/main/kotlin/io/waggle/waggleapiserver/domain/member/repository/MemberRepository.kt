@@ -96,12 +96,12 @@ interface MemberRepository : JpaRepository<Member, Long> {
     @Modifying
     @Query(
         """
-        UPDATE members SET deleted_at = UTC_TIMESTAMP(6)
+        UPDATE members SET deleted_at = UTC_TIMESTAMP(6), deleted_by = :userId
         WHERE user_id = :userId AND deleted_at IS NULL
         """,
         nativeQuery = true,
     )
-    fun updateDeletedAtByUserIdAndDeletedAtIsNull(userId: UUID)
+    fun updateDeletedAtAndDeletedByByUserIdAndDeletedAtIsNull(userId: UUID)
 
     @Modifying
     @Query(

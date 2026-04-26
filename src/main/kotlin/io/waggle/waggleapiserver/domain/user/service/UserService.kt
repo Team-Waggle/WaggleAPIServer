@@ -78,10 +78,7 @@ class UserService(
         return UserDetailResponse.from(savedUser)
     }
 
-    fun generateProfileImagePresignedUrl(
-        request: PresignedUrlRequest,
-        user: User,
-    ): PresignedUrlResponse {
+    fun generateProfileImagePresignedUrl(request: PresignedUrlRequest): PresignedUrlResponse {
         val presignedUploadUrl =
             storageClient.generateUploadUrl("users", request.contentType)
         return PresignedUrlResponse.from(presignedUploadUrl)
@@ -193,7 +190,7 @@ class UserService(
             )
         }
 
-        memberRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
+        memberRepository.updateDeletedAtAndDeletedByByUserIdAndDeletedAtIsNull(user.id)
         applicationRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
         postRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
         followRepository.updateDeletedAtByFollowerIdOrFolloweeIdAndDeletedAtIsNull(user.id)
