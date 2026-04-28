@@ -1,10 +1,12 @@
 package io.waggle.waggleapiserver.domain.notification.event
 
+import io.waggle.waggleapiserver.domain.user.enums.Position
 import java.util.UUID
 
 data class ApplicationReceivedEvent(
     val teamId: Long,
     val postId: Long,
+    val position: Position,
     val triggeredBy: UUID,
 )
 
