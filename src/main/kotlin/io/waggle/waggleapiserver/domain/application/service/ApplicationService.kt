@@ -104,6 +104,7 @@ class ApplicationService(
             ApplicationReceivedEvent(
                 teamId = teamId,
                 postId = post.id,
+                position = savedApplication.position,
                 triggeredBy = user.id,
             ),
         )

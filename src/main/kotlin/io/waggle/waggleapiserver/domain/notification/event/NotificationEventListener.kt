@@ -35,6 +35,7 @@ class NotificationEventListener(
                         mapOf(
                             "teamId" to event.teamId,
                             "postId" to event.postId,
+                            "position" to event.position.name,
                             "triggeredBy" to event.triggeredBy.toString(),
                         ),
                 )
