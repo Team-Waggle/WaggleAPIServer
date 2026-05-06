@@ -1,5 +1,6 @@
 package io.waggle.waggleapiserver.common.infrastructure.websocket
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.util.logger
 import io.waggle.waggleapiserver.domain.auth.service.AuthService
 import org.springframework.http.server.ServerHttpRequest
@@ -35,8 +36,11 @@ class WebSocketAuthHandshakeInterceptor(
             val userId = authService.validateAndConsumeWsToken(token)
             attributes["userId"] = userId
             true
-        } catch (e: Exception) {
+        } catch (e: BusinessException) {
             logger.warn("WebSocket token validation failed: ${e.message}")
+            false
+        } catch (e: Exception) {
+            logger.warn("WebSocket token validation failed", e)
             false
         }
     }
