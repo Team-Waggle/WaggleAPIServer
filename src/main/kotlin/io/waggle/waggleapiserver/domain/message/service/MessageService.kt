@@ -8,12 +8,12 @@ import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.conversation.service.ConversationService
 import io.waggle.waggleapiserver.domain.message.Message
 import io.waggle.waggleapiserver.domain.message.adapter.MessageEvent
-import io.waggle.waggleapiserver.domain.message.adapter.MessagePublisher
 import io.waggle.waggleapiserver.domain.message.dto.request.MessageSendRequest
 import io.waggle.waggleapiserver.domain.message.dto.response.MessageResponse
 import io.waggle.waggleapiserver.domain.message.repository.MessageRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,8 +21,8 @@ import java.util.UUID
 
 @Service
 class MessageService(
+    private val applicationEventPublisher: ApplicationEventPublisher,
     private val conversationService: ConversationService,
-    private val messagePublisher: MessagePublisher,
     private val messageRepository: MessageRepository,
     private val userRepository: UserRepository,
 ) {
@@ -56,7 +56,7 @@ class MessageService(
                 messageId = savedMessage.id,
                 receiverId = receiverId,
             )
-        messagePublisher.publish(event)
+        applicationEventPublisher.publishEvent(event)
     }
 
     @Transactional(readOnly = true)
