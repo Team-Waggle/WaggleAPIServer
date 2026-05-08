@@ -71,7 +71,7 @@ class NotificationService(
                 val triggeredBy =
                     triggeredByUserId
                         ?.let { triggeredByUserById[it] }
-                        ?.let { NotificationResponse.TriggeredByResponse.of(it) }
+                        ?.let { NotificationResponse.TriggeredByResponse.from(it) }
 
                 val metadata =
                     buildMap<String, Any?> {

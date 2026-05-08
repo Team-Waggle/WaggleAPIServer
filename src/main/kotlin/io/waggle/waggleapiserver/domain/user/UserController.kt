@@ -13,7 +13,7 @@ import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlRespons
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
 import io.waggle.waggleapiserver.domain.bookmark.service.BookmarkService
-import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountResponse
+import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountsResponse
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
@@ -78,9 +78,9 @@ class UserController(
 
     @Operation(summary = "사용자 팔로우 개수 정보 조회")
     @GetMapping("/{userId}/follow-count")
-    fun getUserFollowCount(
+    fun getUserFollowCounts(
         @PathVariable userId: UUID,
-    ): FollowCountResponse = followService.getUserFollowCount(userId)
+    ): FollowCountsResponse = followService.getUserFollowCounts(userId)
 
     @Operation(summary = "사용자 참여 팀 목록 조회")
     @GetMapping("/{userId}/teams")

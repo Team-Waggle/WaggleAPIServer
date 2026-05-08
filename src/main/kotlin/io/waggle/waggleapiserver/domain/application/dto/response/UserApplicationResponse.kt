@@ -11,7 +11,7 @@ import java.time.Instant
 @Schema(description = "본인 지원 응답 DTO")
 data class UserApplicationResponse(
     @Schema(description = "지원 ID", example = "1")
-    val applicationId: Long,
+    val id: Long,
     @Schema(description = "지원 직무", example = "BACKEND")
     val position: Position,
     @Schema(description = "지원 상태", example = "PENDING")
@@ -26,24 +26,24 @@ data class UserApplicationResponse(
     @Schema(description = "팀 정보")
     data class TeamResponse(
         @Schema(description = "팀 ID", example = "1")
-        val teamId: Long,
+        val id: Long,
         @Schema(description = "팀명", example = "Waggle")
         val name: String,
     ) {
         companion object {
-            fun from(team: Team): TeamResponse = TeamResponse(teamId = team.id, name = team.name)
+            fun from(team: Team): TeamResponse = TeamResponse(id = team.id, name = team.name)
         }
     }
 
     @Schema(description = "모집글 정보")
     data class PostResponse(
         @Schema(description = "모집글 ID", example = "1")
-        val postId: Long,
+        val id: Long,
         @Schema(description = "모집글 제목", example = "백엔드 개발자 모집")
         val title: String,
     ) {
         companion object {
-            fun from(post: Post): PostResponse = PostResponse(postId = post.id, title = post.title)
+            fun from(post: Post): PostResponse = PostResponse(id = post.id, title = post.title)
         }
     }
 
@@ -54,7 +54,7 @@ data class UserApplicationResponse(
             post: Post,
         ): UserApplicationResponse =
             UserApplicationResponse(
-                applicationId = application.id,
+                id = application.id,
                 position = application.position,
                 status = application.status,
                 team = TeamResponse.from(team),

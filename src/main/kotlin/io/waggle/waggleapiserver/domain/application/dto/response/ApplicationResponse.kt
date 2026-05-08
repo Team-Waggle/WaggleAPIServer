@@ -9,7 +9,7 @@ import java.time.Instant
 @Schema(description = "지원 응답 DTO")
 data class ApplicationResponse(
     @Schema(description = "지원 ID", example = "1")
-    val applicationId: Long,
+    val id: Long,
     @Schema(description = "지원 직무", example = "BACKEND")
     val position: Position,
     @Schema(description = "지원 상태", example = "APPROVED")
@@ -33,7 +33,7 @@ data class ApplicationResponse(
     companion object {
         fun from(application: Application): ApplicationResponse =
             ApplicationResponse(
-                applicationId = application.id,
+                id = application.id,
                 position = application.position,
                 status = application.status,
                 teamId = application.teamId,

@@ -23,7 +23,7 @@ data class ConversationResponse(
     @Schema(description = "마지막 메시지 정보")
     data class LastMessageResponse(
         @Schema(description = "메시지 ID", example = "150")
-        val messageId: Long,
+        val id: Long,
         @Schema(description = "메시지 내용", example = "내일 회의 가능?")
         val content: String,
         @Schema(description = "발송일시", example = "2025-11-16T12:30:45.123456Z")
@@ -32,7 +32,7 @@ data class ConversationResponse(
         companion object {
             fun from(message: Message): LastMessageResponse =
                 LastMessageResponse(
-                    messageId = message.id,
+                    id = message.id,
                     content = message.content,
                     createdAt = message.createdAt,
                 )
@@ -51,7 +51,7 @@ data class ConversationResponse(
                         ConversationPartnerResponse.from(partner)
                     } else {
                         ConversationPartnerResponse(
-                            userId = conversation.partnerId,
+                            id = conversation.partnerId,
                             username = null,
                             position = null,
                             profileImageUrl = null,
