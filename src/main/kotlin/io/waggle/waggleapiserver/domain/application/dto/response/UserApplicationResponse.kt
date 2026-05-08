@@ -17,33 +17,33 @@ data class UserApplicationResponse(
     @Schema(description = "지원 상태", example = "PENDING")
     val status: ApplicationStatus,
     @Schema(description = "지원 팀 정보")
-    val team: TeamSummary,
+    val team: TeamResponse,
     @Schema(description = "지원 모집글 정보")
-    val post: PostSummary,
+    val post: PostResponse,
     @Schema(description = "지원일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) {
-    @Schema(description = "지원 팀 요약")
-    data class TeamSummary(
+    @Schema(description = "팀 정보")
+    data class TeamResponse(
         @Schema(description = "팀 ID", example = "1")
         val teamId: Long,
-        @Schema(description = "팀 이름", example = "와글와글")
+        @Schema(description = "팀명", example = "Waggle")
         val name: String,
     ) {
         companion object {
-            fun from(team: Team): TeamSummary = TeamSummary(teamId = team.id, name = team.name)
+            fun from(team: Team): TeamResponse = TeamResponse(teamId = team.id, name = team.name)
         }
     }
 
-    @Schema(description = "지원 모집글 요약")
-    data class PostSummary(
+    @Schema(description = "모집글 정보")
+    data class PostResponse(
         @Schema(description = "모집글 ID", example = "1")
         val postId: Long,
-        @Schema(description = "모집글 제목", example = "Flutter 개발자를 모십니다")
+        @Schema(description = "모집글 제목", example = "백엔드 개발자 모집")
         val title: String,
     ) {
         companion object {
-            fun from(post: Post): PostSummary = PostSummary(postId = post.id, title = post.title)
+            fun from(post: Post): PostResponse = PostResponse(postId = post.id, title = post.title)
         }
     }
 
@@ -57,8 +57,8 @@ data class UserApplicationResponse(
                 applicationId = application.id,
                 position = application.position,
                 status = application.status,
-                team = TeamSummary.from(team),
-                post = PostSummary.from(post),
+                team = TeamResponse.from(team),
+                post = PostResponse.from(post),
                 createdAt = application.createdAt,
             )
     }
