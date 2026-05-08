@@ -33,18 +33,18 @@ data class UserProfileResponse(
     @Schema(description = "포트폴리오 URL 목록", example = "[\"https://github.com/user\"]")
     val portfolioUrls: List<String>,
     @Schema(description = "좋아요 태그 상위 3개")
-    val topLikeTags: List<TagCount>,
+    val topLikeTags: List<TagCountResponse>,
     @Schema(description = "사용자 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
     @Schema(description = "사용자 수정일시", example = "2025-11-16T12:30:45.123456Z")
     val updatedAt: Instant,
 ) {
-    data class TagCount(
+    data class TagCountResponse(
         val tag: ReviewTag,
         val count: Long,
     ) {
         companion object {
-            fun from(tagCount: MemberReviewTagCount): TagCount = TagCount(tagCount.tag, tagCount.count)
+            fun from(tagCount: MemberReviewTagCount): TagCountResponse = TagCountResponse(tagCount.tag, tagCount.count)
         }
     }
 
@@ -63,7 +63,7 @@ data class UserProfileResponse(
                 bio = user.bio,
                 skills = user.skills.toSet(),
                 portfolioUrls = user.portfolioUrls.toList(),
-                topLikeTags = topLikeTags.map { TagCount.from(it) },
+                topLikeTags = topLikeTags.map { TagCountResponse.from(it) },
                 createdAt = user.createdAt,
                 updatedAt = user.updatedAt,
             )

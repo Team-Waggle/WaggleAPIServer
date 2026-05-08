@@ -18,10 +18,10 @@ data class ConversationResponse(
     )
     val lastReadMessageId: Long?,
     @Schema(description = "마지막 메시지 정보")
-    val lastMessage: LastMessage,
+    val lastMessage: LastMessageResponse,
 ) {
     @Schema(description = "마지막 메시지 정보")
-    data class LastMessage(
+    data class LastMessageResponse(
         @Schema(description = "메시지 ID", example = "150")
         val messageId: Long,
         @Schema(description = "메시지 내용", example = "내일 회의 가능?")
@@ -30,8 +30,8 @@ data class ConversationResponse(
         val createdAt: Instant,
     ) {
         companion object {
-            fun from(message: Message): LastMessage =
-                LastMessage(
+            fun from(message: Message): LastMessageResponse =
+                LastMessageResponse(
                     messageId = message.id,
                     content = message.content,
                     createdAt = message.createdAt,
@@ -59,7 +59,7 @@ data class ConversationResponse(
                     },
                 unreadCount = conversation.unreadCount,
                 lastReadMessageId = conversation.lastReadMessageId,
-                lastMessage = LastMessage.from(lastMessage),
+                lastMessage = LastMessageResponse.from(lastMessage),
             )
     }
 }
