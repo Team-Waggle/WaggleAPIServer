@@ -6,8 +6,8 @@ import io.waggle.waggleapiserver.domain.recruitment.dto.request.RecruitmentUpser
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 
-@Schema(description = "모집글 생성/수정 요청 DTO")
-data class PostUpsertRequest(
+@Schema(description = "모집글 생성 요청 DTO")
+data class PostCreateRequest(
     @Schema(description = "팀 ID", example = "1")
     @field:NotNull
     val teamId: Long,
