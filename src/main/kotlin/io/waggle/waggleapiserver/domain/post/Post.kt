@@ -31,8 +31,8 @@ class Post(
     var content: String,
     @Column(name = "user_id", nullable = false, updatable = false)
     val userId: UUID,
-    @Column(name = "team_id", nullable = false)
-    var teamId: Long,
+    @Column(name = "team_id", nullable = false, updatable = false)
+    val teamId: Long,
 ) : AuditingEntity(),
     Bookmarkable {
     override val targetId: Long
@@ -43,11 +43,9 @@ class Post(
     fun update(
         title: String,
         content: String,
-        teamId: Long,
     ) {
         this.title = title
         this.content = content
-        this.teamId = teamId
     }
 
     fun checkOwnership(currentUserId: UUID) {

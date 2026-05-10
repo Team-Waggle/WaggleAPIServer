@@ -9,8 +9,9 @@ import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
 import io.waggle.waggleapiserver.common.infrastructure.persistence.RequireCompleteProfile
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
+import io.waggle.waggleapiserver.domain.post.dto.request.PostCreateRequest
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
-import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
+import io.waggle.waggleapiserver.domain.post.dto.request.PostUpdateRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.service.PostService
@@ -40,7 +41,7 @@ class PostController(
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun createPost(
-        @Valid @RequestBody request: PostUpsertRequest,
+        @Valid @RequestBody request: PostCreateRequest,
         @CurrentUser user: User,
     ): PostDetailResponse = postService.createPost(request, user)
 
@@ -55,8 +56,8 @@ class PostController(
     @Operation(summary = "모집글 목록 커서 페이지네이션 조회")
     @GetMapping
     fun getPosts(
-        @ParameterObject query: PostGetQuery,
-        @ParameterObject cursorQuery: CursorGetQuery,
+        @Valid @ParameterObject query: PostGetQuery,
+        @Valid @ParameterObject cursorQuery: CursorGetQuery,
     ): CursorResponse<PostSimpleResponse> = postService.getPosts(query, cursorQuery)
 
     @AllowIncompleteProfile
@@ -71,7 +72,7 @@ class PostController(
     @PutMapping("/{postId}")
     fun updatePost(
         @PathVariable postId: Long,
-        @Valid @RequestBody request: PostUpsertRequest,
+        @Valid @RequestBody request: PostUpdateRequest,
         @CurrentUser user: User,
     ): PostDetailResponse = postService.updatePost(postId, request, user)
 

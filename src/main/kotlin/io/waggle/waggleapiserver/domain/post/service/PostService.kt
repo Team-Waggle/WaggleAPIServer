@@ -14,8 +14,9 @@ import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.PostSort
+import io.waggle.waggleapiserver.domain.post.dto.request.PostCreateRequest
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
-import io.waggle.waggleapiserver.domain.post.dto.request.PostUpsertRequest
+import io.waggle.waggleapiserver.domain.post.dto.request.PostUpdateRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.TeamPostSimpleResponse
@@ -49,7 +50,7 @@ class PostService(
 ) {
     @Transactional
     fun createPost(
-        request: PostUpsertRequest,
+        request: PostCreateRequest,
         user: User,
     ): PostDetailResponse {
         val (teamId, title, content, recruitments) = request
@@ -265,23 +266,23 @@ class PostService(
     @Transactional
     fun updatePost(
         postId: Long,
-        request: PostUpsertRequest,
+        request: PostUpdateRequest,
         user: User,
     ): PostDetailResponse {
-        val (teamId, title, content, recruitments) = request
+        val (title, content, recruitments) = request
 
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
 
         post.checkOwnership(user.id)
-        post.update(title, content, teamId)
+        post.update(title, content)
 
         val member =
-            memberRepository.findByUserIdAndTeamId(user.id, teamId)
+            memberRepository.findByUserIdAndTeamId(user.id, post.teamId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, $teamId",
+                    "Member not found: ${user.id}, ${post.teamId}",
                 )
 
         val existingRecruitmentByPosition = recruitmentRepository.findByPostId(postId).associateBy { it.position }
