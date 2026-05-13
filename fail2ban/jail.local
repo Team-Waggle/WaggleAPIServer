@@ -7,17 +7,17 @@ maxretry = 5
 enabled = true
 port = http,https
 filter = nginx-http-auth
-logpath = /var/log/nginx/error.log
+logpath = /var/log/nginx/api-error.log
 
 [nginx-botsearch]
 enabled = true
 port = http,https
 filter = nginx-botsearch
-logpath = /var/log/nginx/access.log
+logpath = /var/log/nginx/api-access.log
 
 [nginx-bad-request]
 enabled = true
 port = http,https
 filter = nginx-bad-request
-logpath = /var/log/nginx/access.log
+logpath = /var/log/nginx/api-access.log
 maxretry = 20
