@@ -40,19 +40,19 @@ class JwtProvider(
                 .parseSignedClaims(token)
             true
         } catch (e: SecurityException) {
-            logger.error("Invalid JWT signature", e)
+            logger.warn("Invalid JWT signature: ${e.message}", e)
             false
         } catch (e: MalformedJwtException) {
-            logger.error("Invalid JWT token", e)
+            logger.debug("Malformed JWT token: ${e.message}")
             false
         } catch (e: ExpiredJwtException) {
-            logger.error("Expired JWT token", e)
+            logger.debug("Expired JWT token")
             false
         } catch (e: UnsupportedJwtException) {
-            logger.error("Unsupported JWT token", e)
+            logger.debug("Unsupported JWT token: ${e.message}")
             false
         } catch (e: IllegalArgumentException) {
-            logger.error("JWT claims string is empty", e)
+            logger.debug("Empty JWT claims string: ${e.message}")
             false
         }
 
