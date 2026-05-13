@@ -103,7 +103,7 @@ services:
       - NET_RAW
     volumes:
       - ./fail2ban/jail.local:/etc/fail2ban/jail.local:ro
-      - ./fail2ban/filter.d:/etc/fail2ban/filter.d:ro
+      - ./fail2ban/filter.d/nginx-bad-request.conf:/etc/fail2ban/filter.d/nginx-bad-request.conf:ro
       - nginx-logs:/var/log/nginx:ro
       - fail2ban-data:/var/lib/fail2ban
     depends_on:
