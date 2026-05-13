@@ -24,7 +24,7 @@ class RateLimitFilter(
 
     @Scheduled(fixedRate = 600_000)
     fun cleanUpExpiredBuckets() {
-        buckets.entries.removeIf { it.value.availableTokens == 100L }
+        buckets.entries.removeIf { it.value.availableTokens == BUCKET_CAPACITY }
     }
 
     override fun doFilterInternal(
@@ -58,8 +58,8 @@ class RateLimitFilter(
             .addLimit(
                 Bandwidth
                     .builder()
-                    .capacity(100)
-                    .refillGreedy(100, Duration.ofMinutes(1))
+                    .capacity(BUCKET_CAPACITY)
+                    .refillGreedy(BUCKET_REFILL_PER_MINUTE, Duration.ofMinutes(1))
                     .build(),
             ).build()
 
@@ -70,4 +70,9 @@ class RateLimitFilter(
             ?.first()
             ?.trim()
             ?: request.remoteAddr
+
+    companion object {
+        private const val BUCKET_CAPACITY = 1000L
+        private const val BUCKET_REFILL_PER_MINUTE = 1000L
+    }
 }
