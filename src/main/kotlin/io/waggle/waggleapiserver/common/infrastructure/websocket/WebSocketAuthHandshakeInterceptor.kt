@@ -28,7 +28,7 @@ class WebSocketAuthHandshakeInterceptor(
 
         val token = servletRequest.getParameter("token")
         if (token == null) {
-            logger.warn("No WebSocket token found in request")
+            logger.debug("No WebSocket token found in request")
             return false
         }
 
@@ -37,7 +37,7 @@ class WebSocketAuthHandshakeInterceptor(
             attributes["userId"] = userId
             true
         } catch (e: BusinessException) {
-            logger.warn("WebSocket token validation failed: ${e.message}")
+            logger.debug("WebSocket token validation failed: ${e.message}")
             false
         } catch (e: Exception) {
             logger.warn("WebSocket token validation failed", e)
