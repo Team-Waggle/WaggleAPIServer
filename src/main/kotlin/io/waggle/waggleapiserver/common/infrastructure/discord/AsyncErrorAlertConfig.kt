@@ -49,6 +49,8 @@ class AsyncErrorAlertConfig(
     }
 
     companion object {
-        private const val SCHEDULER_POOL_SIZE = 2
+        // ScheduledThreadPoolExecutor는 고정 크기라 런타임 동적 조절 불가.
+        // 부팅 시점에 CPU 코어 수로 맞추되 단일 코어 환경에서도 최소 2 보장.
+        private val SCHEDULER_POOL_SIZE = Runtime.getRuntime().availableProcessors().coerceAtLeast(2)
     }
 }
