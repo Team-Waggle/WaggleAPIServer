@@ -215,6 +215,8 @@ class UserService(
                 applicationRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(leaderMembership.teamId)
                 bookmarkRepository.deleteByPostTeamId(leaderMembership.teamId)
                 bookmarkRepository.deleteByIdTargetIdAndIdType(leaderMembership.teamId, BookmarkType.TEAM)
+                notificationRepository.deleteByMetadataPostInTeamId(leaderMembership.teamId)
+                notificationRepository.deleteByMetadataTeamId(leaderMembership.teamId)
                 team.delete()
             } else {
                 val newLeader = successors[0]
@@ -242,6 +244,7 @@ class UserService(
         followRepository.updateDeletedAtByFollowerIdOrFolloweeIdAndDeletedAtIsNull(user.id)
         bookmarkRepository.deleteByPostUserId(user.id)
         bookmarkRepository.deleteByIdUserId(user.id)
+        notificationRepository.deleteByMetadataPostUserId(user.id)
         notificationRepository.deleteByUserId(user.id)
 
         authService.deleteRefreshToken(user.id)

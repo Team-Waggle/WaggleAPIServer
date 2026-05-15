@@ -15,6 +15,7 @@ import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.notification.event.TeamCompletedEvent
+import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.team.Team
@@ -39,6 +40,7 @@ class TeamService(
     private val applicationRepository: ApplicationRepository,
     private val bookmarkRepository: BookmarkRepository,
     private val memberRepository: MemberRepository,
+    private val notificationRepository: NotificationRepository,
     private val postRepository: PostRepository,
     private val recruitmentRepository: RecruitmentRepository,
     private val teamRepository: TeamRepository,
@@ -242,6 +244,8 @@ class TeamService(
         applicationRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(teamId)
         bookmarkRepository.deleteByPostTeamId(teamId)
         bookmarkRepository.deleteByIdTargetIdAndIdType(teamId, BookmarkType.TEAM)
+        notificationRepository.deleteByMetadataPostInTeamId(teamId)
+        notificationRepository.deleteByMetadataTeamId(teamId)
 
         team.delete()
     }

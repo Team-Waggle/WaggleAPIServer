@@ -13,6 +13,7 @@ import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
+import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.PostSort
 import io.waggle.waggleapiserver.domain.post.dto.request.PostCreateRequest
@@ -45,6 +46,7 @@ class PostService(
     private val applicationRepository: ApplicationRepository,
     private val bookmarkRepository: BookmarkRepository,
     private val memberRepository: MemberRepository,
+    private val notificationRepository: NotificationRepository,
     private val postRepository: PostRepository,
     private val recruitmentRepository: RecruitmentRepository,
     private val teamRepository: TeamRepository,
@@ -380,6 +382,7 @@ class PostService(
         applicationReadRepository.updateDeletedAtByApplicationPostIdAndDeletedAtIsNull(postId)
         applicationRepository.updateDeletedAtByPostIdAndDeletedAtIsNull(postId)
         bookmarkRepository.deleteByIdTargetIdAndIdType(postId, BookmarkType.POST)
+        notificationRepository.deleteByMetadataPostId(postId)
 
         post.delete()
     }
