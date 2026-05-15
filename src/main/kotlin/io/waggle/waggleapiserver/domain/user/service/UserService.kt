@@ -9,14 +9,17 @@ import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationReadRepository
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
 import io.waggle.waggleapiserver.domain.auth.service.AuthService
+import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
 import io.waggle.waggleapiserver.domain.follow.repository.FollowRepository
+import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewType
 import io.waggle.waggleapiserver.domain.memberreview.repository.MemberReviewRepository
 import io.waggle.waggleapiserver.domain.notification.event.MemberLeftEvent
 import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
+import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.team.dto.response.UserTeamResponse
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
@@ -49,6 +52,7 @@ class UserService(
     private val memberReviewRepository: MemberReviewRepository,
     private val notificationRepository: NotificationRepository,
     private val postRepository: PostRepository,
+    private val recruitmentRepository: RecruitmentRepository,
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
 ) {
@@ -183,6 +187,42 @@ class UserService(
     @Transactional
     fun deactivateUser(user: User) {
         val members = memberRepository.findByUserIdOrderByRoleAscCreatedAtAsc(user.id)
+
+        members.filter { it.isLeader }.forEach { leaderMembership ->
+            val successors =
+                memberRepository.findByIdNotAndTeamIdOrderByRoleAscCreatedAtAsc(
+                    leaderMembership.id,
+                    leaderMembership.teamId,
+                )
+            val team =
+                teamRepository.findByIdOrNull(leaderMembership.teamId)
+                    ?: throw BusinessException(
+                        ErrorCode.ENTITY_NOT_FOUND,
+                        "Team not found: ${leaderMembership.teamId}",
+                    )
+            if (successors.isEmpty()) {
+                team.profileImageUrl?.let {
+                    eventPublisher.publishEvent(ImageDeleteEvent(it))
+                }
+                memberRepository.updateDeletedAtAndDeletedByByTeamIdAndDeletedAtIsNull(
+                    leaderMembership.teamId,
+                    user.id,
+                )
+                postRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(leaderMembership.teamId)
+                recruitmentRepository.deleteByPostTeamId(leaderMembership.teamId)
+                applicationReadRepository
+                    .updateDeletedAtByApplicationTeamIdAndDeletedAtIsNull(leaderMembership.teamId)
+                applicationRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(leaderMembership.teamId)
+                bookmarkRepository.deleteByPostTeamId(leaderMembership.teamId)
+                bookmarkRepository.deleteByIdTargetIdAndIdType(leaderMembership.teamId, BookmarkType.TEAM)
+                team.delete()
+            } else {
+                val newLeader = successors[0]
+                newLeader.updateRole(MemberRole.LEADER)
+                team.leaderId = newLeader.userId
+            }
+        }
+
         members.forEach { member ->
             eventPublisher.publishEvent(
                 MemberLeftEvent(
