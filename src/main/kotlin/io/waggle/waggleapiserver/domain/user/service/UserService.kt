@@ -6,6 +6,7 @@ import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
+import io.waggle.waggleapiserver.domain.application.repository.ApplicationReadRepository
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
 import io.waggle.waggleapiserver.domain.auth.service.AuthService
 import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
@@ -40,6 +41,7 @@ class UserService(
     private val eventPublisher: ApplicationEventPublisher,
     private val storageClient: StorageClient,
     private val authService: AuthService,
+    private val applicationReadRepository: ApplicationReadRepository,
     private val applicationRepository: ApplicationRepository,
     private val bookmarkRepository: BookmarkRepository,
     private val followRepository: FollowRepository,
@@ -191,9 +193,14 @@ class UserService(
         }
 
         memberRepository.updateDeletedAtAndDeletedByByUserIdAndDeletedAtIsNull(user.id)
+        applicationReadRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
+        applicationReadRepository.updateDeletedAtByApplicationUserIdAndDeletedAtIsNull(user.id)
+        applicationReadRepository.updateDeletedAtByApplicationPostUserIdAndDeletedAtIsNull(user.id)
         applicationRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
+        applicationRepository.updateDeletedAtByPostUserIdAndDeletedAtIsNull(user.id)
         postRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
         followRepository.updateDeletedAtByFollowerIdOrFolloweeIdAndDeletedAtIsNull(user.id)
+        bookmarkRepository.deleteByPostUserId(user.id)
         bookmarkRepository.deleteByIdUserId(user.id)
         notificationRepository.deleteByUserId(user.id)
 

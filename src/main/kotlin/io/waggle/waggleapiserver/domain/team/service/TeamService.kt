@@ -6,6 +6,7 @@ import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
+import io.waggle.waggleapiserver.domain.application.repository.ApplicationReadRepository
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
@@ -34,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional
 class TeamService(
     private val eventPublisher: ApplicationEventPublisher,
     private val storageClient: StorageClient,
+    private val applicationReadRepository: ApplicationReadRepository,
     private val applicationRepository: ApplicationRepository,
     private val bookmarkRepository: BookmarkRepository,
     private val memberRepository: MemberRepository,
@@ -236,7 +238,9 @@ class TeamService(
         memberRepository.updateDeletedAtAndDeletedByByTeamIdAndDeletedAtIsNull(teamId, user.id)
         postRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(teamId)
         recruitmentRepository.deleteByPostTeamId(teamId)
+        applicationReadRepository.updateDeletedAtByApplicationTeamIdAndDeletedAtIsNull(teamId)
         applicationRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(teamId)
+        bookmarkRepository.deleteByPostTeamId(teamId)
         bookmarkRepository.deleteByIdTargetIdAndIdType(teamId, BookmarkType.TEAM)
 
         team.delete()

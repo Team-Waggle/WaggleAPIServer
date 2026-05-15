@@ -7,6 +7,7 @@ import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
+import io.waggle.waggleapiserver.domain.application.repository.ApplicationReadRepository
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
@@ -40,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class PostService(
     private val storageClient: StorageClient,
+    private val applicationReadRepository: ApplicationReadRepository,
     private val applicationRepository: ApplicationRepository,
     private val bookmarkRepository: BookmarkRepository,
     private val memberRepository: MemberRepository,
@@ -375,6 +377,7 @@ class PostService(
         post.checkOwnership(user.id)
 
         recruitmentRepository.deleteByPostId(postId)
+        applicationReadRepository.updateDeletedAtByApplicationPostIdAndDeletedAtIsNull(postId)
         applicationRepository.updateDeletedAtByPostIdAndDeletedAtIsNull(postId)
         bookmarkRepository.deleteByIdTargetIdAndIdType(postId, BookmarkType.POST)
 
