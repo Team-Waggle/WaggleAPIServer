@@ -71,7 +71,7 @@ class MemberService(
             memberRepository.findByUserIdAndTeamId(user.id, teamId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member Not Found")
         val members =
-            memberRepository.findByIdNotAndTeamIdOrderByRoleAscCreatedAtAsc(member.id, teamId)
+            memberRepository.findByIdNotAndTeamIdOrderByRoleAscIdAsc(member.id, teamId)
         if (members.isEmpty()) {
             throw BusinessException(ErrorCode.INVALID_STATE, "Cannot leave as the only member")
         }

@@ -66,16 +66,16 @@ interface MemberRepository : JpaRepository<Member, Long> {
         userId: UUID,
     ): List<Member>
 
-    fun findByIdNotAndTeamIdOrderByRoleAscCreatedAtAsc(
+    fun findByIdNotAndTeamIdOrderByRoleAscIdAsc(
         id: Long,
         teamId: Long,
     ): List<Member>
 
-    fun findByUserIdOrderByRoleAscCreatedAtAsc(userId: UUID): List<Member>
+    fun findByUserIdOrderByRoleAscIdAsc(userId: UUID): List<Member>
 
-    fun findByUserIdAndVisibleTrueOrderByRoleAscCreatedAtAsc(userId: UUID): List<Member>
+    fun findByUserIdAndVisibleTrueOrderByRoleAscIdAsc(userId: UUID): List<Member>
 
-    fun findByTeamIdOrderByRoleAscCreatedAtAsc(teamId: Long): List<Member>
+    fun findByTeamIdOrderByRoleAscIdAsc(teamId: Long): List<Member>
 
     fun findByTeamIdAndRoleIn(
         teamId: Long,
@@ -86,11 +86,11 @@ interface MemberRepository : JpaRepository<Member, Long> {
         """
         SELECT * FROM members
         WHERE team_id = :teamId AND deleted_at IS NOT NULL
-        ORDER BY role ASC, created_at ASC
+        ORDER BY role ASC, id ASC
         """,
         nativeQuery = true,
     )
-    fun findByTeamIdAndDeletedAtIsNotNullOrderByRoleAscCreatedAtAsc(teamId: Long): List<Member>
+    fun findByTeamIdAndDeletedAtIsNotNullOrderByRoleAscIdAsc(teamId: Long): List<Member>
 
     @Modifying
     @Query(

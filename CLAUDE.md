@@ -26,6 +26,9 @@
   - 이유: prod는 JDBC URL에 `serverTimezone=UTC`가 설정되어 있으나 local은 미설정 → `CURRENT_TIMESTAMP`는 환경 의존적. `UTC_TIMESTAMP()`는 세션 timezone 무관하게 항상 UTC를 반환한다.
   - `datetime(6)` 컬럼이므로 정밀도 손실을 막기 위해 `UTC_TIMESTAMP(6)`를 쓸 것 (괄호 없는 형태 금지).
 - ID 전략: 사용자(`User`)는 `UuidCreator.getTimeOrderedEpoch()` (UUID v7 계열), 일반 도메인은 Long auto-increment.
+- **시간순 정렬은 `created_at`이 아니라 `id` 기준으로 할 것** (Long auto-increment 도메인 기준). id가 삽입 순서와 단조 증가해 정렬 결과가 `created_at`과 동일하고(동일 시각 tie는 id가 더 정확), `WHERE <equality-prefix> ORDER BY id`는 InnoDB가 secondary index에 PK(`id`)를 덧붙여 filesort 없이 처리된다.
+  - `created_at` 전용 정렬 컬럼/인덱스를 신설하지 말 것. 시간순 인덱스는 `(team_id)`, `(user_id)`처럼 equality 컬럼만 만들면 PK가 자동으로 붙는다.
+  - `role, created_at` 같은 복합 정렬의 tie-break도 `role, id`로 작성할 것.
 
 ## 3. Controller / API
 

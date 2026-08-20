@@ -148,7 +148,7 @@ class ConversationServiceTest
             val result = conversationService.getConversations("안녕", CursorGetQuery(null, 20), me)
 
             assertThat(result.data).hasSize(1)
-            assertThat(result.data[0].lastMessage.messageId).isEqualTo(message1.id)
+            assertThat(result.data[0].lastMessage.id).isEqualTo(message1.id)
         }
 
         @Test
@@ -204,7 +204,7 @@ class ConversationServiceTest
             assertThat(page2.hasNext).isFalse()
 
             // 중복 없음
-            val allPartnerIds = (page1.data + page2.data).map { it.partner.userId }
+            val allPartnerIds = (page1.data + page2.data).map { it.partner.id }
             assertThat(allPartnerIds).doesNotHaveDuplicates()
 
             // 누락 없음

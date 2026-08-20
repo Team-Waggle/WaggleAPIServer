@@ -65,7 +65,7 @@ class BookmarkService(
 
         return when (type) {
             BookmarkType.POST -> {
-                val posts = postRepository.findByIdInOrderByCreatedAtDesc(targetIds)
+                val posts = postRepository.findByIdInOrderByIdDesc(targetIds)
                 val authorIds = posts.map { it.userId }.distinct()
                 val authorById = userRepository.findAllById(authorIds).associateBy { it.id }
 
@@ -92,7 +92,7 @@ class BookmarkService(
             }
 
             BookmarkType.TEAM -> {
-                val teams = teamRepository.findByIdInOrderByCreatedAtDesc(targetIds)
+                val teams = teamRepository.findByIdInOrderByIdDesc(targetIds)
                 val teamIds = teams.map { it.id }
                 val memberCountByTeamId =
                     memberRepository
