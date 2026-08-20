@@ -71,41 +71,41 @@ interface NotificationRepository : JpaRepository<Notification, Long> {
     @Query(
         """
         DELETE FROM notifications
-        WHERE CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.teamId')) AS UNSIGNED) = :teamId
+        WHERE team_id = :teamId
         """,
         nativeQuery = true,
     )
-    fun deleteByMetadataTeamId(teamId: Long)
+    fun deleteByTeamId(teamId: Long)
 
     @Modifying
     @Query(
         """
         DELETE FROM notifications
-        WHERE CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.postId')) AS UNSIGNED) = :postId
+        WHERE post_id = :postId
         """,
         nativeQuery = true,
     )
-    fun deleteByMetadataPostId(postId: Long)
+    fun deleteByPostId(postId: Long)
 
     @Modifying
     @Query(
         """
         DELETE n FROM notifications n
-        JOIN posts p ON CAST(JSON_UNQUOTE(JSON_EXTRACT(n.metadata, '$.postId')) AS UNSIGNED) = p.id
+        JOIN posts p ON p.id = n.post_id
         WHERE p.team_id = :teamId
         """,
         nativeQuery = true,
     )
-    fun deleteByMetadataPostInTeamId(teamId: Long)
+    fun deleteByPostInTeamId(teamId: Long)
 
     @Modifying
     @Query(
         """
         DELETE n FROM notifications n
-        JOIN posts p ON CAST(JSON_UNQUOTE(JSON_EXTRACT(n.metadata, '$.postId')) AS UNSIGNED) = p.id
+        JOIN posts p ON p.id = n.post_id
         WHERE p.user_id = :userId
         """,
         nativeQuery = true,
     )
-    fun deleteByMetadataPostUserId(userId: UUID)
+    fun deleteByPostUserId(userId: UUID)
 }

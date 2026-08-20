@@ -36,9 +36,9 @@ interface PostRepository : JpaRepository<Post, Long> {
         pageable: Pageable,
     ): List<Post>
 
-    fun findByIdInOrderByCreatedAtDesc(ids: List<Long>): List<Post>
+    fun findByIdInOrderByIdDesc(ids: List<Long>): List<Post>
 
-    fun findByTeamIdOrderByCreatedAtDesc(teamId: Long): List<Post>
+    fun findByTeamIdOrderByIdDesc(teamId: Long): List<Post>
 
     @Modifying
     @Query(

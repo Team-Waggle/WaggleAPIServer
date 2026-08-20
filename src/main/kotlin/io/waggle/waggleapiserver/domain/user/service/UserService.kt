@@ -6,23 +6,14 @@ import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
-import io.waggle.waggleapiserver.domain.application.repository.ApplicationReadRepository
-import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
-import io.waggle.waggleapiserver.domain.auth.service.AuthService
-import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
-import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
-import io.waggle.waggleapiserver.domain.follow.repository.FollowRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.memberreview.enums.ReviewType
 import io.waggle.waggleapiserver.domain.memberreview.repository.MemberReviewRepository
 import io.waggle.waggleapiserver.domain.notification.event.MemberLeftEvent
-import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
-import io.waggle.waggleapiserver.domain.post.repository.PostRepository
-import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.team.dto.response.UserTeamResponse
+import io.waggle.waggleapiserver.domain.team.event.TeamDeletedEvent
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
-import io.waggle.waggleapiserver.domain.term.repository.UserTermAgreementRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.request.MemberUpdateVisibilityRequest
 import io.waggle.waggleapiserver.domain.user.dto.request.UserSetupProfileRequest
@@ -31,6 +22,7 @@ import io.waggle.waggleapiserver.domain.user.dto.response.UserCheckUsernameRespo
 import io.waggle.waggleapiserver.domain.user.dto.response.UserDetailResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileCompletionResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserProfileResponse
+import io.waggle.waggleapiserver.domain.user.event.UserDeactivatedEvent
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
@@ -44,19 +36,10 @@ import java.util.UUID
 class UserService(
     private val eventPublisher: ApplicationEventPublisher,
     private val storageClient: StorageClient,
-    private val authService: AuthService,
-    private val applicationReadRepository: ApplicationReadRepository,
-    private val applicationRepository: ApplicationRepository,
-    private val bookmarkRepository: BookmarkRepository,
-    private val followRepository: FollowRepository,
     private val memberRepository: MemberRepository,
     private val memberReviewRepository: MemberReviewRepository,
-    private val notificationRepository: NotificationRepository,
-    private val postRepository: PostRepository,
-    private val recruitmentRepository: RecruitmentRepository,
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
-    private val userTermAgreementRepository: UserTermAgreementRepository,
 ) {
     @Transactional
     fun setupProfile(
@@ -124,9 +107,9 @@ class UserService(
     ): List<UserTeamResponse> {
         val members =
             if (includeHidden) {
-                memberRepository.findByUserIdOrderByRoleAscCreatedAtAsc(userId)
+                memberRepository.findByUserIdOrderByRoleAscIdAsc(userId)
             } else {
-                memberRepository.findByUserIdAndVisibleTrueOrderByRoleAscCreatedAtAsc(userId)
+                memberRepository.findByUserIdAndVisibleTrueOrderByRoleAscIdAsc(userId)
             }
 
         val teamIds = members.map { it.teamId }
@@ -188,11 +171,11 @@ class UserService(
 
     @Transactional
     fun deactivateUser(user: User) {
-        val members = memberRepository.findByUserIdOrderByRoleAscCreatedAtAsc(user.id)
+        val members = memberRepository.findByUserIdOrderByRoleAscIdAsc(user.id)
 
         members.filter { it.isLeader }.forEach { leaderMembership ->
             val successors =
-                memberRepository.findByIdNotAndTeamIdOrderByRoleAscCreatedAtAsc(
+                memberRepository.findByIdNotAndTeamIdOrderByRoleAscIdAsc(
                     leaderMembership.id,
                     leaderMembership.teamId,
                 )
@@ -206,19 +189,7 @@ class UserService(
                 team.profileImageUrl?.let {
                     eventPublisher.publishEvent(ImageDeleteEvent(it))
                 }
-                memberRepository.updateDeletedAtAndDeletedByByTeamIdAndDeletedAtIsNull(
-                    leaderMembership.teamId,
-                    user.id,
-                )
-                postRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(leaderMembership.teamId)
-                recruitmentRepository.deleteByPostTeamId(leaderMembership.teamId)
-                applicationReadRepository
-                    .updateDeletedAtByApplicationTeamIdAndDeletedAtIsNull(leaderMembership.teamId)
-                applicationRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(leaderMembership.teamId)
-                bookmarkRepository.deleteByPostTeamId(leaderMembership.teamId)
-                bookmarkRepository.deleteByIdTargetIdAndIdType(leaderMembership.teamId, BookmarkType.TEAM)
-                notificationRepository.deleteByMetadataPostInTeamId(leaderMembership.teamId)
-                notificationRepository.deleteByMetadataTeamId(leaderMembership.teamId)
+                eventPublisher.publishEvent(TeamDeletedEvent(leaderMembership.teamId, user.id))
                 team.delete()
             } else {
                 val newLeader = successors[0]
@@ -236,21 +207,7 @@ class UserService(
             )
         }
 
-        memberRepository.updateDeletedAtAndDeletedByByUserIdAndDeletedAtIsNull(user.id)
-        applicationReadRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
-        applicationReadRepository.updateDeletedAtByApplicationUserIdAndDeletedAtIsNull(user.id)
-        applicationReadRepository.updateDeletedAtByApplicationPostUserIdAndDeletedAtIsNull(user.id)
-        applicationRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
-        applicationRepository.updateDeletedAtByPostUserIdAndDeletedAtIsNull(user.id)
-        postRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(user.id)
-        followRepository.updateDeletedAtByFollowerIdOrFolloweeIdAndDeletedAtIsNull(user.id)
-        bookmarkRepository.deleteByPostUserId(user.id)
-        bookmarkRepository.deleteByIdUserId(user.id)
-        notificationRepository.deleteByMetadataPostUserId(user.id)
-        notificationRepository.deleteByUserId(user.id)
-        userTermAgreementRepository.deleteByUserId(user.id)
-
-        authService.deleteRefreshToken(user.id)
+        eventPublisher.publishEvent(UserDeactivatedEvent(user.id))
 
         user.profileImageUrl?.let { eventPublisher.publishEvent(ImageDeleteEvent(it)) }
 

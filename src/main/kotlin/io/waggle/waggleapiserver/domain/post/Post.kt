@@ -20,7 +20,11 @@ import java.util.UUID
 @Entity
 @Table(
     name = "posts",
-    indexes = [Index(name = "idx_posts_title", columnList = "title")],
+    indexes = [
+        Index(name = "idx_posts_title", columnList = "title"),
+        Index(name = "idx_posts_team", columnList = "team_id"),
+        Index(name = "idx_posts_user", columnList = "user_id"),
+    ],
 )
 class Post(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

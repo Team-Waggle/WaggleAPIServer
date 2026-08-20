@@ -7,13 +7,9 @@ import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
-import io.waggle.waggleapiserver.domain.application.repository.ApplicationReadRepository
 import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
-import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
-import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
-import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.PostSort
 import io.waggle.waggleapiserver.domain.post.dto.request.PostCreateRequest
@@ -22,6 +18,7 @@ import io.waggle.waggleapiserver.domain.post.dto.request.PostUpdateRequest
 import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.TeamPostSimpleResponse
+import io.waggle.waggleapiserver.domain.post.event.PostDeletedEvent
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
 import io.waggle.waggleapiserver.domain.recruitment.dto.request.RecruitmentUpdateStatusRequest
@@ -32,6 +29,7 @@ import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
@@ -41,12 +39,10 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class PostService(
+    private val eventPublisher: ApplicationEventPublisher,
     private val storageClient: StorageClient,
-    private val applicationReadRepository: ApplicationReadRepository,
     private val applicationRepository: ApplicationRepository,
-    private val bookmarkRepository: BookmarkRepository,
     private val memberRepository: MemberRepository,
-    private val notificationRepository: NotificationRepository,
     private val postRepository: PostRepository,
     private val recruitmentRepository: RecruitmentRepository,
     private val teamRepository: TeamRepository,
@@ -216,7 +212,7 @@ class PostService(
         teamId: Long,
         user: User?,
     ): List<TeamPostSimpleResponse> {
-        val posts = postRepository.findByTeamIdOrderByCreatedAtDesc(teamId)
+        val posts = postRepository.findByTeamIdOrderByIdDesc(teamId)
 
         val authorIds = posts.map { it.userId }.distinct()
         val authorById = userRepository.findAllById(authorIds).associateBy { it.id }
@@ -378,11 +374,7 @@ class PostService(
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
         post.checkOwnership(user.id)
 
-        recruitmentRepository.deleteByPostId(postId)
-        applicationReadRepository.updateDeletedAtByApplicationPostIdAndDeletedAtIsNull(postId)
-        applicationRepository.updateDeletedAtByPostIdAndDeletedAtIsNull(postId)
-        bookmarkRepository.deleteByIdTargetIdAndIdType(postId, BookmarkType.POST)
-        notificationRepository.deleteByMetadataPostId(postId)
+        eventPublisher.publishEvent(PostDeletedEvent(postId))
 
         post.delete()
     }

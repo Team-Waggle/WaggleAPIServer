@@ -6,23 +6,17 @@ import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
-import io.waggle.waggleapiserver.domain.application.repository.ApplicationReadRepository
-import io.waggle.waggleapiserver.domain.application.repository.ApplicationRepository
-import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
-import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
 import io.waggle.waggleapiserver.domain.member.Member
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.dto.response.MemberResponse
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.notification.event.TeamCompletedEvent
-import io.waggle.waggleapiserver.domain.notification.repository.NotificationRepository
-import io.waggle.waggleapiserver.domain.post.repository.PostRepository
-import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
 import io.waggle.waggleapiserver.domain.team.Team
 import io.waggle.waggleapiserver.domain.team.dto.request.TeamStatusUpdateRequest
 import io.waggle.waggleapiserver.domain.team.dto.request.TeamUpsertRequest
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
 import io.waggle.waggleapiserver.domain.team.enums.TeamStatus
+import io.waggle.waggleapiserver.domain.team.event.TeamDeletedEvent
 import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
@@ -36,13 +30,7 @@ import org.springframework.transaction.annotation.Transactional
 class TeamService(
     private val eventPublisher: ApplicationEventPublisher,
     private val storageClient: StorageClient,
-    private val applicationReadRepository: ApplicationReadRepository,
-    private val applicationRepository: ApplicationRepository,
-    private val bookmarkRepository: BookmarkRepository,
     private val memberRepository: MemberRepository,
-    private val notificationRepository: NotificationRepository,
-    private val postRepository: PostRepository,
-    private val recruitmentRepository: RecruitmentRepository,
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
 ) {
@@ -113,11 +101,11 @@ class TeamService(
         val isTeamMember =
             user?.let { memberRepository.existsByUserIdAndTeamId(it.id, teamId) } ?: false
 
-        val activeMembers = memberRepository.findByTeamIdOrderByRoleAscCreatedAtAsc(teamId)
+        val activeMembers = memberRepository.findByTeamIdOrderByRoleAscIdAsc(teamId)
         val deletedMembers =
             when {
                 isTeamMember ->
-                    memberRepository.findByTeamIdAndDeletedAtIsNotNullOrderByRoleAscCreatedAtAsc(
+                    memberRepository.findByTeamIdAndDeletedAtIsNotNullOrderByRoleAscIdAsc(
                         teamId,
                     )
 
@@ -237,15 +225,7 @@ class TeamService(
             eventPublisher.publishEvent(ImageDeleteEvent(it))
         }
 
-        memberRepository.updateDeletedAtAndDeletedByByTeamIdAndDeletedAtIsNull(teamId, user.id)
-        postRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(teamId)
-        recruitmentRepository.deleteByPostTeamId(teamId)
-        applicationReadRepository.updateDeletedAtByApplicationTeamIdAndDeletedAtIsNull(teamId)
-        applicationRepository.updateDeletedAtByTeamIdAndDeletedAtIsNull(teamId)
-        bookmarkRepository.deleteByPostTeamId(teamId)
-        bookmarkRepository.deleteByIdTargetIdAndIdType(teamId, BookmarkType.TEAM)
-        notificationRepository.deleteByMetadataPostInTeamId(teamId)
-        notificationRepository.deleteByMetadataTeamId(teamId)
+        eventPublisher.publishEvent(TeamDeletedEvent(teamId, user.id))
 
         team.delete()
     }
