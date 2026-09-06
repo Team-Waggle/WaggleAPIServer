@@ -22,6 +22,8 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         pageable: Pageable,
     ): List<Conversation>
 
+    // MATCH 서브쿼리를 IN에 직접 넣으면 세미조인으로 변환되면서 바깥 행마다 FULLTEXT를 다시 프로빙해
+    // 정렬 중간 행이 누락됨. GROUP BY가 derived_merge를 막아 구체화를 강제함 - 제거하면 조용히 결과가 샘
     @Query(
         """
         SELECT c.* FROM conversations c
@@ -30,10 +32,13 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         AND (
             u.username LIKE CONCAT('%', :q, '%')
             OR c.partner_id IN (
-                SELECT IF(m.sender_id = :userId, m.receiver_id, m.sender_id)
-                FROM messages m
-                WHERE (m.sender_id = :userId OR m.receiver_id = :userId)
-                AND MATCH(m.content) AGAINST(:q IN BOOLEAN MODE)
+                SELECT matched.partner_id FROM (
+                    SELECT IF(m.sender_id = :userId, m.receiver_id, m.sender_id) AS partner_id
+                    FROM messages m
+                    WHERE (m.sender_id = :userId OR m.receiver_id = :userId)
+                    AND MATCH(m.content) AGAINST(:q IN BOOLEAN MODE)
+                    GROUP BY partner_id
+                ) matched
             )
         )
         AND (:cursor IS NULL OR c.last_message_id < :cursor)
