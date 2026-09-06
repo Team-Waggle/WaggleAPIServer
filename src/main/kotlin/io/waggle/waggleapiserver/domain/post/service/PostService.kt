@@ -15,7 +15,6 @@ import io.waggle.waggleapiserver.domain.like.repository.LikeRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.post.Post
-import io.waggle.waggleapiserver.domain.post.PostSort
 import io.waggle.waggleapiserver.domain.post.dto.request.PostCreateRequest
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
 import io.waggle.waggleapiserver.domain.post.dto.request.PostUpdateRequest
@@ -34,8 +33,6 @@ import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -125,11 +122,6 @@ class PostService(
         cursorQuery: CursorGetQuery,
         user: User?,
     ): CursorResponse<PostSimpleResponse> {
-        val direction =
-            when (query.sort) {
-                PostSort.NEWEST -> Sort.Direction.DESC
-                PostSort.OLDEST -> Sort.Direction.ASC
-            }
         val posts =
             postRepository.findWithFilter(
                 cursor = cursorQuery.cursor,
@@ -137,7 +129,7 @@ class PostService(
                 positions = query.positions ?: emptySet(),
                 skills = query.skills ?: emptySet(),
                 sort = query.sort,
-                pageable = PageRequest.of(0, cursorQuery.size + 1, Sort.by(direction, "id")),
+                size = cursorQuery.size + 1,
             )
 
         val hasNext = posts.size > cursorQuery.size

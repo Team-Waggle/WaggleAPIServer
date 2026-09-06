@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.conversation.service
 
 import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
+import io.waggle.waggleapiserver.common.infrastructure.config.QuerydslConfig
 import io.waggle.waggleapiserver.domain.conversation.Conversation
 import io.waggle.waggleapiserver.domain.conversation.repository.ConversationRepository
 import io.waggle.waggleapiserver.domain.message.Message
@@ -30,7 +31,8 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @ActiveProfiles("mysql-test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import(ConversationService::class)
+// @DataJpaTest 슬라이스엔 일반 @Configuration이 안 실려, 리포지토리 프래그먼트가 쓰는 빈은 직접 실어야 함
+@Import(ConversationService::class, QuerydslConfig::class)
 class ConversationServiceTest
     @Autowired
     constructor(

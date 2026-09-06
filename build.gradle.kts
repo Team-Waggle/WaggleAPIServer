@@ -2,6 +2,7 @@ plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
     kotlin("plugin.jpa") version "1.9.25"
+    kotlin("kapt") version "1.9.25"
     id("org.springframework.boot") version "3.5.6"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.asciidoctor.jvm.convert") version "3.3.2"
@@ -50,6 +51,10 @@ dependencies {
 
     // OpenAPI (Swagger)
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
+
+    // QueryDSL (버전은 Spring Boot BOM 관리)
+    implementation("com.querydsl:querydsl-jpa::jakarta")
+    kapt("com.querydsl:querydsl-apt::jakarta")
 
     // Rate Limiting
     implementation("com.bucket4j:bucket4j-core:8.10.1")
