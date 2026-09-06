@@ -59,6 +59,9 @@ abstract class CascadeIntegrationTestSupport : IntegrationTestSupport() {
     protected lateinit var jdbcTemplate: JdbcTemplate
 
     @Autowired
+    protected lateinit var databaseCleaner: DatabaseCleaner
+
+    @Autowired
     protected lateinit var teamService: TeamService
 
     @Autowired
@@ -115,29 +118,7 @@ abstract class CascadeIntegrationTestSupport : IntegrationTestSupport() {
     @BeforeEach
     @AfterEach
     fun cleanDatabase() {
-        val tables =
-            listOf(
-                "application_portfolio_urls",
-                "application_reads",
-                "applications",
-                "recruitment_skills",
-                "recruitments",
-                "bookmarks",
-                "likes",
-                "comments",
-                "notifications",
-                "posts",
-                "members",
-                "follows",
-                "user_term_agreements",
-                "user_skills",
-                "user_portfolios",
-                "teams",
-                "users",
-            )
-        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0")
-        tables.forEach { jdbcTemplate.execute("DELETE FROM $it") }
-        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1")
+        databaseCleaner.clean()
     }
 
     protected fun count(

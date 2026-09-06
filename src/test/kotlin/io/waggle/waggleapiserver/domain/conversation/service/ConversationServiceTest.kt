@@ -10,6 +10,8 @@ import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.UserRole
 import io.waggle.waggleapiserver.domain.user.enums.Position
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
+import io.waggle.waggleapiserver.support.DatabaseCleaner
+import io.waggle.waggleapiserver.support.TestcontainersConfig
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -17,22 +19,22 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import org.testcontainers.containers.MySQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 
 @DataJpaTest
-@Testcontainers
 @ActiveProfiles("mysql-test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 // @DataJpaTest 슬라이스엔 일반 @Configuration이 안 실려, 리포지토리 프래그먼트가 쓰는 빈은 직접 실어야 함
-@Import(ConversationService::class, QuerydslConfig::class)
+@Import(
+    ConversationService::class,
+    QuerydslConfig::class,
+    TestcontainersConfig::class,
+    DatabaseCleaner::class,
+)
 class ConversationServiceTest
     @Autowired
     constructor(
@@ -40,17 +42,8 @@ class ConversationServiceTest
         private val conversationRepository: ConversationRepository,
         private val messageRepository: MessageRepository,
         private val userRepository: UserRepository,
+        private val databaseCleaner: DatabaseCleaner,
     ) {
-        companion object {
-            @Container
-            @ServiceConnection
-            val mysql =
-                MySQLContainer("mysql:8.0").apply {
-                    withDatabaseName("waggle")
-                    withCommand("--ngram-token-size=2")
-                }
-        }
-
         private lateinit var me: User
         private lateinit var partner1: User
         private lateinit var partner2: User
@@ -79,9 +72,7 @@ class ConversationServiceTest
 
         @AfterEach
         fun cleanup() {
-            conversationRepository.deleteAll()
-            messageRepository.deleteAll()
-            userRepository.deleteAll()
+            databaseCleaner.clean()
         }
 
         @Test
