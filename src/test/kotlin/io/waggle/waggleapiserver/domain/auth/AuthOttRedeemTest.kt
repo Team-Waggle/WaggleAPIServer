@@ -6,6 +6,7 @@ import io.waggle.waggleapiserver.domain.auth.dto.request.OttRedeemRequest
 import io.waggle.waggleapiserver.domain.auth.service.AuthService
 import io.waggle.waggleapiserver.domain.user.UserRole
 import io.waggle.waggleapiserver.security.jwt.JwtProvider
+import io.waggle.waggleapiserver.support.TestContainers
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -16,18 +17,10 @@ import org.springframework.http.MediaType
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
-import org.testcontainers.containers.GenericContainer
 import java.util.UUID
 
 class AuthOttRedeemTest {
     companion object {
-        // CascadeIntegrationTestSupport 와 같은 수동 start 싱글턴이라 정리는 Ryuk 가 맡음
-        private val redis: GenericContainer<*> = GenericContainer("redis:7-alpine").withExposedPorts(6379)
-
-        init {
-            redis.start()
-        }
-
         private const val ACCESS_TOKEN_TTL = 3_600_000L
         private const val REFRESH_TOKEN_TTL = 604_800_000L
     }
@@ -35,7 +28,7 @@ class AuthOttRedeemTest {
     private val redisTemplate =
         StringRedisTemplate(
             LettuceConnectionFactory(
-                RedisStandaloneConfiguration(redis.host, redis.firstMappedPort),
+                RedisStandaloneConfiguration(TestContainers.redis.host, TestContainers.redis.firstMappedPort),
             ).apply { afterPropertiesSet() },
         ).apply { afterPropertiesSet() }
 
@@ -57,7 +50,7 @@ class AuthOttRedeemTest {
 
         val pairedRefreshToken = redisTemplate.opsForValue().get("oauth-ott-refresh:$ott")
         assertThat(redisTemplate.opsForValue().get("oauth-ott:$ott")).isNotNull()
-        // 세션 슬롯과 같은 값이어야 교환한 클라이언트가 곧바로 refresh 할 수 있음
+        // 세션 슬롯과 같은 값이어야 교환한 클라이언트가 곧바로 refresh할 수 있음
         assertThat(pairedRefreshToken).isEqualTo(redisTemplate.opsForValue().get("refresh-token:$userId"))
     }
 
