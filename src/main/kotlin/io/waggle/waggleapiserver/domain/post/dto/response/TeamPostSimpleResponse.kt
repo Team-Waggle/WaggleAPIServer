@@ -2,11 +2,13 @@ package io.waggle.waggleapiserver.domain.post.dto.response
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import io.waggle.waggleapiserver.domain.post.Deadline
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
 import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import java.time.Instant
+import java.time.LocalDate
 
 @Schema(description = "팀 모집글 응답 DTO")
 data class TeamPostSimpleResponse(
@@ -30,6 +32,8 @@ data class TeamPostSimpleResponse(
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "안 읽은 지원자 수 (팀 멤버만 조회 가능)")
     val unreadApplicationCount: Int? = null,
+    @Schema(description = "모집 마감일. 그날 24시(KST)까지 모집. 미지정 시 무기한", example = "2026-09-30")
+    val deadline: LocalDate?,
     @Schema(description = "모집글 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) {
@@ -47,12 +51,13 @@ data class TeamPostSimpleResponse(
                 id = post.id,
                 title = post.title,
                 user = user,
-                recruiting = recruitments.any { it.status == RecruitmentStatus.RECRUITING },
+                recruiting = !post.isExpired && recruitments.any { it.status == RecruitmentStatus.RECRUITING },
                 recruitments = recruitments,
                 commentCount = commentCount,
                 viewCount = viewCount,
                 applicantCount = applicantCount,
                 unreadApplicationCount = unreadApplicationCount,
+                deadline = post.expiresAt?.let { Deadline.toDeadline(it) },
                 createdAt = post.createdAt,
             )
     }

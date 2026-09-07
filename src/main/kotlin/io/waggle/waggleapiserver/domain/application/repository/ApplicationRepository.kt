@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.application.repository
 
 import io.waggle.waggleapiserver.domain.application.Application
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
+import io.waggle.waggleapiserver.domain.user.enums.Position
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -10,6 +11,11 @@ import java.time.Instant
 import java.util.UUID
 
 interface ApplicationRepository : JpaRepository<Application, Long> {
+    fun existsByPostIdAndPosition(
+        postId: Long,
+        position: Position,
+    ): Boolean
+
     fun existsByPostIdAndUserId(
         postId: Long,
         userId: UUID,

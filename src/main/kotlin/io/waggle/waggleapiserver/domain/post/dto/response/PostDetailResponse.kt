@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
+import io.waggle.waggleapiserver.domain.post.Deadline
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
 import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
 import io.waggle.waggleapiserver.domain.team.dto.response.TeamResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import java.time.Instant
+import java.time.LocalDate
 
 @Schema(description = "모집글 상세 응답 DTO")
 data class PostDetailResponse(
@@ -38,6 +40,8 @@ data class PostDetailResponse(
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "현재 사용자의 이 모집글에 대한 지원 상태")
     val applicationStatus: ApplicationStatus? = null,
+    @Schema(description = "모집 마감일. 그날 24시(KST)까지 모집. 미지정 시 무기한", example = "2026-09-30")
+    val deadline: LocalDate?,
     @Schema(description = "모집글 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) : BookmarkResponse {
@@ -59,13 +63,14 @@ data class PostDetailResponse(
                 content = post.content,
                 user = user,
                 team = team,
-                recruiting = recruitments.any { it.status == RecruitmentStatus.RECRUITING },
+                recruiting = !post.isExpired && recruitments.any { it.status == RecruitmentStatus.RECRUITING },
                 recruitments = recruitments,
                 commentCount = commentCount,
                 viewCount = viewCount,
                 likeCount = likeCount,
                 liked = liked,
                 applicationStatus = applicationStatus,
+                deadline = post.expiresAt?.let { Deadline.toDeadline(it) },
                 createdAt = post.createdAt,
             )
     }

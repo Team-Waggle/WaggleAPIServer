@@ -7,6 +7,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import java.time.LocalDate
 
 @Schema(description = "모집글 수정 요청 DTO")
 data class PostUpdateRequest(
@@ -23,4 +24,6 @@ data class PostUpdateRequest(
     @field:NotNull
     @field:UniquePosition
     val recruitments: List<RecruitmentUpsertRequest>,
+    @Schema(description = "모집 마감일. 그날 24시(KST)까지 모집. 미지정 시 무기한", example = "2026-09-30")
+    val deadline: LocalDate? = null,
 )
