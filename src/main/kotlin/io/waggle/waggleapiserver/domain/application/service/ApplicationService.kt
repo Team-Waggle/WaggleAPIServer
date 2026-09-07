@@ -64,6 +64,8 @@ class ApplicationService(
             )
         }
 
+        post.checkNotExpired()
+
         if (memberRepository.existsByUserIdAndTeamId(user.id, teamId)) {
             throw BusinessException(
                 ErrorCode.DUPLICATE_RESOURCE,

@@ -2,11 +2,13 @@ package io.waggle.waggleapiserver.domain.post.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
+import io.waggle.waggleapiserver.domain.post.Deadline
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
 import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
 import java.time.Instant
+import java.time.LocalDate
 
 @Schema(description = "북마크한 모집글 응답 DTO")
 data class BookmarkedPostResponse(
@@ -20,6 +22,8 @@ data class BookmarkedPostResponse(
     val recruiting: Boolean,
     @Schema(description = "모집 정보 목록")
     val recruitments: List<RecruitmentResponse>,
+    @Schema(description = "모집 마감일. 그날 24시(KST)까지 모집. 미지정 시 무기한", example = "2026-09-30")
+    val deadline: LocalDate?,
     @Schema(description = "모집글 생성일시", example = "2025-11-16T12:30:45.123456Z")
     val createdAt: Instant,
 ) : BookmarkResponse {
@@ -33,8 +37,9 @@ data class BookmarkedPostResponse(
                 id = post.id,
                 title = post.title,
                 user = user,
-                recruiting = recruitments.any { it.status == RecruitmentStatus.RECRUITING },
+                recruiting = !post.isExpired && recruitments.any { it.status == RecruitmentStatus.RECRUITING },
                 recruitments = recruitments,
+                deadline = post.expiresAt?.let { Deadline.toDeadline(it) },
                 createdAt = post.createdAt,
             )
     }

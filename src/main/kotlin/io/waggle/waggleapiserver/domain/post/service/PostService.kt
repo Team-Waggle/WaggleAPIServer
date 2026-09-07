@@ -14,6 +14,7 @@ import io.waggle.waggleapiserver.domain.like.LikeType
 import io.waggle.waggleapiserver.domain.like.repository.LikeRepository
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
+import io.waggle.waggleapiserver.domain.post.Deadline
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.dto.request.PostCreateRequest
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
@@ -24,6 +25,7 @@ import io.waggle.waggleapiserver.domain.post.dto.response.TeamPostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.event.PostDeletedEvent
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
+import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
 import io.waggle.waggleapiserver.domain.recruitment.dto.request.RecruitmentUpdateStatusRequest
 import io.waggle.waggleapiserver.domain.recruitment.dto.response.RecruitmentResponse
 import io.waggle.waggleapiserver.domain.recruitment.repository.RecruitmentRepository
@@ -57,7 +59,13 @@ class PostService(
         request: PostCreateRequest,
         user: User,
     ): PostDetailResponse {
-        val (teamId, title, content, recruitments) = request
+        val (teamId, title, content, recruitments, deadline) = request
+
+        // 애너테이션으로 검사하면 서버가 UTC라 KST 새벽에 어제 날짜가 통과함
+        val expiresAt = deadline?.let { Deadline.toExpiresAt(it) }
+        if (expiresAt != null && Deadline.isPast(expiresAt)) {
+            throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Deadline cannot be in the past")
+        }
 
         val team =
             teamRepository.findByIdOrNull(teamId)
@@ -83,6 +91,7 @@ class PostService(
                 content = content,
                 userId = user.id,
                 teamId = teamId,
+                expiresAt = expiresAt,
             )
         val savedPost = postRepository.save(post)
 
@@ -325,14 +334,14 @@ class PostService(
         request: PostUpdateRequest,
         user: User,
     ): PostDetailResponse {
-        val (title, content, recruitments) = request
+        val (title, content, recruitments, deadline) = request
 
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
 
         post.checkOwnership(user.id)
-        post.update(title, content)
+        post.update(title, content, deadline?.let { Deadline.toExpiresAt(it) })
 
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, post.teamId)
@@ -346,6 +355,7 @@ class PostService(
 
         val recruitmentsToDelete =
             existingRecruitmentByPosition.filterKeys { it !in requestedRecruitmentByPosition }.values
+        recruitmentsToDelete.forEach { checkDeletableRecruitment(it) }
         recruitmentRepository.deleteAll(recruitmentsToDelete)
 
         val updatedRecruitments =
@@ -358,10 +368,15 @@ class PostService(
                 }
             }
 
+        val newRecruitments = requestedRecruitmentByPosition.filterKeys { it !in existingRecruitmentByPosition }
+        // 새 포지션은 RECRUITING 으로 들어가므로 마감된 글이 되살아남. 같은 요청에서 기한을 연장했다면 통과함
+        if (newRecruitments.isNotEmpty()) {
+            post.checkNotExpired()
+        }
+
         val insertedRecruitments =
             recruitmentRepository.saveAll(
-                requestedRecruitmentByPosition
-                    .filterKeys { it !in existingRecruitmentByPosition }
+                newRecruitments
                     .values
                     .map {
                         Recruitment(
@@ -395,6 +410,23 @@ class PostService(
         )
     }
 
+    // 마감한 포지션을 지웠다 다시 추가하면 RECRUITING 으로 되살아나 재개 금지가 우회됨.
+    // 지원서는 recruitment 가 아니라 position 을 참조해 삭제해도 남으므로 대응 모집 정보가 없는 지원서가 생김
+    private fun checkDeletableRecruitment(recruitment: Recruitment) {
+        if (!recruitment.isRecruiting()) {
+            throw BusinessException(
+                ErrorCode.INVALID_STATE,
+                "Cannot delete a closed recruitment: ${recruitment.position}",
+            )
+        }
+        if (applicationRepository.existsByPostIdAndPosition(recruitment.postId, recruitment.position)) {
+            throw BusinessException(
+                ErrorCode.INVALID_STATE,
+                "Cannot delete a recruitment with applications: ${recruitment.position}",
+            )
+        }
+    }
+
     @Transactional
     fun updatePostRecruitmentStatus(
         postId: Long,
@@ -413,8 +445,18 @@ class PostService(
                 )
         member.checkMemberRole(MemberRole.MANAGER)
 
-        val recruitments = recruitmentRepository.findByPostId(postId)
-        recruitments.forEach { it.updateStatus(request.status) }
+        // 현재 기획상 마감 상태를 재모집으로 변경하지 않음
+        if (request.status != RecruitmentStatus.CLOSED) {
+            throw BusinessException(ErrorCode.INVALID_STATE, "Recruitment cannot be reopened")
+        }
+
+        // 열린 포지션이 하나도 없으면 이미 마감된 글이라, 중복 마감을 걸러내려면 먼저 추려야 함
+        val openRecruitments = recruitmentRepository.findByPostId(postId).filter { it.isRecruiting() }
+        if (openRecruitments.isEmpty()) {
+            throw BusinessException(ErrorCode.INVALID_STATE, "Post is already closed: $postId")
+        }
+        openRecruitments.forEach { it.close() }
+        post.limitDeadlineToToday()
     }
 
     @Transactional

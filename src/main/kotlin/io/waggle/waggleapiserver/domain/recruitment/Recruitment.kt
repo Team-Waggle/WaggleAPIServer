@@ -1,7 +1,5 @@
 package io.waggle.waggleapiserver.domain.recruitment
 
-import io.waggle.waggleapiserver.common.exception.BusinessException
-import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.enums.Position
 import io.waggle.waggleapiserver.domain.user.enums.Skill
 import jakarta.persistence.CollectionTable
@@ -41,9 +39,6 @@ class Recruitment(
     val position: Position,
     @Column(nullable = false)
     var count: Int,
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
-    var status: RecruitmentStatus = RecruitmentStatus.RECRUITING,
     @Column(name = "post_id", nullable = false, updatable = false)
     val postId: Long,
     @ElementCollection(fetch = FetchType.EAGER)
@@ -53,6 +48,12 @@ class Recruitment(
     @Column(name = "skill", nullable = false, columnDefinition = "VARCHAR(30)")
     val skills: MutableSet<Skill> = mutableSetOf(),
 ) {
+    // 마감은 되돌릴 수 없어 close만 상태를 바꿀 수 있음
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
+    final var status: RecruitmentStatus = RecruitmentStatus.RECRUITING
+        private set
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     lateinit var createdAt: Instant
@@ -72,10 +73,7 @@ class Recruitment(
         this.skills.addAll(skills)
     }
 
-    fun updateStatus(newStatus: RecruitmentStatus) {
-        if (status == newStatus) {
-            throw BusinessException(ErrorCode.INVALID_STATE, "Recruitment is already ${newStatus.name}")
-        }
-        status = newStatus
+    fun close() {
+        status = RecruitmentStatus.CLOSED
     }
 }
