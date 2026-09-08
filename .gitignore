@@ -43,3 +43,5 @@ out/
 .env.*
 !.env.example
 *.pem
+
+.claude/settings.local.json

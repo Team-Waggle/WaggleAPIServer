@@ -133,16 +133,23 @@
   ```
 
   메서드·변수 이름으로 표현할 수 있으면 주석 대신 이름을 고칠 것. `existsByIdAndTombstonedAtIsNull`처럼 이름이 조건을 다 말하면 주석이 불필요해진다.
-- **주석은 명사형 종결어미로 쓰고 끝에 마침표를 붙이지 말 것.** `-한다`/`-된다`/`-없다` 같은 서술형 대신 `-함`/`-됨`/`-불필요`처럼 끝낸다. Kotlin·SQL·YAML 주석 모두 해당.
+- **주석은 명사형 종결어미로 쓰고 마침표를 쓰지 말 것.** `-한다`/`-된다`/`-없다` 같은 서술형 대신 `-함`/`-됨`/`-불필요`처럼 끝낸다. Kotlin·SQL·YAML 주석 모두 해당.
+  - **문장 사이 마침표도 쓰지 말고 줄바꿈으로 나눌 것.**
+  - **영문 뒤에 오는 한국어 조사는 붙여쓸 것** — `REST 는`이 아니라 `REST는`. 조사가 아니라 용언이면 띄어쓴다 (`filesort 해야`, `refresh 할`).
+  - **가운뎃점(`·`)을 주석에 쓰지 말 것.** 키보드로 직접 치지 않는 문자라 사람이 쓴 주석에서 튄다. 쉼표나 `와`로 대체. 이 문서 본문 같은 산문에는 계속 쓴다.
 
   ```kotlin
   // 삭제-답글 경합으로 고아 답글이 생기는 것을 막는다.   ✗ 서술형 + 마침표
   // 삭제-답글 경합으로 생기는 고아 답글 방지용.           ✗ 마침표
   // 삭제-답글 경합으로 생기는 고아 답글 방지용             ✓
 
-  // 1-depth이므로 재귀가 필요 없다. depth를 늘릴 때 while 루프가 된다.  ✗
-  // 1-depth이므로 재귀 불필요. depth 확장 시 while 루프가 됨            ✓ 문장 사이 마침표는 유지
+  // 1-depth이므로 재귀가 필요 없다. depth를 늘릴 때 while 루프가 된다.  ✗ 서술형 + 문장 사이 마침표
+  // 1-depth이므로 재귀 불필요. depth 확장 시 while 루프가 됨            ✗ 문장 사이 마침표
+  // 1-depth이므로 재귀 불필요                                          ✓ 줄바꿈으로 나눔
+  // depth 확장 시 while 루프가 됨
   ```
+
+  위 네 규칙은 기계 판정이 가능하므로 `.claude/hooks/check-comment-convention.pl`이 Edit/Write 직후 `.kt`/`.kts`/`.sql`을 검사한다 (`.claude/settings.json`의 `PostToolUse` 훅). 반면 "코드가 말할 수 없는 것만 쓸 것"은 훅으로 잡히지 않으므로 매번 사람이 판단한다.
 - **검증 함수 네이밍**: 조건을 어기면 던지는 함수는 `check*`, `Boolean`을 반환하면 `is*`로 쓸 것.
   - `check*`의 뒷부분은 **명사구·형용사구**로 둘 것. `checkTargetExists`처럼 술어문이면 `Boolean`을 반환할 것처럼 읽힌다 (`checkOwnership`, `checkMemberRole`, `checkCompleted`, `checkProfileComplete`, `checkAllRequiredAgreed` 전례).
   - 이름이 실제 검사 범위를 담게 할 것. 좋아요 대상 검증은 존재뿐 아니라 soft delete·tombstone까지 막으므로 `checkLikableTarget`이다.
