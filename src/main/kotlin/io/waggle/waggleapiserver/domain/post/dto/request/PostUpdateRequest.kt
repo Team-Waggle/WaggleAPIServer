@@ -1,5 +1,6 @@
 package io.waggle.waggleapiserver.domain.post.dto.request
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import io.waggle.waggleapiserver.common.validation.constraint.UniquePosition
 import io.waggle.waggleapiserver.domain.recruitment.dto.request.RecruitmentUpsertRequest
@@ -24,6 +25,11 @@ data class PostUpdateRequest(
     @field:NotNull
     @field:UniquePosition
     val recruitments: List<RecruitmentUpsertRequest>,
-    @Schema(description = "모집 마감일. 그날 24시(KST)까지 모집. 미지정 시 무기한", example = "2026-09-30")
-    val deadline: LocalDate? = null,
+    @JsonProperty(required = true)
+    @Schema(
+        description = "모집 마감일. 그날 24시(KST)까지 모집. 무기한이면 null",
+        example = "2026-09-30",
+        types = ["string", "null"],
+    )
+    val deadline: LocalDate?,
 )

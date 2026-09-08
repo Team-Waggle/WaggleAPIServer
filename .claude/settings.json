@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "perl \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-comment-convention.pl\""
+          }
+        ]
+      }
+    ]
+  }
+}
