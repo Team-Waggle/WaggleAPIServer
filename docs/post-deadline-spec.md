@@ -136,12 +136,19 @@ fun checkNotExpired() {
 
 ### 요청
 
-`PostCreateRequest` / `PostUpdateRequest`에 optional 필드로 추가한다.
+`PostCreateRequest` / `PostUpdateRequest`에 **필수 필드**로 추가한다. 값은 nullable이지만 키는 반드시 보내야 한다.
 
 ```kotlin
-@Schema(description = "모집 마감일. 그날 24시(KST)까지 모집. 미지정 시 무기한", example = "2026-09-30")
-val deadline: LocalDate? = null,
+@JsonProperty(required = true)
+@Schema(
+    description = "모집 마감일. 그날 24시(KST)까지 모집. 무기한이면 null",
+    example = "2026-09-30",
+    types = ["string", "null"],
+)
+val deadline: LocalDate?,
 ```
+
+기본값을 두지 않는 이유는 수정 API 때문이다. `updatePost`는 전체 치환이라 키를 빠뜨리면 기존 마감일이 조용히 지워진다. 키를 강제하면 무기한 전환은 `null`을 명시해야 하고, 누락은 400이 된다.
 
 **필드는 반드시 목록 맨 끝에 둔다.** `PostService`가 위치 기반 구조분해를 쓰기 때문이다.
 
@@ -287,7 +294,7 @@ private fun checkDeletableRecruitment(recruitment: Recruitment) {
 | 변경 | 영향 |
 |---|---|
 | 응답에 `deadline` 추가 | additive. 기존 클라이언트 무영향 |
-| 요청에 optional `deadline` 추가 | 미전송 시 `NULL` = 무기한. 기존 클라이언트 무영향 |
+| 요청에 필수 `deadline` 추가 | **breaking.** 키를 안 보내던 클라이언트는 400. 무기한이면 `null`을 명시해야 한다 |
 | `recruiting` 의미 확장 | 기존 행은 `expires_at IS NULL`이라 동작 불변 |
 | 포지션 재개 거부 | 재개를 쓰던 클라이언트가 있으면 400. 기획상 재개는 허용되지 않는 조작이다 |
 

@@ -12,10 +12,10 @@ import org.junit.jupiter.api.Test
 import org.springframework.data.repository.findByIdOrNull
 
 /**
- * 엔티티의 @SQLRestriction("deleted_at IS NULL")이 soft delete된 행을 가리는지 고정하는 테스트.
+ * 엔티티의 @SQLRestriction("deleted_at IS NULL")이 soft delete된 행을 가리는지 고정하는 테스트
  *
- * 이전 구조(@Filter + SoftDeleteFilterAspect)는 두 경로에서 뚫렸다 —
- * em.find()에는 필터가 안 붙었고, @Transactional 밖에서는 필터 자체가 안 켜졌다.
+ * 이전 구조(@Filter + SoftDeleteFilterAspect)는 두 경로에서 뚫렸음
+ * em.find()에는 필터가 안 붙었고, @Transactional 밖에서는 필터 자체가 안 켜졌음
  */
 class SoftDeleteRestrictionTest : CascadeIntegrationTestSupport() {
     @Test
@@ -76,7 +76,7 @@ class SoftDeleteRestrictionTest : CascadeIntegrationTestSupport() {
         assertThatThrownBy {
             postService.updatePost(
                 post.id,
-                PostUpdateRequest(title = "수정", content = "수정", recruitments = emptyList()),
+                PostUpdateRequest(title = "수정", content = "수정", recruitments = emptyList(), deadline = null),
                 owner,
             )
         }.isInstanceOf(BusinessException::class.java)
@@ -90,8 +90,8 @@ class SoftDeleteRestrictionTest : CascadeIntegrationTestSupport() {
 
         userService.deactivateUser(user)
 
-        // CurrentUserArgumentResolver가 하는 것과 같은 호출.
-        // 이전에는 찾아져서 JWT 만료까지 인증이 유지됐음.
+        // CurrentUserArgumentResolver가 하는 것과 같은 호출
+        // 이전에는 찾아져서 JWT 만료까지 인증이 유지됐음
         assertThat(userRepository.findByIdOrNull(user.id)).isNull()
     }
 
@@ -109,7 +109,7 @@ class SoftDeleteRestrictionTest : CascadeIntegrationTestSupport() {
             member.id.toString(),
         )
 
-        // 재가입 시 멤버 복원, 탈퇴자 조회 등이 의존하는 탈출구.
+        // 재가입 시 멤버 복원, 탈퇴자 조회 등이 의존하는 탈출구
         assertThat(memberRepository.findByUserIdAndTeamIdAndDeletedAtIsNotNull(member.id, team.id)).isNotNull()
         assertThat(memberRepository.findByUserIdAndTeamIdIncludingDeleted(member.id, team.id)).isNotNull()
         assertThat(memberRepository.findByTeamIdAndDeletedAtIsNotNullOrderByRoleAscIdAsc(team.id)).hasSize(1)
