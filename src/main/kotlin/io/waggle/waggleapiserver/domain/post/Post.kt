@@ -24,6 +24,8 @@ import java.util.UUID
         Index(name = "idx_posts_title", columnList = "title"),
         Index(name = "idx_posts_team", columnList = "team_id"),
         Index(name = "idx_posts_user", columnList = "user_id"),
+        Index(name = "idx_posts_view_count", columnList = "view_count"),
+        Index(name = "idx_posts_expires_at_id", columnList = "expires_at, id DESC"),
     ],
 )
 class Post(
@@ -59,7 +61,8 @@ class Post(
         content: String,
         expiresAt: Instant?,
     ) {
-        // 값이 바뀔 때만 검사함. 이미 마감된 글도 기존 마감일을 그대로 실어 보내며 본문을 고칠 수 있어야 함
+        // 값이 바뀔 때만 검사함
+        // 이미 마감된 글도 기존 마감일을 그대로 실어 보내며 본문을 고칠 수 있어야 함
         if (expiresAt != this.expiresAt && expiresAt != null && Deadline.isPast(expiresAt)) {
             throw BusinessException(
                 ErrorCode.INVALID_INPUT_VALUE,
@@ -72,7 +75,8 @@ class Post(
         this.expiresAt = expiresAt
     }
 
-    // 마감일 상한을 오늘로 둠. 어제로 당기면 오늘 들어온 지원이 마감일 이후 기록이 됨.
+    // 마감일 상한을 오늘로 둠
+    // 어제로 당기면 오늘 들어온 지원이 마감일 이후 기록이 됨
     // 이미 지난 기한은 그대로 둬 마감일이 미래로 밀리지 않게 함
     fun limitDeadlineToToday() {
         val today = Deadline.todayExpiresAt()

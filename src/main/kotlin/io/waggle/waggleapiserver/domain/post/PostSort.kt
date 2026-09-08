@@ -7,6 +7,15 @@ enum class PostSort {
     @Schema(description = "최신순")
     NEWEST,
 
-    @Schema(description = "오래된순")
+    @Schema(description = "오래된 순")
     OLDEST,
+
+    @Schema(description = "좋아요순")
+    MOST_LIKED,
+
+    @Schema(description = "조회순")
+    MOST_VIEWED,
+
+    @Schema(description = "마감 임박순")
+    DEADLINE_SOON,
 }
