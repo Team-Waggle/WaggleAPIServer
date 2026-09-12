@@ -7,11 +7,17 @@ import io.waggle.waggleapiserver.domain.user.enums.Skill
 
 interface PostRepositoryCustom {
     fun findWithFilter(
-        cursor: Long?,
+        cursor: PostCursor?,
         q: String?,
         positions: Set<Position>,
         skills: Set<Skill>,
         sort: PostSort,
         size: Int,
-    ): List<Post>
+    ): List<PostWithCursor>
 }
+
+// 정렬 키를 아는 계층이 리포지토리뿐이라 다음 커서도 여기서 만들어 내보냄
+data class PostWithCursor(
+    val post: Post,
+    val cursor: PostCursor,
+)

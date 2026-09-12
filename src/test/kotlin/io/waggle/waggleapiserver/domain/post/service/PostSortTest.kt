@@ -282,42 +282,44 @@ class PostSortTest : CascadeIntegrationTestSupport() {
     }
 
     @Test
-    fun `마감 임박순은 커서 글이 삭제되면 빈 목록을 준다`() {
+    fun `마감 임박순은 커서 글이 삭제돼도 다음 페이지가 이어진다`() {
         val author = createUser("author")
         val team = createTeam(author.id)
 
-        openPost(author.id, team.id, LocalDate.now().plusDays(1))
-        openPost(author.id, team.id, LocalDate.now().plusDays(7))
+        val soon = openPost(author.id, team.id, LocalDate.now().plusDays(1))
+        val later = openPost(author.id, team.id, LocalDate.now().plusDays(7))
 
         val firstPage = deadlineSoon(size = 1)
-        postService.deletePost(firstPage.nextCursor!!, author)
+        postService.deletePost(soon.id, author)
 
-        assertThat(deadlineSoon(size = 20, cursor = firstPage.nextCursor).data).isEmpty()
+        assertThat(deadlineSoon(size = 20, cursor = firstPage.nextCursor).data.map { it.id })
+            .containsExactly(later.id)
     }
 
     @Test
-    fun `조회순은 커서 글이 삭제되면 빈 목록을 준다`() {
+    fun `조회순은 커서 글이 삭제돼도 다음 페이지가 이어진다`() {
         val author = createUser("author")
         val team = createTeam(author.id)
 
         val mostViewed = createPost(author.id, team.id)
-        createPost(author.id, team.id)
+        val leastViewed = createPost(author.id, team.id)
         jdbcTemplate.update("UPDATE posts SET view_count = ? WHERE id = ?", 9, mostViewed.id)
 
         val firstPage = list(PostSort.MOST_VIEWED, size = 1)
-        postService.deletePost(firstPage.nextCursor!!, author)
+        postService.deletePost(mostViewed.id, author)
 
-        assertThat(list(PostSort.MOST_VIEWED, size = 20, cursor = firstPage.nextCursor).data).isEmpty()
+        assertThat(list(PostSort.MOST_VIEWED, size = 20, cursor = firstPage.nextCursor).data.map { it.id })
+            .containsExactly(leastViewed.id)
     }
 
     @Test
-    fun `좋아요순은 커서 글이 삭제되면 좋아요 있는 구간을 건너뛰지 않고 끝낸다`() {
+    fun `좋아요순은 커서 글이 삭제돼도 좋아요 있는 구간을 건너뛰지 않는다`() {
         val author = createUser("author")
         val team = createTeam(author.id)
         val firstLiker = createUser("first-liker")
         val secondLiker = createUser("second-liker")
 
-        createPost(author.id, team.id)
+        val noLike = createPost(author.id, team.id)
         val oneLike = createPost(author.id, team.id)
         val twoLikes = createPost(author.id, team.id)
         createLike(firstLiker.id, LikeType.POST, oneLike.id)
@@ -325,15 +327,16 @@ class PostSortTest : CascadeIntegrationTestSupport() {
         createLike(secondLiker.id, LikeType.POST, twoLikes.id)
 
         val firstPage = list(PostSort.MOST_LIKED, size = 1)
-        postService.deletePost(firstPage.nextCursor!!, author)
+        postService.deletePost(twoLikes.id, author)
 
-        assertThat(list(PostSort.MOST_LIKED, size = 20, cursor = firstPage.nextCursor).data).isEmpty()
+        assertThat(list(PostSort.MOST_LIKED, size = 20, cursor = firstPage.nextCursor).data.map { it.id })
+            .containsExactly(oneLike.id, noLike.id)
     }
 
     private fun list(
         sort: PostSort,
         size: Int,
-        cursor: Long? = null,
+        cursor: String? = null,
     ) = postService.getPosts(
         PostGetQuery(sort = sort),
         CursorGetQuery(cursor = cursor, size = size),
@@ -342,7 +345,7 @@ class PostSortTest : CascadeIntegrationTestSupport() {
 
     private fun deadlineSoon(
         size: Int,
-        cursor: Long? = null,
+        cursor: String? = null,
     ) = postService.getPosts(
         PostGetQuery(sort = PostSort.DEADLINE_SOON),
         CursorGetQuery(cursor = cursor, size = size),

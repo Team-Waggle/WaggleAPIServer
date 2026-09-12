@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.util.IdCursor
 import io.waggle.waggleapiserver.domain.comment.Comment
 import io.waggle.waggleapiserver.domain.comment.dto.request.CommentCreateRequest
 import io.waggle.waggleapiserver.domain.comment.dto.request.CommentUpdateRequest
@@ -66,13 +67,13 @@ class CommentService(
         val roots =
             commentRepository.findRootsByPostIdWithCursor(
                 postId = postId,
-                cursor = cursorQuery.cursor,
+                cursor = cursorQuery.cursor?.let { IdCursor.decode(it).id },
                 pageable = PageRequest.of(0, cursorQuery.size + 1),
             )
 
         val hasNext = roots.size > cursorQuery.size
         val content = if (hasNext) roots.take(cursorQuery.size) else roots
-        val nextCursor = if (hasNext) content.last().id else null
+        val nextCursor = if (hasNext) IdCursor(content.last().id).encode() else null
 
         val replies =
             if (content.isEmpty()) {
@@ -89,7 +90,7 @@ class CommentService(
         val authorById =
             userRepository.findAllById(comments.map { it.userId }.distinct()).associateBy { it.id }
 
-        // 탈퇴자의 댓글은 tombstone으로 남지만 user 행은 soft delete되어 여기 안 잡힌다.
+        // 탈퇴자의 댓글은 tombstone으로 남지만 user 행은 soft delete되어 여기 안 잡힘
         comments
             .firstOrNull { it.userId !in authorById && !it.isTombstoned }
             ?.let {
@@ -99,7 +100,7 @@ class CommentService(
                 )
             }
 
-        // 답글에도 좋아요가 달리므로 최상위 댓글과 답글 id 전부가 배치 조회 대상.
+        // 답글에도 좋아요가 달리므로 최상위 댓글과 답글 id 전부가 배치 조회 대상
         val commentIds = comments.map { it.id }
         val likeCountByCommentId =
             if (commentIds.isEmpty()) {
@@ -172,7 +173,8 @@ class CommentService(
                 )
         comment.checkOwnership(user.id)
 
-        // tombstone도 본문이 사라지므로 좋아요 정리 대상. 분기 이전에 한 번만 발행.
+        // tombstone도 본문이 사라지므로 좋아요 정리 대상
+        // 분기 이전에 한 번만 발행
         eventPublisher.publishEvent(CommentDeletedEvent(commentId))
 
         if (comment.isReply) {

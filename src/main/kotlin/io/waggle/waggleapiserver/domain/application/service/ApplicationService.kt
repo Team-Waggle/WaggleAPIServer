@@ -4,11 +4,13 @@ import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.util.IdCursor
 import io.waggle.waggleapiserver.domain.application.Application
 import io.waggle.waggleapiserver.domain.application.ApplicationRead
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
 import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreateRequest
 import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationUpdateRequest
+import io.waggle.waggleapiserver.domain.application.dto.request.TeamApplicationCursor
 import io.waggle.waggleapiserver.domain.application.dto.response.ApplicationResponse
 import io.waggle.waggleapiserver.domain.application.dto.response.TeamApplicationResponse
 import io.waggle.waggleapiserver.domain.application.dto.response.UserApplicationCountsResponse
@@ -160,7 +162,7 @@ class ApplicationService(
             applicationRepository.findByUserIdWithCursor(
                 userId = user.id,
                 status = status,
-                cursor = cursorQuery.cursor,
+                cursor = cursorQuery.cursor?.let { IdCursor.decode(it).id },
                 pageable = pageable,
             )
 
@@ -191,7 +193,8 @@ class ApplicationService(
 
         return CursorResponse(
             data = data,
-            nextCursor = if (hasNext) slicedApplications.lastOrNull()?.id else null,
+            nextCursor =
+                if (hasNext) slicedApplications.lastOrNull()?.let { IdCursor(it.id).encode() } else null,
             hasNext = hasNext,
         )
     }
@@ -224,14 +227,7 @@ class ApplicationService(
         member.checkMemberRole(MemberRole.MANAGER)
 
         val pageable = PageRequest.of(0, cursorQuery.size + 1)
-        val cursorStatusPriority =
-            cursorQuery.cursor?.let { cursorId ->
-                applicationRepository.findByIdOrNull(cursorId)?.statusPriority
-                    ?: throw BusinessException(
-                        ErrorCode.ENTITY_NOT_FOUND,
-                        "Application not found: $cursorId",
-                    )
-            }
+        val cursor = cursorQuery.cursor?.let { TeamApplicationCursor.decode(it) }
         val applications =
             if (postId != null) {
                 val post =
@@ -248,15 +244,15 @@ class ApplicationService(
                 }
                 applicationRepository.findByPostIdWithCursor(
                     postId,
-                    cursorQuery.cursor,
-                    cursorStatusPriority,
+                    cursor?.id,
+                    cursor?.statusPriority,
                     pageable,
                 )
             } else {
                 applicationRepository.findByTeamIdWithCursor(
                     teamId,
-                    cursorQuery.cursor,
-                    cursorStatusPriority,
+                    cursor?.id,
+                    cursor?.statusPriority,
                     pageable,
                 )
             }
@@ -289,7 +285,14 @@ class ApplicationService(
 
         return CursorResponse(
             data = data,
-            nextCursor = if (hasNext) slicedApplications.lastOrNull()?.id else null,
+            nextCursor =
+                if (hasNext) {
+                    slicedApplications.lastOrNull()?.let {
+                        TeamApplicationCursor(it.statusPriority, it.id).encode()
+                    }
+                } else {
+                    null
+                },
             hasNext = hasNext,
         )
     }
