@@ -49,10 +49,11 @@ class Recruitment(
     val skills: MutableSet<Skill> = mutableSetOf(),
 ) {
     // 마감은 되돌릴 수 없어 close만 상태를 바꿀 수 있음
+    // allOpen이 엔티티를 열어 private setter는 컴파일이 안 되고, final을 붙이면 Hibernate가 프록시를 못 만들어 HHH000305 경고를 냄
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(20)")
-    final var status: RecruitmentStatus = RecruitmentStatus.RECRUITING
-        private set
+    var status: RecruitmentStatus = RecruitmentStatus.RECRUITING
+        protected set
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
