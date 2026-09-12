@@ -9,7 +9,6 @@ import io.waggle.waggleapiserver.domain.like.LikeType
 import io.waggle.waggleapiserver.domain.like.QLike.like
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.PostSort
-import io.waggle.waggleapiserver.domain.post.QPost
 import io.waggle.waggleapiserver.domain.post.QPost.post
 import io.waggle.waggleapiserver.domain.recruitment.QRecruitment.recruitment
 import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
@@ -21,19 +20,33 @@ class PostRepositoryCustomImpl(
     private val queryFactory: JPAQueryFactory,
 ) : PostRepositoryCustom {
     override fun findWithFilter(
-        cursor: Long?,
+        cursor: PostCursor?,
         q: String?,
         positions: Set<Position>,
         skills: Set<Skill>,
         sort: PostSort,
         size: Int,
-    ): List<Post> =
+    ): List<PostWithCursor> =
         when (sort) {
             PostSort.NEWEST ->
-                findOrderByColumn(q, positions, skills, size, cursor?.let { post.id.lt(it) }, post.id.desc())
+                findOrderByColumn(
+                    q,
+                    positions,
+                    skills,
+                    size,
+                    cursor?.let { post.id.lt(it.id) },
+                    post.id.desc(),
+                ).map { PostWithCursor(it, PostCursor.Id(it.id)) }
 
             PostSort.OLDEST ->
-                findOrderByColumn(q, positions, skills, size, cursor?.let { post.id.gt(it) }, post.id.asc())
+                findOrderByColumn(
+                    q,
+                    positions,
+                    skills,
+                    size,
+                    cursor?.let { post.id.gt(it.id) },
+                    post.id.asc(),
+                ).map { PostWithCursor(it, PostCursor.Id(it.id)) }
 
             PostSort.MOST_VIEWED ->
                 findOrderByColumn(
@@ -41,13 +54,16 @@ class PostRepositoryCustomImpl(
                     positions,
                     skills,
                     size,
-                    cursor?.let { afterViewCountCursor(it) },
+                    (cursor as PostCursor.ViewCount?)?.let { afterViewCountCursor(it) },
                     post.viewCount.desc(),
                     post.id.desc(),
-                )
+                ).map { PostWithCursor(it, PostCursor.ViewCount(it.viewCount, it.id)) }
 
-            PostSort.MOST_LIKED -> findOrderByLikeCount(q, positions, skills, size, cursor)
-            PostSort.DEADLINE_SOON -> findByDeadlineGroup(q, positions, skills, size, cursor)
+            PostSort.MOST_LIKED ->
+                findOrderByLikeCount(q, positions, skills, size, cursor as PostCursor.LikeCount?)
+
+            PostSort.DEADLINE_SOON ->
+                findByDeadlineGroup(q, positions, skills, size, cursor as PostCursor.Deadline?)
         }
 
     // 하나의 CASE로 정렬하면 선두 키가 표현식이라 필터에 걸린 전체를 filesort 해야 해서 묶음별로 나눔
@@ -56,13 +72,12 @@ class PostRepositoryCustomImpl(
         positions: Set<Position>,
         skills: Set<Skill>,
         size: Int,
-        cursor: Long?,
-    ): List<Post> {
+        cursor: PostCursor.Deadline?,
+    ): List<PostWithCursor> {
         val now = Instant.now()
-        val startGroup =
-            cursor?.let { deadlineGroupOf(it, now) ?: return emptyList() } ?: DeadlineGroup.EXPIRING
+        val startGroup = cursor?.group ?: DeadlineGroup.EXPIRING
 
-        val collected = mutableListOf<Post>()
+        val collected = mutableListOf<PostWithCursor>()
         for (group in DeadlineGroup.entries.drop(startGroup.ordinal)) {
             val remaining = size - collected.size
             if (remaining <= 0) break
@@ -79,30 +94,9 @@ class PostRepositoryCustomImpl(
                     ).orderBy(*deadlineOrderBy(group))
                     .limit(remaining.toLong())
                     .fetch()
+                    .map { PostWithCursor(it, PostCursor.Deadline(group, it.expiresAt, it.id)) }
         }
         return collected
-    }
-
-    // 커서 글이 삭제되면 이어붙일 지점이 없어 호출부가 빈 목록을 돌려줌
-    private fun deadlineGroupOf(
-        cursor: Long,
-        now: Instant,
-    ): DeadlineGroup? {
-        val cursorPost =
-            queryFactory.selectFrom(post).where(post.id.eq(cursor)).fetchOne() ?: return null
-        val open =
-            queryFactory
-                .selectOne()
-                .from(recruitment)
-                .where(recruitment.postId.eq(cursor).and(recruitment.status.eq(RecruitmentStatus.RECRUITING)))
-                .fetchFirst() != null
-
-        val recruiting = open && (cursorPost.expiresAt == null || cursorPost.expiresAt!! > now)
-        return when {
-            !recruiting -> DeadlineGroup.CLOSED
-            cursorPost.expiresAt == null -> DeadlineGroup.INDEFINITE
-            else -> DeadlineGroup.EXPIRING
-        }
     }
 
     private fun deadlineGroup(
@@ -122,17 +116,14 @@ class PostRepositoryCustomImpl(
 
     private fun afterDeadlineCursor(
         group: DeadlineGroup,
-        cursor: Long,
+        cursor: PostCursor.Deadline,
     ): BooleanExpression {
         if (group != DeadlineGroup.EXPIRING) {
-            return post.id.lt(cursor)
+            return post.id.lt(cursor.id)
         }
-        val cursorPost = QPost("cursorPost")
-        val cursorExpiresAt =
-            JPAExpressions.select(cursorPost.expiresAt).from(cursorPost).where(cursorPost.id.eq(cursor))
         return post.expiresAt
-            .gt(cursorExpiresAt)
-            .or(post.expiresAt.eq(cursorExpiresAt).and(post.id.lt(cursor)))
+            .gt(cursor.expiresAt)
+            .or(post.expiresAt.eq(cursor.expiresAt).and(post.id.lt(cursor.id)))
     }
 
     private fun deadlineOrderBy(group: DeadlineGroup): Array<OrderSpecifier<*>> =
@@ -169,15 +160,12 @@ class PostRepositoryCustomImpl(
         positions: Set<Position>,
         skills: Set<Skill>,
         size: Int,
-        cursor: Long?,
-    ): List<Post> {
-        // 커서 글이 삭제되면 좋아요 수 서브쿼리가 0을 돌려줘 좋아요 있는 구간을 통째로 건너뜀
-        if (cursor != null && !existsPost(cursor)) {
-            return emptyList()
-        }
-
+        cursor: PostCursor.LikeCount?,
+    ): List<PostWithCursor> {
+        val likeCount = like.count()
         return queryFactory
-            .selectFrom(post)
+            .select(post, likeCount)
+            .from(post)
             .leftJoin(like)
             .on(
                 like.id.type
@@ -188,45 +176,26 @@ class PostRepositoryCustomImpl(
                 recruitedForPosition(positions),
                 recruitedWithSkill(skills),
             ).groupBy(post)
-            .having(afterLikeCountCursor(cursor))
-            .orderBy(OrderSpecifier(Order.DESC, like.count()), post.id.desc())
+            .having(cursor?.let { afterLikeCountCursor(it) })
+            .orderBy(OrderSpecifier(Order.DESC, likeCount), post.id.desc())
             .limit(size.toLong())
             .fetch()
+            .map {
+                val found = it.get(post)!!
+                PostWithCursor(found, PostCursor.LikeCount(it.get(likeCount)!!, found.id))
+            }
     }
 
-    private fun existsPost(id: Long): Boolean =
-        queryFactory
-            .selectOne()
-            .from(post)
-            .where(post.id.eq(id))
-            .fetchFirst() != null
+    private fun afterViewCountCursor(cursor: PostCursor.ViewCount): BooleanExpression =
+        post.viewCount
+            .lt(cursor.viewCount)
+            .or(post.viewCount.eq(cursor.viewCount).and(post.id.lt(cursor.id)))
 
-    // 복합 커서로 가면 CursorGetQuery, CursorResponse 계약이 전 API에서 바뀜
-    private fun afterViewCountCursor(cursor: Long): BooleanExpression {
-        val cursorPost = QPost("cursorPost")
-        val cursorViewCount =
-            JPAExpressions.select(cursorPost.viewCount).from(cursorPost).where(cursorPost.id.eq(cursor))
-        return post.viewCount
-            .lt(cursorViewCount)
-            .or(post.viewCount.eq(cursorViewCount).and(post.id.lt(cursor)))
-    }
-
-    private fun afterLikeCountCursor(cursor: Long?): BooleanExpression? =
-        cursor?.let {
-            val cursorLikeCount =
-                JPAExpressions
-                    .select(like.count())
-                    .from(like)
-                    .where(
-                        like.id.type
-                            .eq(LikeType.POST)
-                            .and(like.id.targetId.eq(it)),
-                    )
-            like
-                .count()
-                .lt(cursorLikeCount)
-                .or(like.count().eq(cursorLikeCount).and(post.id.lt(it)))
-        }
+    private fun afterLikeCountCursor(cursor: PostCursor.LikeCount): BooleanExpression =
+        like
+            .count()
+            .lt(cursor.likeCount)
+            .or(like.count().eq(cursor.likeCount).and(post.id.lt(cursor.id)))
 
     private fun titleContains(q: String?): BooleanExpression? = q?.let { post.title.contains(it) }
 
@@ -240,11 +209,4 @@ class PostRepositoryCustomImpl(
         post.id.`in`(
             JPAExpressions.select(recruitment.postId).from(recruitment).where(condition),
         )
-
-    // 선언 순서가 곧 노출 순서임
-    private enum class DeadlineGroup {
-        EXPIRING,
-        INDEFINITE,
-        CLOSED,
-    }
 }

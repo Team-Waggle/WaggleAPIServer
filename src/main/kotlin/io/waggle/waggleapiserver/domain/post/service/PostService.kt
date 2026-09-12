@@ -23,6 +23,7 @@ import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.TeamPostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.event.PostDeletedEvent
+import io.waggle.waggleapiserver.domain.post.repository.PostCursor
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
 import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
@@ -133,7 +134,7 @@ class PostService(
     ): CursorResponse<PostSimpleResponse> {
         val posts =
             postRepository.findWithFilter(
-                cursor = cursorQuery.cursor,
+                cursor = cursorQuery.cursor?.let { PostCursor.decode(it, query.sort) },
                 q = query.q,
                 positions = query.positions ?: emptySet(),
                 skills = query.skills ?: emptySet(),
@@ -142,8 +143,9 @@ class PostService(
             )
 
         val hasNext = posts.size > cursorQuery.size
-        val content = if (hasNext) posts.take(cursorQuery.size) else posts
-        val nextCursor = if (hasNext) content.last().id else null
+        val slicedPosts = if (hasNext) posts.take(cursorQuery.size) else posts
+        val nextCursor = if (hasNext) slicedPosts.last().cursor.encode() else null
+        val content = slicedPosts.map { it.post }
 
         val authorIds = content.map { it.userId }.distinct()
         val authorById = userRepository.findAllById(authorIds).associateBy { it.id }

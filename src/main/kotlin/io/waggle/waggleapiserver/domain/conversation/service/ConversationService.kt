@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.conversation.service
 
 import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
+import io.waggle.waggleapiserver.common.util.IdCursor
 import io.waggle.waggleapiserver.domain.conversation.dto.response.ConversationResponse
 import io.waggle.waggleapiserver.domain.conversation.repository.ConversationRepository
 import io.waggle.waggleapiserver.domain.message.Message
@@ -25,7 +26,8 @@ class ConversationService(
         cursorQuery: CursorGetQuery,
         user: User,
     ): CursorResponse<ConversationResponse> {
-        val (cursor, size) = cursorQuery
+        val (encodedCursor, size) = cursorQuery
+        val cursor = encodedCursor?.let { IdCursor.decode(it).id }
 
         val conversations =
             if (q.isNullOrBlank()) {
@@ -66,7 +68,8 @@ class ConversationService(
                 )
             }
 
-        val nextCursor = if (hasNext) slicedConversations.last().lastMessageId else null
+        val nextCursor =
+            if (hasNext) IdCursor(slicedConversations.last().lastMessageId).encode() else null
 
         return CursorResponse(
             data = data,

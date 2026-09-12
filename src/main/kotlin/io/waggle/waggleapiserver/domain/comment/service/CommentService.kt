@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.util.IdCursor
 import io.waggle.waggleapiserver.domain.comment.Comment
 import io.waggle.waggleapiserver.domain.comment.dto.request.CommentCreateRequest
 import io.waggle.waggleapiserver.domain.comment.dto.request.CommentUpdateRequest
@@ -66,13 +67,13 @@ class CommentService(
         val roots =
             commentRepository.findRootsByPostIdWithCursor(
                 postId = postId,
-                cursor = cursorQuery.cursor,
+                cursor = cursorQuery.cursor?.let { IdCursor.decode(it).id },
                 pageable = PageRequest.of(0, cursorQuery.size + 1),
             )
 
         val hasNext = roots.size > cursorQuery.size
         val content = if (hasNext) roots.take(cursorQuery.size) else roots
-        val nextCursor = if (hasNext) content.last().id else null
+        val nextCursor = if (hasNext) IdCursor(content.last().id).encode() else null
 
         val replies =
             if (content.isEmpty()) {
