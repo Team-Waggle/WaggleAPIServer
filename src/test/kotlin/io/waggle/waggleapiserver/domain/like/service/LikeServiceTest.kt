@@ -62,7 +62,7 @@ class LikeServiceTest : CascadeIntegrationTestSupport() {
         val reply = createComment(post.id, author.id, parentId = root.id)
 
         likeService.like(LikeType.COMMENT, root.id, liker)
-        val replyResult = likeService.like(LikeType.COMMENT, reply.id, author)
+        val replyResult = likeService.like(LikeType.COMMENT, reply.id, liker)
 
         assertThat(replyResult.response.likeCount).isEqualTo(1L)
         assertThat(count("SELECT COUNT(*) FROM likes WHERE type = 'COMMENT'")).isEqualTo(2L)
@@ -116,6 +116,35 @@ class LikeServiceTest : CascadeIntegrationTestSupport() {
     }
 
     @Test
+    fun `본인 모집글에는 좋아요를 누를 수 있다`() {
+        val author = createUser("author")
+        val team = createTeam(author.id)
+        val post = createPost(author.id, team.id)
+
+        val result = likeService.like(LikeType.POST, post.id, author)
+
+        assertThat(result.created).isTrue()
+        assertThat(result.response.liked).isTrue()
+        assertThat(result.response.likeCount).isEqualTo(1L)
+    }
+
+    @Test
+    fun `본인 댓글에는 좋아요를 누를 수 없다`() {
+        val author = createUser("author")
+        val commenter = createUser("commenter")
+        val team = createTeam(author.id)
+        val post = createPost(author.id, team.id)
+        val comment = createComment(post.id, commenter.id)
+
+        assertThatThrownBy { likeService.like(LikeType.COMMENT, comment.id, commenter) }
+            .isInstanceOf(BusinessException::class.java)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.INVALID_INPUT_VALUE)
+        assertThat(count("SELECT COUNT(*) FROM likes WHERE type = 'COMMENT' AND target_id = ?", comment.id))
+            .isZero()
+    }
+
+    @Test
     fun `모집글 목록과 상세는 좋아요 수와 본인 좋아요 여부를 함께 준다`() {
         val author = createUser("author")
         val liker = createUser("liker")
@@ -156,13 +185,14 @@ class LikeServiceTest : CascadeIntegrationTestSupport() {
     fun `댓글 목록은 최상위 댓글과 답글 모두의 좋아요를 채운다`() {
         val author = createUser("author")
         val liker = createUser("liker")
+        val otherLiker = createUser("otherLiker")
         val team = createTeam(author.id)
         val post = createPost(author.id, team.id)
         val root = createComment(post.id, author.id)
         val reply = createComment(post.id, author.id, parentId = root.id)
 
         likeService.like(LikeType.COMMENT, root.id, liker)
-        likeService.like(LikeType.COMMENT, root.id, author)
+        likeService.like(LikeType.COMMENT, root.id, otherLiker)
         likeService.like(LikeType.COMMENT, reply.id, liker)
 
         val data = commentService.getComments(post.id, CursorGetQuery(cursor = null), liker).data

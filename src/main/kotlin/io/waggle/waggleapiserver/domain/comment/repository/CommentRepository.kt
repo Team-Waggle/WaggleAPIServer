@@ -12,6 +12,11 @@ import java.util.UUID
 interface CommentRepository : JpaRepository<Comment, Long> {
     fun existsByIdAndTombstonedAtIsNull(id: Long): Boolean
 
+    fun existsByIdAndUserId(
+        id: Long,
+        userId: UUID,
+    ): Boolean
+
     fun existsByPostIdAndParentId(
         postId: Long,
         parentId: Long,
