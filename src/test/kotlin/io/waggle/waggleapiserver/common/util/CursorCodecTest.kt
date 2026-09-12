@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.common.util
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.domain.application.dto.request.TeamApplicationCursor
 import io.waggle.waggleapiserver.domain.post.PostSort
 import io.waggle.waggleapiserver.domain.post.repository.DeadlineGroup
 import io.waggle.waggleapiserver.domain.post.repository.PostCursor
@@ -22,9 +23,11 @@ class CursorCodecTest {
     fun `복합 커서는 정렬 키까지 왕복한다`() {
         val viewCount = PostCursor.ViewCount(viewCount = 9, id = 123)
         val likeCount = PostCursor.LikeCount(likeCount = 2, id = 123)
+        val application = TeamApplicationCursor(statusPriority = 0, id = 456)
 
         assertThat(PostCursor.decode(viewCount.encode(), PostSort.MOST_VIEWED)).isEqualTo(viewCount)
         assertThat(PostCursor.decode(likeCount.encode(), PostSort.MOST_LIKED)).isEqualTo(likeCount)
+        assertThat(TeamApplicationCursor.decode(application.encode())).isEqualTo(application)
     }
 
     @Test
@@ -52,6 +55,7 @@ class CursorCodecTest {
             listOf(
                 IdCursor(123).encode(),
                 PostCursor.ViewCount(9, 123).encode(),
+                TeamApplicationCursor(0, 456).encode(),
             )
 
         assertThat(tokens).allMatch { it.startsWith("ey") }
