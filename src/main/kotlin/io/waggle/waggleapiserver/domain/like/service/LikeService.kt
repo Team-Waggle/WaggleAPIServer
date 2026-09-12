@@ -27,6 +27,9 @@ class LikeService(
         user: User,
     ): LikeResult {
         checkLikableTarget(type, targetId)
+        if (type == LikeType.COMMENT && commentRepository.existsByIdAndUserId(targetId, user.id)) {
+            throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Cannot like your own comment")
+        }
 
         val likeId = LikeId(type, targetId, user.id)
         val created = !likeRepository.existsById(likeId)
