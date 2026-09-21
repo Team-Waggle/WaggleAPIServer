@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.auth
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
 import io.waggle.waggleapiserver.domain.auth.dto.request.OttRedeemRequest
@@ -26,6 +27,7 @@ class AuthController(
         summary = "OAuth OTT 교환",
         description = "OAuth 콜백 후 받은 1회용 토큰(OTT)을 액세스 토큰으로 교환함. OTT는 1분 후 만료되며 1회 사용 시 폐기됨.",
     )
+    @SecurityRequirements
     @PostMapping("/oauth/redeem")
     fun redeemOtt(
         @Valid @RequestBody request: OttRedeemRequest,
@@ -36,6 +38,7 @@ class AuthController(
         summary = "액세스 토큰 재발급",
         description = "유효한 리프레시 토큰으로 액세스 토큰을 재발급함",
     )
+    @SecurityRequirements
     @PostMapping("/refresh")
     fun refresh(
         @CookieValue("refreshToken") refreshToken: String,

@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.team.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
 import io.waggle.waggleapiserver.domain.team.dto.response.UserTeamResponse
@@ -25,6 +26,7 @@ class UserTeamController(
     private val userService: UserService,
 ) {
     @Operation(summary = "사용자 참여 팀 목록 조회")
+    @SecurityRequirements
     @GetMapping("/{userId}/teams")
     fun getUserTeams(
         @PathVariable userId: UUID,

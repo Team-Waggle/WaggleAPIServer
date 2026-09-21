@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.follow.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
 import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountsResponse
@@ -20,6 +21,7 @@ class UserFollowController(
     private val followService: FollowService,
 ) {
     @Operation(summary = "사용자 팔로우 개수 정보 조회")
+    @SecurityRequirements
     @GetMapping("/{userId}/follow-count")
     fun getUserFollowCounts(
         @PathVariable userId: UUID,

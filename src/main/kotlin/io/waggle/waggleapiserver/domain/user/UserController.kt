@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.user
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.AllowIncompleteSetup
 import io.waggle.waggleapiserver.common.infrastructure.persistence.AllowMissingTermAgreement
@@ -49,12 +50,14 @@ class UserController(
     ): PresignedUrlResponse = userService.generateProfileImagePresignedUrl(request)
 
     @Operation(summary = "사용자명 사용 가능 여부 조회")
+    @SecurityRequirements
     @GetMapping("/check")
     fun checkUsername(
         @RequestParam username: String,
     ): UserCheckUsernameResponse = userService.checkUsername(username)
 
     @Operation(summary = "사용자 조회")
+    @SecurityRequirements
     @GetMapping("/{userId}")
     fun getUser(
         @PathVariable userId: UUID,
