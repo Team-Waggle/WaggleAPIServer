@@ -55,6 +55,7 @@ class SecurityConfig(
                 authorize
                     .requestMatchers(
                         "/actuator/health",
+                        "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         "/oauth2/**",
