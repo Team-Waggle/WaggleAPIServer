@@ -2,13 +2,14 @@ package io.waggle.waggleapiserver.common.infrastructure.discord
 
 import io.waggle.waggleapiserver.common.util.logger
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestTemplate
+import java.time.Duration
 
 @Profile("prod")
 @Component
@@ -17,8 +18,14 @@ class DiscordWebhookClient(
     private val webhookUrl: String,
     @Value("\${app.discord.mention-role-id:}")
     private val mentionRoleId: String,
+    restTemplateBuilder: RestTemplateBuilder,
 ) {
-    private val restTemplate = RestTemplate()
+    // 타임아웃이 없으면 Discord 지연 시 알림 저장, 이미지 삭제와 공유하는 @Async 풀이 물려 함께 멈춤
+    private val restTemplate =
+        restTemplateBuilder
+            .connectTimeout(CONNECT_TIMEOUT)
+            .readTimeout(READ_TIMEOUT)
+            .build()
 
     @Async
     fun send(context: DiscordErrorContext) {
@@ -76,5 +83,11 @@ class DiscordWebhookClient(
 
     private fun StringBuilder.appendAsyncDetails(context: DiscordErrorContext.Async) {
         appendLine("**Source**: `${context.source}`")
+    }
+
+    companion object {
+        // 늘리면 Discord 장애 시 풀 점유가 길어지고, 줄이면 느린 응답에서 알림이 유실됨
+        private val CONNECT_TIMEOUT = Duration.ofSeconds(3)
+        private val READ_TIMEOUT = Duration.ofSeconds(5)
     }
 }
