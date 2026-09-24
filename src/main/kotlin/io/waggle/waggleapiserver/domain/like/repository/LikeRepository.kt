@@ -39,6 +39,21 @@ interface LikeRepository : JpaRepository<Like, LikeId> {
         targetIds: List<Long>,
     ): List<Long>
 
+    // ON DUPLICATE KEY UPDATE는 Connector/J 기본값(CLIENT_FOUND_ROWS)에서 중복이어도 1을 돌려줘 created 판정이 깨짐
+    @Modifying
+    @Query(
+        """
+        INSERT IGNORE INTO likes (type, target_id, user_id, created_at)
+        VALUES (:#{#type.name()}, :targetId, :userId, UTC_TIMESTAMP(6))
+        """,
+        nativeQuery = true,
+    )
+    fun insertIfAbsent(
+        type: LikeType,
+        targetId: Long,
+        userId: UUID,
+    ): Int
+
     fun deleteByIdTypeAndIdTargetId(
         type: LikeType,
         targetId: Long,

@@ -3,7 +3,6 @@ package io.waggle.waggleapiserver.domain.like.service
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.comment.repository.CommentRepository
-import io.waggle.waggleapiserver.domain.like.Like
 import io.waggle.waggleapiserver.domain.like.LikeId
 import io.waggle.waggleapiserver.domain.like.LikeType
 import io.waggle.waggleapiserver.domain.like.dto.response.LikeResponse
@@ -31,11 +30,7 @@ class LikeService(
             throw BusinessException(ErrorCode.INVALID_INPUT_VALUE, "Cannot like your own comment")
         }
 
-        val likeId = LikeId(type, targetId, user.id)
-        val created = !likeRepository.existsById(likeId)
-        if (created) {
-            likeRepository.save(Like(likeId))
-        }
+        val created = likeRepository.insertIfAbsent(type, targetId, user.id) == 1
 
         return LikeResult(
             created = created,
