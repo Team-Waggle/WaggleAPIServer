@@ -13,6 +13,8 @@ class PostViewService(
     private val postRepository: PostRepository,
     private val redisTemplate: StringRedisTemplate,
 ) {
+    // TODO: 프로젝트 초기라 작성자 본인 조회와 새로고침 반복까지 모두 셈
+    // 조회순 정렬 조작 방어가 필요해지면 post-view-seen:{postId}:{viewer} 키를 SET NX EX로 걸어 중복 제거
     fun incrementViewCount(postId: Long): Long =
         try {
             redisTemplate.opsForValue().increment(viewCountKey(postId)) ?: 0
@@ -54,7 +56,8 @@ class PostViewService(
                     .build(),
             ).use { it.asSequence().toList() }
 
-    // getAndDelete 성공 직후 UPDATE 전에 죽으면 그 증분은 복구 불가. 조회수는 근사치라 감수함
+    // getAndDelete 성공 직후 UPDATE 전에 죽으면 그 증분은 복구 불가
+    // 조회수는 근사치라 감수함
     @Transactional
     fun flushViewCount(key: String) {
         val postId = key.removePrefix(VIEW_COUNT_KEY_PREFIX).toLongOrNull() ?: return

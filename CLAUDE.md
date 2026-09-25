@@ -15,7 +15,6 @@
   - `service/` — 비즈니스 로직
   - `enums/` — 도메인 enum
 - **컨트롤러가 둘 이상인 도메인은 `controller/` 하위로 모을 것** (예: `domain/comment/controller/`). 하나뿐이면 도메인 루트에 그대로 둔다.
-  - `domain/message/`는 아직 루트에 둘을 두고 있다 — 이 규칙 도입 이전 코드이며, 정리 대상.
 - **리포지토리 메서드는 반환 타입 순으로 선언할 것**: 단순 타입(`Boolean`/`Int`/`Long`) → 엔티티 단건(`Entity?`) → 목록(`List<Entity>`, `List<Projection>`) → 쓰기(`Unit`: `update*`/`delete*`/`markAs*`).
   - 프로젝션 인터페이스는 리포지토리 인터페이스 아래 같은 파일에 둔다 (`ApplicationRepository`의 `PostApplicantCount` 전례).
 
@@ -66,7 +65,7 @@
   DELETE /comments/{commentId}      CommentController
   ```
 
-  - **두 컨트롤러 모두 자식 도메인(`domain/comment/controller/`)에 두고 부모 컨트롤러에 얹지 말 것.** 부모에 얹으면 그 엔드포인트가 부모 태그로 묶여 한 도메인 API가 Swagger에서 쪼개진다. `/teams/{teamId}/posts`와 `POST /teams/{teamId}/applications`가 각각 "모집글"·"팀 지원"이 아니라 **"팀"** 으로 나가는 것이 실제 사례다 (정리 대상).
+  - **두 컨트롤러 모두 자식 도메인(`domain/comment/controller/`)에 두고 부모 컨트롤러에 얹지 말 것.** 부모에 얹으면 그 엔드포인트가 부모 태그로 묶여 한 도메인 API가 Swagger에서 쪼개진다. 예) `/teams/{teamId}/posts`를 `TeamController`에 두면 "모집글"이 아니라 "팀" 태그로 나간다. 그래서 `TeamPostController`는 `domain/post/controller/`에 둔다.
   - **두 컨트롤러에 같은 `@Tag(name = ...)`을 줄 것.** OpenAPI 태그는 문자열 매칭이라 컨트롤러가 달라도 한 그룹으로 합쳐진다.
   - **메서드 레벨 `@Tag`로 때우려 하지 말 것.** 클래스 레벨 태그를 덮어쓰지 않고 **더해져서** 해당 오퍼레이션이 두 그룹에 중복 노출된다. 위 두 항목은 `/v3/api-docs`를 실제로 뽑아 확인했다.
   - URL 계층상의 부모는 경로 변수로, 그 외 참조는 요청 본문으로 받는다. 예) `POST /teams/{teamId}/applications`는 `teamId`가 경로, `postId`가 본문.
@@ -231,5 +230,14 @@
 ## 9. 인프라 (참고)
 
 - 프로덕션은 EC2 + Docker 기반 (nginx 리버스 프록시 + Spring API 컨테이너). 구체 호스트/도메인은 별도 운영 문서 참조.
+- **API 서버는 단일 인스턴스(앱 컨테이너 1개 = JVM 프로세스 1개)로 운영한다.** 배포도 `docker-compose down` → `up` 순서라 구·신 프로세스가 동시에 뜨는 구간이 없다. 아래 코드는 이 전제에 기대고 있으므로, 프로세스가 둘 이상 뜨는 구성(스케일아웃, 블루그린·롤링 배포)으로 바꿀 때 함께 손볼 것.
+
+  | 위치 | 프로세스가 N개 뜨면 |
+  |---|---|
+  | `RateLimitFilter`, `StompRateLimitInterceptor` | in-memory 버킷이 프로세스별로 생겨 한도가 N배 |
+  | `@Scheduled` 전체 (`NotificationScheduler`, `RecruitmentScheduler`, `PostViewScheduler` 등) | 프로세스마다 실행되어 리마인드 알림 등이 중복 발송 |
+  | `PostViewScheduler`의 Redis SCAN | 같은 키를 여러 프로세스가 훑음. `getAndDelete`라 조회수 중복 반영은 없음 |
+
+  - 메시지 전달만 Redis pub/sub이라 멀티 인스턴스 대비가 된 것처럼 보이지만, 위 항목 때문에 전체로는 단일 인스턴스 전제다. 전환 시 ShedLock(스케줄러)과 bucket4j-redis(레이트 리밋)로 대응.
 - 환경 차이: prod는 JDBC `serverTimezone=UTC`, local은 미설정 — `UTC_TIMESTAMP()` 컨벤션(2번)의 근거.
 - SSL은 Let's Encrypt standalone 모드 + nginx stop/start hook으로 갱신 (갱신 시 짧은 다운타임 발생).

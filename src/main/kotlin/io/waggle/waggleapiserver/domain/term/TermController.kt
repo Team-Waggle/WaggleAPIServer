@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-@Tag(name = "Term", description = "약관 동의 API")
+@Tag(name = "약관")
 @RestController
 @RequestMapping("/terms")
 class TermController(

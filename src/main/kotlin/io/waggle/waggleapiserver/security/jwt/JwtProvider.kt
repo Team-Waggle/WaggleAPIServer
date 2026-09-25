@@ -2,9 +2,8 @@ package io.waggle.waggleapiserver.security.jwt
 
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.MalformedJwtException
-import io.jsonwebtoken.UnsupportedJwtException
 import io.jsonwebtoken.security.Keys
 import io.waggle.waggleapiserver.common.util.logger
 import io.waggle.waggleapiserver.domain.user.UserRole
@@ -39,17 +38,11 @@ class JwtProvider(
                 .build()
                 .parseSignedClaims(token)
             true
-        } catch (e: SecurityException) {
-            logger.warn("Invalid JWT signature: ${e.message}", e)
-            false
-        } catch (e: MalformedJwtException) {
-            logger.debug("Malformed JWT token: ${e.message}")
-            false
         } catch (e: ExpiredJwtException) {
             logger.debug("Expired JWT token")
             false
-        } catch (e: UnsupportedJwtException) {
-            logger.debug("Unsupported JWT token: ${e.message}")
+        } catch (e: JwtException) {
+            logger.warn("Invalid JWT (${e.javaClass.simpleName}): ${e.message}")
             false
         } catch (e: IllegalArgumentException) {
             logger.debug("Empty JWT claims string: ${e.message}")

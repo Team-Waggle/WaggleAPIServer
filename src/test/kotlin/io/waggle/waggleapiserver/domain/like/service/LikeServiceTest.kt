@@ -9,6 +9,9 @@ import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class LikeServiceTest : CascadeIntegrationTestSupport() {
     @Test
@@ -21,13 +24,39 @@ class LikeServiceTest : CascadeIntegrationTestSupport() {
         val first = likeService.like(LikeType.POST, post.id, liker)
         val second = likeService.like(LikeType.POST, post.id, liker)
 
-        // created는 PUT의 201/200을 가름 — 최초만 true.
+        // created는 PUT의 201/200을 가름 — 최초만 true
         assertThat(first.created).isTrue()
         assertThat(first.response.liked).isTrue()
         assertThat(first.response.likeCount).isEqualTo(1L)
         assertThat(second.created).isFalse()
         assertThat(second.response.liked).isTrue()
         assertThat(second.response.likeCount).isEqualTo(1L)
+        assertThat(count("SELECT COUNT(*) FROM likes WHERE type = 'POST' AND target_id = ?", post.id))
+            .isEqualTo(1L)
+    }
+
+    @Test
+    fun `같은 좋아요를 동시에 눌러도 전부 성공하고 한 건만 생성된다`() {
+        val author = createUser("author")
+        val liker = createUser("liker")
+        val team = createTeam(author.id)
+        val post = createPost(author.id, team.id)
+        val threadCount = 8
+        val startLatch = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(threadCount)
+
+        val futures =
+            (1..threadCount).map {
+                executor.submit<LikeResult> {
+                    startLatch.await()
+                    likeService.like(LikeType.POST, post.id, liker)
+                }
+            }
+        startLatch.countDown()
+        val results = futures.map { it.get(10, TimeUnit.SECONDS) }
+        executor.shutdown()
+
+        assertThat(results.count { it.created }).isEqualTo(1)
         assertThat(count("SELECT COUNT(*) FROM likes WHERE type = 'POST' AND target_id = ?", post.id))
             .isEqualTo(1L)
     }
