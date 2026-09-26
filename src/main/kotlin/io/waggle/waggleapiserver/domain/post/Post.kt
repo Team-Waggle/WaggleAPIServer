@@ -21,7 +21,6 @@ import java.util.UUID
 @Table(
     name = "posts",
     indexes = [
-        Index(name = "idx_posts_title", columnList = "title"),
         Index(name = "idx_posts_team", columnList = "team_id"),
         Index(name = "idx_posts_user", columnList = "user_id"),
         Index(name = "idx_posts_view_count", columnList = "view_count"),
