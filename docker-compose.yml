@@ -55,7 +55,7 @@ services:
     restart: unless-stopped
 
   database:
-    # 테스트(TestContainers.kt)와 같은 패치 버전이어야 테스트의 EXPLAIN, FULLTEXT 결과가 운영과 일치함
+    # TestContainers.kt와 같은 버전 유지
     image: mysql:8.0.45
     container_name: waggle-db
     command: --ngram-token-size=2

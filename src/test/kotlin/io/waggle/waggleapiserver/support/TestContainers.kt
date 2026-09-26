@@ -9,7 +9,7 @@ import org.testcontainers.containers.MySQLContainer
  * stop하지 않는 것은 의도 - 캐시된 컨텍스트가 죽은 포트를 물지 않게 하며 JVM 종료 시 Ryuk가 정리함
  */
 object TestContainers {
-    // 운영(docker-compose.yml)과 같은 패치 버전이어야 테스트의 EXPLAIN, FULLTEXT 결과가 운영과 일치함
+    // docker-compose.yml(운영)과 같은 버전 유지
     val mysql: MySQLContainer<*> =
         MySQLContainer("mysql:8.0.45").apply {
             withDatabaseName("waggle")
