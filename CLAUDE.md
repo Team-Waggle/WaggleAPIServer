@@ -52,6 +52,8 @@
 - **시간순 정렬은 `created_at`이 아니라 `id` 기준으로 할 것** (Long auto-increment 도메인 기준). id가 삽입 순서와 단조 증가해 정렬 결과가 `created_at`과 동일하고(동일 시각 tie는 id가 더 정확), `WHERE <equality-prefix> ORDER BY id`는 InnoDB가 secondary index에 PK(`id`)를 덧붙여 filesort 없이 처리된다.
   - `created_at` 전용 정렬 컬럼/인덱스를 신설하지 말 것. 시간순 인덱스는 `(team_id)`, `(user_id)`처럼 equality 컬럼만 만들면 PK가 자동으로 붙는다.
   - `role, created_at` 같은 복합 정렬의 tie-break도 `role, id`로 작성할 것.
+- **Flyway 마이그레이션 파일에는 주석을 쓰지 말 것.** 무엇을 하는지는 파일 이름으로, 왜 하는지는 커밋 메시지에 남긴다.
+  - 적용된 마이그레이션은 체크섬 때문에 수정할 수 없어, 주석이 틀리거나 낡아도 고칠 방법이 없다.
 
 ## 3. Controller / API
 
