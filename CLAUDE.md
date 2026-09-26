@@ -73,17 +73,22 @@
   - URL 계층상의 부모는 경로 변수로, 그 외 참조는 요청 본문으로 받는다. 예) `POST /teams/{teamId}/applications`는 `teamId`가 경로, `postId`가 본문.
 - **쿼리 파라미터 객체 바인딩**: `@ParameterObject` (springdoc) 사용. `@ModelAttribute`는 Swagger에서 개별 쿼리 파라미터가 아닌 JSON 객체로 표시되므로 금지.
 - 페이지네이션: 공통 DTO `common/dto/request/CursorGetQuery`, `common/dto/response/CursorResponse` 사용.
-- **프로필 완성 가드** — 두 메커니즘이 공존하므로 상황에 맞게 선택할 것:
+- **셋업 가드** (프로필 완성 + 필수 약관 동의) — 두 메커니즘이 공존하므로 상황에 맞게 선택할 것:
 
   | 상황 | 사용 |
   |---|---|
   | 메서드 본문에서 user 사용 | `@CurrentUser user: User` (resolver 부수효과로 자동 가드) |
-  | 메서드 본문에서 user 미사용 | `@RequireCompleteProfile` (인터셉터, 파라미터 없이 가드만) |
-  | 가드 면제 (조회 등) | `@AllowIncompleteProfile` |
+  | 메서드 본문에서 user 미사용 | `@RequireCompleteSetup` (인터셉터, 파라미터 없이 가드만) |
+  | 가드 면제 (조회 등) | `@AllowIncompleteSetup` (프로필, 약관 검사 모두 면제. resolver에만 적용) |
+  | 약관 검사만 면제 | `@AllowMissingTermAgreement` (프로필은 검사. resolver와 인터셉터 모두 적용) |
   | 인증 자체가 선택적 (비로그인도 허용) | `@CurrentUser user: User?` (nullable) |
 
-  - 가드 트리거만을 위해 미사용 `@CurrentUser user: User` 파라미터를 끼워두지 말 것 — `@RequireCompleteProfile`로 의도를 명시할 것.
-  - SecurityConfig는 인증(JWT)만 처리. 프로필 완성은 위 메커니즘으로만 강제됨.
+  - 가드 트리거만을 위해 미사용 `@CurrentUser user: User` 파라미터를 끼워두지 말 것 — `@RequireCompleteSetup`으로 의도를 명시할 것.
+  - SecurityConfig는 인증(JWT)만 처리. 셋업 완료는 위 메커니즘으로만 강제됨.
+- **비로그인 공개 API는 두 곳에 함께 표시할 것.**
+  1. 컨트롤러: user를 쓰면 `@CurrentUser user: User?`, 쓰지 않으면 빈 `@SecurityRequirements` (Swagger 공개 표시와 같은 기준)
+  2. `SecurityConfig`의 공개 목록에 경로 추가. 경로 변수는 `*` 대신 ID 형식으로 제한한다 (`{postId:[0-9]+}`, `{userId:[0-9a-fA-F-]{36}}`). `*`는 `/users/me`나 새로 추가될 `/posts/{단어}`까지 공개한다.
+  - 둘이 어긋나면 `SecurityPermitAllTest`가 모든 컨트롤러 메서드를 순회해 실패로 알려준다.
 
 ## 4. DTO
 
