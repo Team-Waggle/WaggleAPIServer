@@ -17,10 +17,7 @@ import java.util.UUID
 @Table(
     name = "notifications",
     indexes = [
-        Index(
-            name = "idx_notifications_user_read_created",
-            columnList = "user_id, read_at, created_at DESC",
-        ),
+        Index(name = "idx_notifications_user", columnList = "user_id"),
         Index(name = "idx_notifications_team", columnList = "team_id"),
         Index(name = "idx_notifications_post", columnList = "post_id"),
     ],
@@ -43,8 +40,9 @@ class Notification(
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now()
 
-    // metadata(JSON)의 teamId/postId를 노출하는 generated STORED 컬럼(읽기 전용).
-    // 값 계산·저장은 DB가 담당하므로 insertable/updatable = false. cascade 삭제 및 조회 인덱스 대상.
+    // metadata(JSON)의 teamId/postId를 노출하는 generated STORED 컬럼(읽기 전용)
+    // 값 계산과 저장은 DB가 담당하므로 insertable/updatable = false
+    // cascade 삭제 및 조회 인덱스 대상
     @Column(name = "team_id", insertable = false, updatable = false, columnDefinition = "BIGINT")
     val teamId: Long? = null
 

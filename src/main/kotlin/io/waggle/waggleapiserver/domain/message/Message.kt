@@ -17,14 +17,8 @@ import java.util.UUID
 @Table(
     name = "messages",
     indexes = [
-        Index(
-            name = "idx_messages_sender_receiver_created",
-            columnList = "sender_id, receiver_id, created_at",
-        ),
-        Index(
-            name = "idx_messages_receiver_sender_created",
-            columnList = "receiver_id, sender_id, created_at",
-        ),
+        Index(name = "idx_messages_sender_receiver", columnList = "sender_id, receiver_id"),
+        Index(name = "idx_messages_receiver_sender", columnList = "receiver_id, sender_id"),
         Index(name = "idx_messages_receiver_read", columnList = "receiver_id, read_at"),
     ],
 )
