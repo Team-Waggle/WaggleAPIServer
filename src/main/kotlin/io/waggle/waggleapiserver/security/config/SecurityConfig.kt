@@ -70,9 +70,21 @@ class SecurityConfig(
                     authorize.requestMatchers("/ws-test.html").permitAll()
                 }
 
+                // 경로 변수를 * 대신 ID 형식으로 제한해야 /users/me나 새로 추가될 /posts/{단어} GET이 공개되지 않음
                 authorize
-                    .requestMatchers(HttpMethod.GET, "/posts/**", "/teams/**", "/users/**")
-                    .permitAll()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/posts",
+                        "/posts/{postId:[0-9]+}",
+                        "/posts/{postId:[0-9]+}/comments",
+                        "/teams/{teamId:[0-9]+}",
+                        "/teams/{teamId:[0-9]+}/members",
+                        "/teams/{teamId:[0-9]+}/posts",
+                        "/users/check",
+                        "/users/{userId:[0-9a-fA-F-]{36}}",
+                        "/users/{userId:[0-9a-fA-F-]{36}}/follow-count",
+                        "/users/{userId:[0-9a-fA-F-]{36}}/teams",
+                    ).permitAll()
                     .anyRequest()
                     .authenticated()
             }.oauth2Login { oauth2 ->
