@@ -23,6 +23,7 @@ import io.waggle.waggleapiserver.domain.post.dto.response.PostDetailResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.PostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.dto.response.TeamPostSimpleResponse
 import io.waggle.waggleapiserver.domain.post.event.PostDeletedEvent
+import io.waggle.waggleapiserver.domain.post.repository.PostCursor
 import io.waggle.waggleapiserver.domain.post.repository.PostRepository
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
 import io.waggle.waggleapiserver.domain.recruitment.RecruitmentStatus
@@ -133,7 +134,7 @@ class PostService(
     ): CursorResponse<PostSimpleResponse> {
         val posts =
             postRepository.findWithFilter(
-                cursor = cursorQuery.cursor,
+                cursor = cursorQuery.cursor?.let { PostCursor.decode(it, query.sort) },
                 q = query.q,
                 positions = query.positions ?: emptySet(),
                 skills = query.skills ?: emptySet(),
@@ -142,8 +143,9 @@ class PostService(
             )
 
         val hasNext = posts.size > cursorQuery.size
-        val content = if (hasNext) posts.take(cursorQuery.size) else posts
-        val nextCursor = if (hasNext) content.last().id else null
+        val slicedPosts = if (hasNext) posts.take(cursorQuery.size) else posts
+        val nextCursor = if (hasNext) slicedPosts.last().cursor.encode() else null
+        val content = slicedPosts.map { it.post }
 
         val authorIds = content.map { it.userId }.distinct()
         val authorById = userRepository.findAllById(authorIds).associateBy { it.id }
@@ -369,7 +371,8 @@ class PostService(
             }
 
         val newRecruitments = requestedRecruitmentByPosition.filterKeys { it !in existingRecruitmentByPosition }
-        // 새 포지션은 RECRUITING 으로 들어가므로 마감된 글이 되살아남. 같은 요청에서 기한을 연장했다면 통과함
+        // 새 포지션은 RECRUITING으로 들어가므로 마감된 글이 되살아남
+        // 같은 요청에서 기한을 연장했다면 통과함
         if (newRecruitments.isNotEmpty()) {
             post.checkNotExpired()
         }
@@ -410,8 +413,8 @@ class PostService(
         )
     }
 
-    // 마감한 포지션을 지웠다 다시 추가하면 RECRUITING 으로 되살아나 재개 금지가 우회됨.
-    // 지원서는 recruitment 가 아니라 position 을 참조해 삭제해도 남으므로 대응 모집 정보가 없는 지원서가 생김
+    // 마감한 포지션을 지웠다 다시 추가하면 RECRUITING으로 되살아나 재개 금지가 우회됨
+    // 지원서는 recruitment가 아니라 position을 참조해 삭제해도 남으므로 대응 모집 정보가 없는 지원서가 생김
     private fun checkDeletableRecruitment(recruitment: Recruitment) {
         if (!recruitment.isRecruiting()) {
             throw BusinessException(

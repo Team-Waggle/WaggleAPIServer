@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.notification.service
 
 import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
+import io.waggle.waggleapiserver.common.util.IdCursor
 import io.waggle.waggleapiserver.domain.notification.NotificationType
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationCountsResponse
 import io.waggle.waggleapiserver.domain.notification.dto.response.NotificationResponse
@@ -29,7 +30,11 @@ class NotificationService(
     ): CursorResponse<NotificationResponse> {
         val pageable = PageRequest.of(0, cursorQuery.size + 1)
         val notifications =
-            notificationRepository.findByUserIdWithCursor(user.id, cursorQuery.cursor, pageable)
+            notificationRepository.findByUserIdWithCursor(
+                user.id,
+                cursorQuery.cursor?.let { IdCursor.decode(it).id },
+                pageable,
+            )
 
         val hasNext = notifications.size > cursorQuery.size
         val slicedNotifications =
@@ -88,7 +93,7 @@ class NotificationService(
 
         return CursorResponse(
             data = data,
-            nextCursor = if (hasNext) slicedNotifications.lastOrNull()?.id else null,
+            nextCursor = if (hasNext) slicedNotifications.lastOrNull()?.let { IdCursor(it.id).encode() } else null,
             hasNext = hasNext,
         )
     }

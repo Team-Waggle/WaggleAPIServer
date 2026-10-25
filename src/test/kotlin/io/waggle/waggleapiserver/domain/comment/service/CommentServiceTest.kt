@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.comment.service
 
 import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.util.IdCursor
 import io.waggle.waggleapiserver.domain.comment.dto.request.CommentCreateRequest
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
@@ -137,7 +138,7 @@ class CommentServiceTest : CascadeIntegrationTestSupport() {
 
         assertThat(firstPage.data).hasSize(2)
         assertThat(firstPage.hasNext).isTrue()
-        assertThat(firstPage.nextCursor).isEqualTo(roots[1].id)
+        assertThat(firstPage.nextCursor).isEqualTo(IdCursor(roots[1].id).encode())
         // 잘린 페이지 안의 스레드는 답글이 온전히 포함됨
         assertThat(firstPage.data.map { it.replies.size }).containsExactly(2, 2)
 

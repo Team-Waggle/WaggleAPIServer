@@ -5,6 +5,7 @@ import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.util.IdCursor
 import io.waggle.waggleapiserver.domain.conversation.service.ConversationService
 import io.waggle.waggleapiserver.domain.message.Message
 import io.waggle.waggleapiserver.domain.message.adapter.MessageEvent
@@ -65,7 +66,8 @@ class MessageService(
         cursorQuery: CursorGetQuery,
         user: User,
     ): CursorResponse<MessageResponse> {
-        val (cursor, size, direction) = cursorQuery
+        val (encodedCursor, size, direction) = cursorQuery
+        val cursor = encodedCursor?.let { IdCursor.decode(it).id }
         val pageable = PageRequest.of(0, size + 1)
 
         val messages =
@@ -98,7 +100,7 @@ class MessageService(
                     receiver = userById[msg.receiverId]!!,
                 )
             }
-        val nextCursor = if (hasNext) slicedMessages.last().id else null
+        val nextCursor = if (hasNext) IdCursor(slicedMessages.last().id).encode() else null
 
         return CursorResponse(
             data = data,
