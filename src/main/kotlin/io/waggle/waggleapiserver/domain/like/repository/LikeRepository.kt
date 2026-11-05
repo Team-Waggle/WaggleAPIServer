@@ -54,6 +54,20 @@ interface LikeRepository : JpaRepository<Like, LikeId> {
         userId: UUID,
     ): Int
 
+    @Modifying
+    @Query(
+        """
+        DELETE FROM likes
+        WHERE type = :#{#type.name()} AND target_id = :targetId AND user_id = :userId
+        """,
+        nativeQuery = true,
+    )
+    fun deleteIfPresent(
+        type: LikeType,
+        targetId: Long,
+        userId: UUID,
+    ): Int
+
     fun deleteByIdTypeAndIdTargetId(
         type: LikeType,
         targetId: Long,

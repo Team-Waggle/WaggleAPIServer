@@ -38,6 +38,11 @@ class Comment(
     @Column(name = "tombstoned_at")
     var tombstonedAt: Instant? = null
 
+    // 좋아요 처리의 native UPDATE만 이 컬럼을 씀
+    // JPA가 쓰면 저장 시 메모리의 옛 값으로 덮어씀 (CLAUDE.md 2절)
+    @Column(name = "like_count", nullable = false, insertable = false, updatable = false)
+    val likeCount: Long = 0
+
     val isReply: Boolean get() = parentId != null
 
     val isTombstoned: Boolean get() = tombstonedAt != null

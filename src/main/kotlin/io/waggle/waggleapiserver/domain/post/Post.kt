@@ -24,6 +24,7 @@ import java.util.UUID
         Index(name = "idx_posts_team", columnList = "team_id"),
         Index(name = "idx_posts_user", columnList = "user_id"),
         Index(name = "idx_posts_view_count", columnList = "view_count"),
+        Index(name = "idx_posts_like_count", columnList = "like_count"),
         Index(name = "idx_posts_expires_at_id", columnList = "expires_at, id DESC"),
     ],
 )
@@ -45,6 +46,11 @@ class Post(
     // 스케줄러의 native UPDATE만 이 컬럼을 씀
     @Column(name = "view_count", nullable = false, insertable = false, updatable = false)
     val viewCount: Long = 0
+
+    // 좋아요 처리의 native UPDATE만 이 컬럼을 씀
+    // JPA가 쓰면 저장 시 메모리의 옛 값으로 덮어씀 (CLAUDE.md 2절)
+    @Column(name = "like_count", nullable = false, insertable = false, updatable = false)
+    val likeCount: Long = 0
 
     override val targetId: Long
         get() = id

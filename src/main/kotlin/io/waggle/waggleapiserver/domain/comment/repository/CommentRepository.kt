@@ -26,8 +26,12 @@ interface CommentRepository : JpaRepository<Comment, Long> {
     // tombstone은 "삭제된 댓글입니다"로 보이므로 함께 집계
     fun countByPostId(postId: Long): Long
 
-    // 삭제-답글 경합으로 생기는 고아 답글 방지용.
-    // 답글 작성 시 부모를, 삭제 시 대상을 이 메서드로 조회할 것.
+    // native UPDATE 직후 같은 트랜잭션에서 읽으려면 엔티티가 아니라 스칼라로 DB 값을 받아야 함
+    @Query("SELECT c.likeCount FROM Comment c WHERE c.id = :commentId")
+    fun findLikeCountById(commentId: Long): Long?
+
+    // 삭제-답글 경합으로 생기는 고아 답글 방지용
+    // 답글 작성 시 부모를, 삭제 시 대상을 이 메서드로 조회할 것
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     fun findWithLockById(id: Long): Comment?
 
@@ -116,6 +120,54 @@ interface CommentRepository : JpaRepository<Comment, Long> {
         nativeQuery = true,
     )
     fun updateDeletedAtByEmptiedTombstoneParentOfUserId(userId: UUID)
+
+    @Modifying
+    @Query("UPDATE comments SET like_count = like_count + 1 WHERE id = :commentId", nativeQuery = true)
+    fun increaseLikeCount(commentId: Long)
+
+    @Modifying
+    @Query("UPDATE comments SET like_count = like_count - 1 WHERE id = :commentId", nativeQuery = true)
+    fun decreaseLikeCount(commentId: Long)
+
+    // likes 행을 지우기 전에 실행해야 함
+    // 지운 뒤에는 그 사용자가 어느 댓글에 몇 개를 눌렀는지 알 수 없어 카운터가 그대로 남음
+    @Modifying
+    @Query(
+        """
+        UPDATE comments c
+        JOIN (
+            SELECT target_id, COUNT(*) AS liked_count FROM likes
+            WHERE type = 'COMMENT' AND user_id = :userId
+            GROUP BY target_id
+        ) l ON l.target_id = c.id
+        SET c.like_count = c.like_count - l.liked_count
+        """,
+        nativeQuery = true,
+    )
+    fun decreaseLikeCountByLikerId(userId: UUID)
+
+    @Modifying
+    @Query("UPDATE comments SET like_count = 0 WHERE id = :commentId", nativeQuery = true)
+    fun resetLikeCount(commentId: Long)
+
+    @Modifying
+    @Query("UPDATE comments SET like_count = 0 WHERE post_id = :postId", nativeQuery = true)
+    fun resetLikeCountByPostId(postId: Long)
+
+    @Modifying
+    @Query(
+        """
+        UPDATE comments c JOIN posts p ON p.id = c.post_id
+        SET c.like_count = 0
+        WHERE p.team_id = :teamId
+        """,
+        nativeQuery = true,
+    )
+    fun resetLikeCountByPostInTeamId(teamId: Long)
+
+    @Modifying
+    @Query("UPDATE comments SET like_count = 0 WHERE user_id = :userId", nativeQuery = true)
+    fun resetLikeCountByUserId(userId: UUID)
 }
 
 interface PostCommentCount {
