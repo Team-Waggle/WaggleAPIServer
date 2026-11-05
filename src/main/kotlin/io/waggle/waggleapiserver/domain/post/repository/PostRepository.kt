@@ -9,6 +9,10 @@ import java.util.UUID
 interface PostRepository :
     JpaRepository<Post, Long>,
     PostRepositoryCustom {
+    // native UPDATE 직후 같은 트랜잭션에서 읽으려면 엔티티가 아니라 스칼라로 DB 값을 받아야 함
+    @Query("SELECT p.likeCount FROM Post p WHERE p.id = :postId")
+    fun findLikeCountById(postId: Long): Long?
+
     fun findByIdInOrderByIdDesc(ids: List<Long>): List<Post>
 
     fun findByTeamIdOrderByIdDesc(teamId: Long): List<Post>
@@ -26,6 +30,43 @@ interface PostRepository :
         postId: Long,
         delta: Long,
     )
+
+    @Modifying
+    @Query("UPDATE posts SET like_count = like_count + 1 WHERE id = :postId", nativeQuery = true)
+    fun increaseLikeCount(postId: Long)
+
+    @Modifying
+    @Query("UPDATE posts SET like_count = like_count - 1 WHERE id = :postId", nativeQuery = true)
+    fun decreaseLikeCount(postId: Long)
+
+    // likes 행을 지우기 전에 실행해야 함
+    // 지운 뒤에는 그 사용자가 어느 글에 몇 개를 눌렀는지 알 수 없어 카운터가 그대로 남음
+    @Modifying
+    @Query(
+        """
+        UPDATE posts p
+        JOIN (
+            SELECT target_id, COUNT(*) AS liked_count FROM likes
+            WHERE type = 'POST' AND user_id = :userId
+            GROUP BY target_id
+        ) l ON l.target_id = p.id
+        SET p.like_count = p.like_count - l.liked_count
+        """,
+        nativeQuery = true,
+    )
+    fun decreaseLikeCountByLikerId(userId: UUID)
+
+    @Modifying
+    @Query("UPDATE posts SET like_count = 0 WHERE id = :postId", nativeQuery = true)
+    fun resetLikeCount(postId: Long)
+
+    @Modifying
+    @Query("UPDATE posts SET like_count = 0 WHERE team_id = :teamId", nativeQuery = true)
+    fun resetLikeCountByTeamId(teamId: Long)
+
+    @Modifying
+    @Query("UPDATE posts SET like_count = 0 WHERE user_id = :userId", nativeQuery = true)
+    fun resetLikeCountByUserId(userId: UUID)
 
     @Modifying
     @Query(

@@ -1,12 +1,9 @@
 package io.waggle.waggleapiserver.domain.post.repository
 
-import com.querydsl.core.types.Order
 import com.querydsl.core.types.OrderSpecifier
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
-import io.waggle.waggleapiserver.domain.like.LikeType
-import io.waggle.waggleapiserver.domain.like.QLike.like
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.PostSort
 import io.waggle.waggleapiserver.domain.post.QPost
@@ -46,7 +43,17 @@ class PostRepositoryCustomImpl(
                     post.id.desc(),
                 )
 
-            PostSort.MOST_LIKED -> findOrderByLikeCount(q, positions, skills, size, cursor)
+            PostSort.MOST_LIKED ->
+                findOrderByColumn(
+                    q,
+                    positions,
+                    skills,
+                    size,
+                    cursor?.let { afterLikeCountCursor(it) },
+                    post.likeCount.desc(),
+                    post.id.desc(),
+                )
+
             PostSort.DEADLINE_SOON -> findByDeadlineGroup(q, positions, skills, size, cursor)
         }
 
@@ -164,43 +171,6 @@ class PostRepositoryCustomImpl(
             .limit(size.toLong())
             .fetch()
 
-    private fun findOrderByLikeCount(
-        q: String?,
-        positions: Set<Position>,
-        skills: Set<Skill>,
-        size: Int,
-        cursor: Long?,
-    ): List<Post> {
-        // 커서 글이 삭제되면 좋아요 수 서브쿼리가 0을 돌려줘 좋아요 있는 구간을 통째로 건너뜀
-        if (cursor != null && !existsPost(cursor)) {
-            return emptyList()
-        }
-
-        return queryFactory
-            .selectFrom(post)
-            .leftJoin(like)
-            .on(
-                like.id.type
-                    .eq(LikeType.POST)
-                    .and(like.id.targetId.eq(post.id)),
-            ).where(
-                titleContains(q),
-                recruitedForPosition(positions),
-                recruitedWithSkill(skills),
-            ).groupBy(post)
-            .having(afterLikeCountCursor(cursor))
-            .orderBy(OrderSpecifier(Order.DESC, like.count()), post.id.desc())
-            .limit(size.toLong())
-            .fetch()
-    }
-
-    private fun existsPost(id: Long): Boolean =
-        queryFactory
-            .selectOne()
-            .from(post)
-            .where(post.id.eq(id))
-            .fetchFirst() != null
-
     // 복합 커서로 가면 CursorGetQuery, CursorResponse 계약이 전 API에서 바뀜
     private fun afterViewCountCursor(cursor: Long): BooleanExpression {
         val cursorPost = QPost("cursorPost")
@@ -211,22 +181,14 @@ class PostRepositoryCustomImpl(
             .or(post.viewCount.eq(cursorViewCount).and(post.id.lt(cursor)))
     }
 
-    private fun afterLikeCountCursor(cursor: Long?): BooleanExpression? =
-        cursor?.let {
-            val cursorLikeCount =
-                JPAExpressions
-                    .select(like.count())
-                    .from(like)
-                    .where(
-                        like.id.type
-                            .eq(LikeType.POST)
-                            .and(like.id.targetId.eq(it)),
-                    )
-            like
-                .count()
-                .lt(cursorLikeCount)
-                .or(like.count().eq(cursorLikeCount).and(post.id.lt(it)))
-        }
+    private fun afterLikeCountCursor(cursor: Long): BooleanExpression {
+        val cursorPost = QPost("cursorPost")
+        val cursorLikeCount =
+            JPAExpressions.select(cursorPost.likeCount).from(cursorPost).where(cursorPost.id.eq(cursor))
+        return post.likeCount
+            .lt(cursorLikeCount)
+            .or(post.likeCount.eq(cursorLikeCount).and(post.id.lt(cursor)))
+    }
 
     private fun titleContains(q: String?): BooleanExpression? = q?.let { post.title.contains(it) }
 

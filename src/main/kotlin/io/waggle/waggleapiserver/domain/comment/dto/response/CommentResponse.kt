@@ -33,24 +33,21 @@ data class CommentResponse(
     val updatedAt: Instant,
 ) {
     companion object {
-        // 작성자가 null인 게 정상인지(=tombstone인지)는 호출자가 조회 시점에 이미 검증함.
+        // 작성자가 null인 게 정상인지(=tombstone인지)는 호출자가 조회 시점에 이미 검증함
         fun of(
             root: Comment,
             replies: List<Comment>,
             userById: Map<UUID, User>,
-            likeCountByCommentId: Map<Long, Long> = emptyMap(),
             likedCommentIdSet: Set<Long> = emptySet(),
         ): CommentResponse =
             of(
                 root,
                 userById[root.userId]?.let { UserSimpleResponse.from(it) },
-                likeCountByCommentId[root.id] ?: 0,
                 root.id in likedCommentIdSet,
                 replies.map { reply ->
                     of(
                         reply,
                         userById[reply.userId]?.let { UserSimpleResponse.from(it) },
-                        likeCountByCommentId[reply.id] ?: 0,
                         reply.id in likedCommentIdSet,
                     )
                 },
@@ -59,7 +56,6 @@ data class CommentResponse(
         fun of(
             comment: Comment,
             user: UserSimpleResponse?,
-            likeCount: Long = 0,
             liked: Boolean = false,
             replies: List<CommentResponse> = emptyList(),
         ): CommentResponse =
@@ -70,7 +66,7 @@ data class CommentResponse(
                 content = if (comment.isTombstoned) null else comment.content,
                 user = if (comment.isTombstoned) null else user,
                 tombstoned = comment.isTombstoned,
-                likeCount = likeCount,
+                likeCount = comment.likeCount,
                 liked = liked,
                 replies = replies,
                 createdAt = comment.createdAt,

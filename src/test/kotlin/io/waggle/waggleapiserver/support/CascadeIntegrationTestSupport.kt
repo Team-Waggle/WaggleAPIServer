@@ -234,11 +234,34 @@ abstract class CascadeIntegrationTestSupport : IntegrationTestSupport() {
         type: BookmarkType,
     ): Bookmark = bookmarkRepository.save(Bookmark(BookmarkId(userId, targetId, type)))
 
+    // LikeService처럼 like_count도 함께 올려야 테스트 데이터가 카운터와 실제 likes 수 일치를 지킴
     protected fun createLike(
         userId: UUID,
         type: LikeType,
         targetId: Long,
-    ): Like = likeRepository.save(Like(LikeId(type, targetId, userId)))
+    ): Like {
+        val like = likeRepository.save(Like(LikeId(type, targetId, userId)))
+        val table =
+            when (type) {
+                LikeType.POST -> "posts"
+                LikeType.COMMENT -> "comments"
+            }
+        jdbcTemplate.update("UPDATE $table SET like_count = like_count + 1 WHERE id = ?", targetId)
+        return like
+    }
+
+    // like_count가 실제 likes 행 수와 다른 행의 수
+    // 삭제되거나 tombstone된 행도 포함하므로 native로 셈
+    protected fun countLikeCountMismatches(): Long =
+        count(
+            """
+            SELECT
+                (SELECT COUNT(*) FROM posts p
+                 WHERE p.like_count <> (SELECT COUNT(*) FROM likes l WHERE l.type = 'POST' AND l.target_id = p.id))
+              + (SELECT COUNT(*) FROM comments c
+                 WHERE c.like_count <> (SELECT COUNT(*) FROM likes l WHERE l.type = 'COMMENT' AND l.target_id = c.id))
+            """,
+        )
 
     protected fun createNotification(
         userId: UUID,

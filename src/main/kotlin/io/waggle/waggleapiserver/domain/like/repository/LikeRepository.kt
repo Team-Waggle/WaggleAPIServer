@@ -9,24 +9,6 @@ import org.springframework.data.jpa.repository.Query
 import java.util.UUID
 
 interface LikeRepository : JpaRepository<Like, LikeId> {
-    fun countByIdTypeAndIdTargetId(
-        type: LikeType,
-        targetId: Long,
-    ): Long
-
-    @Query(
-        """
-        SELECT l.id.targetId AS targetId, COUNT(l) AS likeCount
-        FROM Like l
-        WHERE l.id.type = :type AND l.id.targetId IN :targetIds
-        GROUP BY l.id.targetId
-        """,
-    )
-    fun countLikesGroupByTargetId(
-        type: LikeType,
-        targetIds: List<Long>,
-    ): List<TargetLikeCount>
-
     @Query(
         """
         SELECT l.id.targetId FROM Like l
@@ -49,6 +31,20 @@ interface LikeRepository : JpaRepository<Like, LikeId> {
         nativeQuery = true,
     )
     fun insertIfAbsent(
+        type: LikeType,
+        targetId: Long,
+        userId: UUID,
+    ): Int
+
+    @Modifying
+    @Query(
+        """
+        DELETE FROM likes
+        WHERE type = :#{#type.name()} AND target_id = :targetId AND user_id = :userId
+        """,
+        nativeQuery = true,
+    )
+    fun deleteIfPresent(
         type: LikeType,
         targetId: Long,
         userId: UUID,
@@ -116,9 +112,4 @@ interface LikeRepository : JpaRepository<Like, LikeId> {
         nativeQuery = true,
     )
     fun deleteByCommentUserId(userId: UUID)
-}
-
-interface TargetLikeCount {
-    val targetId: Long
-    val likeCount: Long
 }

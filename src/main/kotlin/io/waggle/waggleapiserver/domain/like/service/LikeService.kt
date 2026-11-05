@@ -3,7 +3,6 @@ package io.waggle.waggleapiserver.domain.like.service
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.comment.repository.CommentRepository
-import io.waggle.waggleapiserver.domain.like.LikeId
 import io.waggle.waggleapiserver.domain.like.LikeType
 import io.waggle.waggleapiserver.domain.like.dto.response.LikeResponse
 import io.waggle.waggleapiserver.domain.like.repository.LikeRepository
@@ -31,14 +30,13 @@ class LikeService(
         }
 
         val created = likeRepository.insertIfAbsent(type, targetId, user.id) == 1
+        if (created) {
+            increaseLikeCount(type, targetId)
+        }
 
         return LikeResult(
             created = created,
-            response =
-                LikeResponse.of(
-                    liked = true,
-                    likeCount = likeRepository.countByIdTypeAndIdTargetId(type, targetId),
-                ),
+            response = LikeResponse.of(liked = true, likeCount = getLikeCount(type, targetId)),
         )
     }
 
@@ -50,13 +48,38 @@ class LikeService(
     ): LikeResponse {
         checkLikableTarget(type, targetId)
 
-        likeRepository.deleteById(LikeId(type, targetId, user.id))
+        val deleted = likeRepository.deleteIfPresent(type, targetId, user.id) == 1
+        if (deleted) {
+            decreaseLikeCount(type, targetId)
+        }
 
-        return LikeResponse.of(
-            liked = false,
-            likeCount = likeRepository.countByIdTypeAndIdTargetId(type, targetId),
-        )
+        return LikeResponse.of(liked = false, likeCount = getLikeCount(type, targetId))
     }
+
+    private fun increaseLikeCount(
+        type: LikeType,
+        targetId: Long,
+    ) = when (type) {
+        LikeType.POST -> postRepository.increaseLikeCount(targetId)
+        LikeType.COMMENT -> commentRepository.increaseLikeCount(targetId)
+    }
+
+    private fun decreaseLikeCount(
+        type: LikeType,
+        targetId: Long,
+    ) = when (type) {
+        LikeType.POST -> postRepository.decreaseLikeCount(targetId)
+        LikeType.COMMENT -> commentRepository.decreaseLikeCount(targetId)
+    }
+
+    private fun getLikeCount(
+        type: LikeType,
+        targetId: Long,
+    ): Long =
+        when (type) {
+            LikeType.POST -> postRepository.findLikeCountById(targetId)
+            LikeType.COMMENT -> commentRepository.findLikeCountById(targetId)
+        } ?: 0
 
     private fun checkLikableTarget(
         type: LikeType,

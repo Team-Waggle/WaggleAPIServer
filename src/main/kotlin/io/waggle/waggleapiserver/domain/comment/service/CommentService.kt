@@ -89,7 +89,7 @@ class CommentService(
         val authorById =
             userRepository.findAllById(comments.map { it.userId }.distinct()).associateBy { it.id }
 
-        // 탈퇴자의 댓글은 tombstone으로 남지만 user 행은 soft delete되어 여기 안 잡힌다.
+        // 탈퇴자의 댓글은 tombstone으로 남지만 user 행은 soft delete되어 여기 안 잡힘
         comments
             .firstOrNull { it.userId !in authorById && !it.isTombstoned }
             ?.let {
@@ -99,16 +99,8 @@ class CommentService(
                 )
             }
 
-        // 답글에도 좋아요가 달리므로 최상위 댓글과 답글 id 전부가 배치 조회 대상.
+        // 답글에도 좋아요가 달리므로 최상위 댓글과 답글 id 전부가 배치 조회 대상
         val commentIds = comments.map { it.id }
-        val likeCountByCommentId =
-            if (commentIds.isEmpty()) {
-                emptyMap()
-            } else {
-                likeRepository
-                    .countLikesGroupByTargetId(LikeType.COMMENT, commentIds)
-                    .associate { it.targetId to it.likeCount }
-            }
         val likedCommentIdSet =
             if (user == null || commentIds.isEmpty()) {
                 emptySet()
@@ -124,7 +116,6 @@ class CommentService(
                     it,
                     repliesByParentId[it.id] ?: emptyList(),
                     authorById,
-                    likeCountByCommentId,
                     likedCommentIdSet,
                 )
             }
@@ -154,7 +145,6 @@ class CommentService(
         return CommentResponse.of(
             comment,
             UserSimpleResponse.from(user),
-            likeRepository.countByIdTypeAndIdTargetId(LikeType.COMMENT, commentId),
             likeRepository.existsById(LikeId(LikeType.COMMENT, commentId, user.id)),
         )
     }
@@ -172,7 +162,8 @@ class CommentService(
                 )
         comment.checkOwnership(user.id)
 
-        // tombstone도 본문이 사라지므로 좋아요 정리 대상. 분기 이전에 한 번만 발행.
+        // tombstone도 본문이 사라지므로 좋아요 정리 대상
+        // 분기 이전에 한 번만 발행
         eventPublisher.publishEvent(CommentDeletedEvent(commentId))
 
         if (comment.isReply) {
