@@ -162,14 +162,6 @@ class PostService(
             }
         val pendingViewCountByPostId = postViewService.getPendingViewCountByPostId(postIds)
 
-        val likeCountByPostId =
-            if (postIds.isEmpty()) {
-                emptyMap()
-            } else {
-                likeRepository
-                    .countLikesGroupByTargetId(LikeType.POST, postIds)
-                    .associate { it.targetId to it.likeCount }
-            }
         val likedPostIdSet =
             if (user == null || postIds.isEmpty()) {
                 emptySet()
@@ -198,7 +190,7 @@ class PostService(
                     recruitments,
                     commentCountByPostId[post.id] ?: 0,
                     post.viewCount + (pendingViewCountByPostId[post.id] ?: 0),
-                    likeCountByPostId[post.id] ?: 0,
+                    post.likeCount,
                     post.id in likedPostIdSet,
                 )
             }
@@ -248,7 +240,7 @@ class PostService(
             recruitments,
             commentRepository.countByPostId(postId),
             post.viewCount + pendingViewCount,
-            likeRepository.countByIdTypeAndIdTargetId(LikeType.POST, postId),
+            post.likeCount,
             user?.let { likeRepository.existsById(LikeId(LikeType.POST, postId, it.id)) } ?: false,
             applicationStatus,
         )
@@ -406,7 +398,7 @@ class PostService(
             savedRecruitments.map { RecruitmentResponse.from(it) },
             commentCount = commentRepository.countByPostId(postId),
             viewCount = post.viewCount + postViewService.getPendingViewCount(postId),
-            likeCount = likeRepository.countByIdTypeAndIdTargetId(LikeType.POST, postId),
+            likeCount = post.likeCount,
             liked = likeRepository.existsById(LikeId(LikeType.POST, postId, user.id)),
         )
     }

@@ -101,14 +101,6 @@ class CommentService(
 
         // 답글에도 좋아요가 달리므로 최상위 댓글과 답글 id 전부가 배치 조회 대상
         val commentIds = comments.map { it.id }
-        val likeCountByCommentId =
-            if (commentIds.isEmpty()) {
-                emptyMap()
-            } else {
-                likeRepository
-                    .countLikesGroupByTargetId(LikeType.COMMENT, commentIds)
-                    .associate { it.targetId to it.likeCount }
-            }
         val likedCommentIdSet =
             if (user == null || commentIds.isEmpty()) {
                 emptySet()
@@ -124,7 +116,6 @@ class CommentService(
                     it,
                     repliesByParentId[it.id] ?: emptyList(),
                     authorById,
-                    likeCountByCommentId,
                     likedCommentIdSet,
                 )
             }
@@ -154,7 +145,6 @@ class CommentService(
         return CommentResponse.of(
             comment,
             UserSimpleResponse.from(user),
-            likeRepository.countByIdTypeAndIdTargetId(LikeType.COMMENT, commentId),
             likeRepository.existsById(LikeId(LikeType.COMMENT, commentId, user.id)),
         )
     }
