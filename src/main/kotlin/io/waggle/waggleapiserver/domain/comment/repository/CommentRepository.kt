@@ -22,7 +22,8 @@ interface CommentRepository : JpaRepository<Comment, Long> {
         parentId: Long,
     ): Boolean
 
-    // 목록에 렌더링되는 항목 수와 일치시킴. tombstone은 "삭제된 댓글입니다"로 보이므로 함께 집계.
+    // 목록에 렌더링되는 항목 수와 일치시킴
+    // tombstone은 "삭제된 댓글입니다"로 보이므로 함께 집계
     fun countByPostId(postId: Long): Long
 
     // 삭제-답글 경합으로 생기는 고아 답글 방지용.
@@ -101,8 +102,8 @@ interface CommentRepository : JpaRepository<Comment, Long> {
     )
     fun updateDeletedAtByUserIdAndHasNoReply(userId: UUID)
 
-    // 반드시 위 두 쿼리 뒤에 실행할 것. mine에 deleted_at 조건이 없는 이유는
-    // 이미 지워진 답글이라도 "있었다"는 사실로 부모를 찾아야 하기 때문.
+    // 반드시 위 두 쿼리 뒤에 실행할 것
+    // mine에 deleted_at 조건이 없는 이유는 이미 지워진 답글이라도 "있었다"는 사실로 부모를 찾아야 하기 때문
     @Modifying
     @Query(
         """

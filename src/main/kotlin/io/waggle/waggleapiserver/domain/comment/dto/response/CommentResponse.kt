@@ -33,7 +33,7 @@ data class CommentResponse(
     val updatedAt: Instant,
 ) {
     companion object {
-        // 작성자가 null인 게 정상인지(=tombstone인지)는 호출자가 조회 시점에 이미 검증함.
+        // 작성자가 null인 게 정상인지(=tombstone인지)는 호출자가 조회 시점에 이미 검증함
         fun of(
             root: Comment,
             replies: List<Comment>,
