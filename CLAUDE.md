@@ -37,6 +37,9 @@
     jdbcTemplate.queryForObject("SELECT ... FROM comments") // ✗ 변경 이전 상태를 봄
     ```
   - 벌크 UPDATE 후 같은 트랜잭션에서 그 엔티티를 다시 읽어야 하면 `@Modifying(clearAutomatically = true)`를 쓴다. 현재 코드베이스는 cascade 벌크 UPDATE 뒤에 해당 엔티티를 읽지 않아 기본값으로 충분하다.
+- **native UPDATE로만 바꾸는 컬럼(카운터 등)은 엔티티에 `insertable = false, updatable = false`로 매핑할 것.** Hibernate는 엔티티를 저장할 때 바뀌지 않은 컬럼까지 모두 쓰므로, 막지 않으면 먼저 읽어 둔 옛 값으로 native가 바꾼 값을 덮어쓴다 (`view_count`, `like_count` 전례).
+  - 바꾼 직후 같은 트랜잭션에서 그 값을 읽을 때는 엔티티가 아니라 스칼라 조회(`SELECT p.likeCount FROM Post p ...`)를 쓴다. 엔티티 조회는 영속성 컨텍스트에 남은 옛 사본을 돌려준다.
+  - 이 용도로 `clearAutomatically`는 쓰지 않는다. 컨텍스트 전체를 비워 앞서 읽은 엔티티가 detached되고, 그 뒤의 필드 변경이 조용히 저장되지 않는다.
 - **타임스탬프 UPDATE 쿼리**: native 쿼리 + MySQL `UTC_TIMESTAMP(6)` 사용. 앱에서 `Instant.now()`를 파라미터로 전달하지 말 것.
   - 이유: prod는 JDBC URL에 `serverTimezone=UTC`가 설정되어 있으나 local은 미설정 → `CURRENT_TIMESTAMP`는 환경 의존적. `UTC_TIMESTAMP()`는 세션 timezone 무관하게 항상 UTC를 반환한다.
   - `datetime(6)` 컬럼이므로 정밀도 손실을 막기 위해 `UTC_TIMESTAMP(6)`를 쓸 것 (괄호 없는 형태 금지).
