@@ -32,8 +32,10 @@ class RateLimitFilter(
         response: HttpServletResponse,
         filterChain: FilterChain,
     ) {
-        val clientIp = resolveClientIp(request)
-        val bucket = buckets.computeIfAbsent(clientIp) { createBucket() }
+        // prod는 forward-headers-strategy: native라 Tomcat이 신뢰 프록시(nginx)의 X-Forwarded-For로 remoteAddr을 바꿔 둠
+        // 헤더를 직접 읽으면 클라이언트가 값을 위조해 버킷을 우회할 수 있음
+        // native 설정이 빠지면 모든 요청이 nginx IP 하나로 모여 전체가 한 버킷을 나눠 씀
+        val bucket = buckets.computeIfAbsent(request.remoteAddr) { createBucket() }
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response)
@@ -62,14 +64,6 @@ class RateLimitFilter(
                     .refillGreedy(BUCKET_REFILL_PER_MINUTE, Duration.ofMinutes(1))
                     .build(),
             ).build()
-
-    private fun resolveClientIp(request: HttpServletRequest): String =
-        request
-            .getHeader("X-Forwarded-For")
-            ?.split(",")
-            ?.first()
-            ?.trim()
-            ?: request.remoteAddr
 
     companion object {
         private const val BUCKET_CAPACITY = 1000L
