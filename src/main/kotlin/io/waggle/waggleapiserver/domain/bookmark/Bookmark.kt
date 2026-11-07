@@ -31,6 +31,10 @@ data class BookmarkId(
             name = "idx_bookmarks_type_target",
             columnList = "type, target_id",
         ),
+        Index(
+            name = "idx_bookmarks_user_type",
+            columnList = "user_id, type",
+        ),
     ],
 )
 class Bookmark(
