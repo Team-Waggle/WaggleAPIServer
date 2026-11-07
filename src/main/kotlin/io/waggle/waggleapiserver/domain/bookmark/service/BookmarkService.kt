@@ -49,6 +49,7 @@ class BookmarkService(
             bookmarkRepository.deleteById(bookmarkId)
             BookmarkToggleResponse(bookmarked = false)
         } else {
+            checkBookmarkableTarget(type, targetId)
             val bookmark = Bookmark(bookmarkId)
             bookmarkRepository.save(bookmark)
             BookmarkToggleResponse(bookmarked = true)
@@ -113,6 +114,21 @@ class BookmarkService(
                     )
                 }
             }
+        }
+    }
+
+    // 없는 ID를 북마크해 두면 나중에 그 ID로 생성된 대상이 목록에 나타남
+    private fun checkBookmarkableTarget(
+        type: BookmarkType,
+        targetId: Long,
+    ) {
+        val exists =
+            when (type) {
+                BookmarkType.POST -> postRepository.existsById(targetId)
+                BookmarkType.TEAM -> teamRepository.existsById(targetId)
+            }
+        if (!exists) {
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "$type not found: $targetId")
         }
     }
 }
