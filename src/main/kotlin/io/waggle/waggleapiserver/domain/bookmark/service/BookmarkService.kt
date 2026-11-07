@@ -32,6 +32,7 @@ class BookmarkService(
     private val teamRepository: TeamRepository,
     private val userRepository: UserRepository,
 ) {
+    @Transactional
     fun toggleBookmark(
         request: BookmarkToggleRequest,
         user: User,
