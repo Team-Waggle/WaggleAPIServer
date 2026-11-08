@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.team.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.storage.ImageDirectory
 import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
@@ -68,10 +69,15 @@ class TeamService(
         return TeamResponse.of(savedTeam, memberCount, member.role)
     }
 
-    fun generateProfileImagePresignedUrl(request: PresignedUrlRequest): PresignedUrlResponse {
+    // 팀 생성 전에 올리므로 팀 ID 대신 올린 사용자 ID로 묶음
+    fun generateProfileImagePresignedUrl(
+        request: PresignedUrlRequest,
+        user: User,
+    ): PresignedUrlResponse {
         val presignedUploadUrl =
             storageClient.generateUploadUrl(
-                "teams",
+                ImageDirectory.TEAM_PROFILE,
+                user.id,
                 request.contentType,
             )
         return PresignedUrlResponse.from(presignedUploadUrl)

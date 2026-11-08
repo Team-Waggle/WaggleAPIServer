@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.user.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.storage.ImageDirectory
 import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
@@ -69,9 +70,12 @@ class UserService(
         return UserDetailResponse.from(savedUser)
     }
 
-    fun generateProfileImagePresignedUrl(request: PresignedUrlRequest): PresignedUrlResponse {
+    fun generateProfileImagePresignedUrl(
+        request: PresignedUrlRequest,
+        user: User,
+    ): PresignedUrlResponse {
         val presignedUploadUrl =
-            storageClient.generateUploadUrl("users", request.contentType)
+            storageClient.generateUploadUrl(ImageDirectory.USER_PROFILE, user.id, request.contentType)
         return PresignedUrlResponse.from(presignedUploadUrl)
     }
 

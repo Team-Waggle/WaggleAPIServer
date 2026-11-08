@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.AllowIncompleteSetup
 import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
-import io.waggle.waggleapiserver.common.infrastructure.persistence.RequireCompleteSetup
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.domain.team.dto.request.TeamStatusUpdateRequest
@@ -39,12 +38,12 @@ class TeamController(
         @CurrentUser user: User,
     ): TeamResponse = teamService.createTeam(request, user)
 
-    @RequireCompleteSetup
     @Operation(summary = "팀 프로필 이미지 업로드용 Presigned URL 생성")
     @PostMapping("/profile-image/presigned-url")
     fun generateProfileImagePresignedUrl(
         @Valid @RequestBody request: PresignedUrlRequest,
-    ): PresignedUrlResponse = teamService.generateProfileImagePresignedUrl(request)
+        @CurrentUser user: User,
+    ): PresignedUrlResponse = teamService.generateProfileImagePresignedUrl(request, user)
 
     @AllowIncompleteSetup
     @Operation(summary = "팀 상세 조회")
