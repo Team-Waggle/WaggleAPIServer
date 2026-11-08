@@ -33,7 +33,7 @@ class UserServiceCascadeTest : CascadeIntegrationTestSupport() {
         // 탈퇴자 soft-delete → applicant만 active
         assertThat(count("SELECT COUNT(*) FROM users WHERE deleted_at IS NULL")).isEqualTo(1L)
 
-        verify(authService).deleteRefreshToken(user.id)
+        verify(authService).deleteAllRefreshTokens(user.id)
     }
 
     @Test

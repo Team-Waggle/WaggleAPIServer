@@ -32,11 +32,14 @@ class AuthOttRedeemTest {
             ).apply { afterPropertiesSet() },
         ).apply { afterPropertiesSet() }
 
+    private val jwtProvider =
+        JwtProvider("test-secret-test-secret-test-secret-test-secret", ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL)
+
     private val authService =
         AuthService(
             REFRESH_TOKEN_TTL,
             AuthCookieManager(cookieSecure = false, cookieSameSite = "Lax", cookieDomain = null),
-            JwtProvider("test-secret-test-secret-test-secret-test-secret", ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL),
+            jwtProvider,
             redisTemplate,
         )
 
@@ -51,7 +54,8 @@ class AuthOttRedeemTest {
         val pairedRefreshToken = redisTemplate.opsForValue().get("oauth-ott-refresh:$ott")
         assertThat(redisTemplate.opsForValue().get("oauth-ott:$ott")).isNotNull()
         // 세션 슬롯과 같은 값이어야 교환한 클라이언트가 곧바로 refresh 할 수 있음
-        assertThat(pairedRefreshToken).isEqualTo(redisTemplate.opsForValue().get("refresh-token:$userId"))
+        val sessionId = jwtProvider.getSessionIdFromToken(pairedRefreshToken!!)
+        assertThat(pairedRefreshToken).isEqualTo(redisTemplate.opsForValue().get("refresh-token:$userId:$sessionId"))
     }
 
     @Test

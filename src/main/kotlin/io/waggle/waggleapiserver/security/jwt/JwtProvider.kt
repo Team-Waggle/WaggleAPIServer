@@ -23,21 +23,20 @@ class JwtProvider(
     fun generateAccessToken(
         userId: UUID,
         role: UserRole,
-    ): String = generateToken(userId, role, accessTokenTtl)
+    ): String = generateToken(userId, role, TokenType.ACCESS, accessTokenTtl)
 
     fun generateRefreshToken(
         userId: UUID,
         role: UserRole,
-    ): String = generateToken(userId, role, refreshTokenTtl)
+        sessionId: UUID,
+    ): String = generateToken(userId, role, TokenType.REFRESH, refreshTokenTtl, sessionId)
 
-    fun isTokenValid(token: String): Boolean =
+    fun isTokenValid(
+        token: String,
+        type: TokenType,
+    ): Boolean =
         try {
-            Jwts
-                .parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-            true
+            getClaimsFromToken(token)[TYPE_CLAIM] == type.claimValue
         } catch (e: ExpiredJwtException) {
             logger.debug("Expired JWT token")
             false
@@ -56,18 +55,27 @@ class JwtProvider(
             ?.let { UserRole.valueOf(it) }
             ?: UserRole.USER
 
+    fun getSessionIdFromToken(token: String): UUID =
+        UUID.fromString(getClaimsFromToken(token)[SESSION_ID_CLAIM] as String)
+
     private fun generateToken(
         userId: UUID,
         role: UserRole,
+        type: TokenType,
         ttl: Long,
+        sessionId: UUID? = null,
     ): String {
         val now = Date()
         val expiration = Date(now.time + ttl)
 
+        // iat, exp가 초 단위라 같은 초에 갱신하면 이전과 같은 토큰이 나와 재사용 탐지가 구분하지 못함
         return Jwts
             .builder()
+            .id(UUID.randomUUID().toString())
             .subject(userId.toString())
             .claim("role", role.name)
+            .claim(TYPE_CLAIM, type.claimValue)
+            .apply { sessionId?.let { claim(SESSION_ID_CLAIM, it.toString()) } }
             .issuedAt(now)
             .expiration(expiration)
             .signWith(key)
@@ -81,4 +89,9 @@ class JwtProvider(
             .build()
             .parseSignedClaims(token)
             .payload
+
+    companion object {
+        private const val TYPE_CLAIM = "typ"
+        private const val SESSION_ID_CLAIM = "sid"
+    }
 }
