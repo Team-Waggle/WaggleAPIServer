@@ -12,7 +12,6 @@
 | ID | 항목 | 우선순위 |
 |---|---|---|
 | U2 | 프로필, 팀 이미지 URL을 조작해 버킷의 다른 S3 객체를 지울 수 있음 | 긴급 |
-| U3 | STOMP로 다른 사용자에게 발신자를 위조한 메시지를 직접 보낼 수 있음 | 긴급 |
 | U4 | `@Async`가 스레드 풀 없이 작업마다 새 스레드를 만듦 | 긴급 |
 | H1 | 요청 시작 때 읽은 `User`를 저장해 다른 변경을 덮어씀 | 높음 |
 | H2 | 리프레시 토큰이 사용자당 1개라 다른 기기 로그인 시 기존 기기가 로그아웃됨 | 높음 |
@@ -30,7 +29,6 @@
 | M9 | 조회수 스케줄러의 종료 대기 설정이 적용되지 않음 | 중간 |
 | M10 | 이미지 URL 컬럼 길이가 엔티티와 마이그레이션에서 다르고 요청 길이 제한이 없음 | 중간 |
 | M11 | Presigned URL 업로드에 크기 제한이 없고 고아 객체가 쌓임 | 중간 |
-| M12 | STOMP 메시지 전송이 실패해도 클라이언트에 알리지 않음 | 중간 |
 | L1 | 약관 미동의가 400(`INVALID_STATE`) | 낮음 |
 | L2 | 멤버 역할 정렬이 enum 문자열 순서에 의존 | 낮음 |
 | L3 | 메시지 검색어의 연산자 문자가 검색 결과를 바꿈 | 낮음 |
@@ -88,16 +86,6 @@
   - 삭제 시점에도 `S3_BASE_URL`로 시작하지 않는 URL은 무시한다. OAuth 가입 때 저장된 Google, Kakao 외부 이미지 URL로 쓸데없는 삭제 요청이 나가는 것도 함께 막힌다
   - 가능하면 발급한 키를 사용자나 팀 ID와 묶어 검증한다
   - 역할의 `s3:DeleteObject`를 `waggle-server/prod/*`로 좁힌다
-
-### U3. STOMP로 다른 사용자에게 발신자를 위조한 메시지를 직접 보낼 수 있음
-
-- **위치**: `WebSocketConfig`, `StompRateLimitInterceptor`
-- **문제**: 클라이언트가 보내는 STOMP 프레임의 목적지를 검사하는 곳이 없다. 클라이언트 SEND도 `/user/{사용자 ID}/...` 목적지면 Spring의 사용자 목적지 처리기가 그 사용자의 세션으로 그대로 전달한다. 유일한 inbound 인터셉터인 레이트 리밋은 `/app/message/send`만 본다.
-- **영향**
-  - 공개 API에서 피해자 ID를 알아내 `SEND /user/{피해자 ID}/queue/messages`로 아무 발신자를 단 메시지를 보내면, 피해자 화면에 진짜 DM처럼 표시된다. 피싱과 사칭에 쓸 수 있고 DB에 흔적이 남지 않는다
-  - 레이트 리밋은 목적지 문자열을 정확히 비교하는데, 핸들러 매칭은 `/app/message//send`처럼 슬래시를 겹쳐도 통과한다. 표기만 바꿔 레이트 리밋을 우회해 DB 쓰기를 무제한으로 할 수 있다
-- **확인**: 위조 메시지 전달은 실행 재현 (로컬 서버에 두 사용자를 STOMP로 접속시켜 피해자가 위조 메시지를 받음을 확인). 레이트 리밋 우회는 코드 추적
-- **권장 방향**: inbound `ChannelInterceptor` 하나로 허용 목록을 강제한다. SEND는 `/app/message/send` 정확 일치만, SUBSCRIBE는 `/user/queue/messages`와 `/user/queue/errors`만 허용하고 나머지는 거부한다. 레이트 리밋 인터셉터보다 앞에 둔다. spring-security-messaging도 대안이지만 STOMP CSRF 설정 등 변경 범위가 크다
 
 ### U4. `@Async`가 스레드 풀 없이 작업마다 새 스레드를 만듦
 
@@ -285,14 +273,6 @@
 - **영향**: 가입한 계정이 URL을 반복 발급받아 큰 파일을 올릴 수 있다. S3 저장, 전송 비용이 늘고 버킷에 쓰레기가 쌓인다.
 - **확인**: 코드 추적
 - **권장 방향**: 크기 제한이 필요하면 presigned POST(`content-length-range`)로 바꾼다. 임시 경로에 올렸다가 실제로 쓰일 때 확정하는 방식과 버킷 수명 주기 규칙을 검토한다. 모집글 삭제 시 본문 이미지 정리도 함께 본다.
-
-### M12. STOMP 메시지 전송이 실패해도 클라이언트에 알리지 않음
-
-- **위치**: `MessageStompController`, `MessageService.sendMessage`
-- **문제**: 자기 자신에게 보내거나 수신자가 없거나 탈퇴했으면 `BusinessException`을 던지는데, `@MessageExceptionHandler`가 없다. `GlobalExceptionHandler`는 REST 전용이라 STOMP에는 적용되지 않는다. 메시지 길이 검증 실패도 마찬가지다.
-- **영향**: 서버는 로그만 남기고, 보낸 쪽 화면은 "전송됨"으로 남았다가 새로고침하면 메시지가 사라진다. 레이트 리밋 초과는 `/queue/errors`로 알리는데 비즈니스 오류는 알리지 않아 동작이 일관되지 않다.
-- **확인**: 코드 추적
-- **권장 방향**: `MessageStompController`에 `@MessageExceptionHandler`와 `@SendToUser("/queue/errors")`를 두고 기존 `ErrorResponse`를 재사용한다. U3과 같은 영역이라 함께 처리하면 좋다.
 
 ---
 
