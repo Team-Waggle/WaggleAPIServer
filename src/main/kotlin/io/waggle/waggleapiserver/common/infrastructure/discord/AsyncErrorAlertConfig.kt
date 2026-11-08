@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.common.util.logger
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.task.ThreadPoolTaskExecutorBuilder
+import org.springframework.boot.task.ThreadPoolTaskSchedulerBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.annotation.AsyncConfigurer
@@ -18,6 +19,7 @@ import java.util.concurrent.ThreadPoolExecutor
 class AsyncErrorAlertConfig(
     private val discordWebhookClientProvider: ObjectProvider<DiscordWebhookClient>,
     private val taskExecutorBuilder: ThreadPoolTaskExecutorBuilder,
+    private val taskSchedulerBuilder: ThreadPoolTaskSchedulerBuilder,
 ) : AsyncConfigurer,
     SchedulingConfigurer {
     // WebSocket 설정이 실행기 빈을 여럿 등록해 Boot의 기본 실행기가 생기지 않음
@@ -30,6 +32,20 @@ class AsyncErrorAlertConfig(
             setRejectedExecutionHandler(ThreadPoolExecutor.CallerRunsPolicy())
         }
 
+    // 빈이어야 컨텍스트 종료 시 spring.task.scheduling.shutdown 설정대로 진행 중인 작업을 기다림
+    @Bean
+    fun taskScheduler(): ThreadPoolTaskScheduler =
+        taskSchedulerBuilder
+            .poolSize(SCHEDULER_POOL_SIZE)
+            .threadNamePrefix("scheduled-")
+            .build()
+            .apply {
+                setErrorHandler { throwable ->
+                    logger.error("Uncaught scheduled task exception", throwable)
+                    notifyDiscord("@Scheduled task", throwable)
+                }
+            }
+
     override fun getAsyncExecutor(): Executor = applicationTaskExecutor()
 
     override fun getAsyncUncaughtExceptionHandler(): AsyncUncaughtExceptionHandler =
@@ -40,17 +56,7 @@ class AsyncErrorAlertConfig(
         }
 
     override fun configureTasks(taskRegistrar: ScheduledTaskRegistrar) {
-        val scheduler =
-            ThreadPoolTaskScheduler().apply {
-                poolSize = SCHEDULER_POOL_SIZE
-                setThreadNamePrefix("scheduled-")
-                setErrorHandler { throwable ->
-                    logger.error("Uncaught scheduled task exception", throwable)
-                    notifyDiscord("@Scheduled task", throwable)
-                }
-                initialize()
-            }
-        taskRegistrar.setTaskScheduler(scheduler)
+        taskRegistrar.setTaskScheduler(taskScheduler())
     }
 
     private fun notifyDiscord(
@@ -67,8 +73,8 @@ class AsyncErrorAlertConfig(
     }
 
     companion object {
-        // ScheduledThreadPoolExecutor는 고정 크기라 런타임 동적 조절 불가.
-        // 부팅 시점에 CPU 코어 수로 맞추되 단일 코어 환경에서도 최소 2 보장.
+        // ScheduledThreadPoolExecutor는 고정 크기라 런타임 동적 조절 불가
+        // 부팅 시점에 CPU 코어 수로 맞추되 단일 코어 환경에서도 최소 2 보장
         private val SCHEDULER_POOL_SIZE = Runtime.getRuntime().availableProcessors().coerceAtLeast(2)
     }
 }

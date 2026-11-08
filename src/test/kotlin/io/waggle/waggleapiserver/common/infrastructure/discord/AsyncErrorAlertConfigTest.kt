@@ -8,7 +8,10 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.scheduling.annotation.Async
+import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
+import org.springframework.scheduling.config.ScheduledTaskRegistrar
 import org.springframework.test.util.ReflectionTestUtils
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ThreadPoolExecutor
@@ -22,6 +25,12 @@ class AsyncErrorAlertConfigTest : IntegrationTestSupport() {
     @Autowired
     private lateinit var applicationTaskExecutor: ThreadPoolTaskExecutor
 
+    @Autowired
+    private lateinit var taskScheduler: ThreadPoolTaskScheduler
+
+    @Autowired
+    private lateinit var scheduledAnnotationBeanPostProcessor: ScheduledAnnotationBeanPostProcessor
+
     @Test
     fun `Async 메서드는 상한이 있는 공용 풀에서 실행된다`() {
         val threadName = asyncProbe.currentThreadName().get(5, TimeUnit.SECONDS)
@@ -33,6 +42,15 @@ class AsyncErrorAlertConfigTest : IntegrationTestSupport() {
         assertThat(applicationTaskExecutor.threadPoolExecutor.rejectedExecutionHandler)
             .isInstanceOf(ThreadPoolExecutor.CallerRunsPolicy::class.java)
         assertWaitsOnShutdown(applicationTaskExecutor)
+    }
+
+    @Test
+    fun `Scheduled 작업은 종료 시 진행 중인 작업을 기다리는 스케줄러 빈에서 실행된다`() {
+        val registrar =
+            ReflectionTestUtils.getField(scheduledAnnotationBeanPostProcessor, "registrar") as ScheduledTaskRegistrar
+
+        assertThat(registrar.scheduler).isSameAs(taskScheduler)
+        assertWaitsOnShutdown(taskScheduler)
     }
 
     private fun assertWaitsOnShutdown(executor: Any) {
