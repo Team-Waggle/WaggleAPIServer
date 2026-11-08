@@ -47,7 +47,7 @@ class AuthController(
 
     @Operation(
         summary = "로그아웃",
-        description = "리프레시 토큰 무효화",
+        description = "이 기기의 리프레시 토큰을 무효화함. 다른 기기의 로그인은 유지됨",
     )
     @PostMapping("/logout")
     fun logout(

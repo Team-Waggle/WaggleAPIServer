@@ -13,6 +13,6 @@ class AuthCascadeListener(
     // refresh token은 Redis(트랜잭션 밖) → 탈퇴가 실제 커밋된 뒤에만 제거
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onUserDeactivated(event: UserDeactivatedEvent) {
-        authService.deleteRefreshToken(event.userId)
+        authService.deleteAllRefreshTokens(event.userId)
     }
 }

@@ -26,14 +26,12 @@ class AuthService(
         userId: UUID,
         role: UserRole,
     ): String {
+        // 로그인마다 새 세션을 만들어 다른 기기의 세션을 덮어쓰지 않음
+        val sessionId = UUID.randomUUID()
         val accessToken = jwtProvider.generateAccessToken(userId, role)
-        val refreshToken = jwtProvider.generateRefreshToken(userId, role)
+        val refreshToken = jwtProvider.generateRefreshToken(userId, role, sessionId)
 
-        redisTemplate.opsForValue().set(
-            "refresh-token:$userId",
-            refreshToken,
-            Duration.ofMillis(refreshTokenTtl),
-        )
+        saveRefreshToken(userId, sessionId, refreshToken)
 
         val ott = UUID.randomUUID().toString()
         redisTemplate.opsForValue().set(
@@ -41,7 +39,7 @@ class AuthService(
             accessToken,
             Duration.ofMinutes(1),
         )
-        // 쿠키를 여기서도 심으면 쿠키함이 둘로 갈려 한쪽의 refresh 가 다른 쪽을 재사용 탐지로 끊음
+        // 쿠키를 여기서도 심으면 쿠키함이 둘로 갈려 한쪽의 refresh가 다른 쪽을 재사용 탐지로 끊음
         redisTemplate.opsForValue().set(
             "oauth-ott-refresh:$ott",
             refreshToken,
@@ -86,25 +84,22 @@ class AuthService(
 
         val userId = jwtProvider.getUserIdFromToken(refreshToken)
         val role = jwtProvider.getRoleFromToken(refreshToken)
+        val sessionId = jwtProvider.getSessionIdFromToken(refreshToken)
 
         val stored =
-            redisTemplate.opsForValue().get("refresh-token:$userId")
+            redisTemplate.opsForValue().get(refreshTokenKey(userId, sessionId))
                 ?: throw BusinessException(ErrorCode.INVALID_TOKEN, "Refresh token not found")
 
         if (stored != refreshToken) {
-            // 재사용 탐지 시 강제 로그아웃
-            redisTemplate.delete("refresh-token:$userId")
+            // 이미 교체된 토큰이 다시 쓰이면 탈취로 보고 이 세션만 끊음
+            deleteRefreshToken(userId, sessionId)
             throw BusinessException(ErrorCode.INVALID_TOKEN, "Refresh token reuse detected")
         }
 
         val newAccessToken = jwtProvider.generateAccessToken(userId, role)
-        val newRefreshToken = jwtProvider.generateRefreshToken(userId, role)
+        val newRefreshToken = jwtProvider.generateRefreshToken(userId, role, sessionId)
 
-        redisTemplate.opsForValue().set(
-            "refresh-token:$userId",
-            newRefreshToken,
-            Duration.ofMillis(refreshTokenTtl),
-        )
+        saveRefreshToken(userId, sessionId, newRefreshToken)
         val maxAgeSeconds = (refreshTokenTtl / 1000).toInt()
         authCookieManager.addRefreshTokenCookie(response, newRefreshToken, maxAgeSeconds)
 
@@ -116,8 +111,10 @@ class AuthService(
         response: HttpServletResponse,
     ) {
         if (jwtProvider.isTokenValid(refreshToken, TokenType.REFRESH)) {
-            val userId = jwtProvider.getUserIdFromToken(refreshToken)
-            redisTemplate.delete("refresh-token:$userId")
+            deleteRefreshToken(
+                jwtProvider.getUserIdFromToken(refreshToken),
+                jwtProvider.getSessionIdFromToken(refreshToken),
+            )
         }
 
         authCookieManager.expireRefreshTokenCookie(response)
@@ -133,8 +130,11 @@ class AuthService(
         return WsTokenResponse(token)
     }
 
-    fun deleteRefreshToken(userId: UUID) {
-        redisTemplate.delete("refresh-token:$userId")
+    fun deleteAllRefreshTokens(userId: UUID) {
+        val sessionIds = redisTemplate.opsForSet().members(refreshSessionsKey(userId)).orEmpty()
+        redisTemplate.delete(
+            sessionIds.map { refreshTokenKey(userId, UUID.fromString(it)) } + refreshSessionsKey(userId),
+        )
     }
 
     fun validateAndConsumeWsToken(token: String): UUID {
@@ -146,5 +146,37 @@ class AuthService(
                     "Invalid or expired WebSocket token",
                 )
         return UUID.fromString(userId)
+    }
+
+    // 세션 목록은 탈퇴 시 지울 토큰 키를 찾는 용도라 실제 세션을 빠짐없이 담아야 함
+    // 목록에 먼저 넣고 토큰을 저장해 중간에 실패해도 목록에서 빠지는 세션이 없게 함
+    // 목록의 만료도 갱신마다 늘려야 갱신하며 오래 쓰는 세션이 목록보다 오래 살지 않음
+    private fun saveRefreshToken(
+        userId: UUID,
+        sessionId: UUID,
+        refreshToken: String,
+    ) {
+        val ttl = Duration.ofMillis(refreshTokenTtl)
+        redisTemplate.opsForSet().add(refreshSessionsKey(userId), sessionId.toString())
+        redisTemplate.expire(refreshSessionsKey(userId), ttl)
+        redisTemplate.opsForValue().set(refreshTokenKey(userId, sessionId), refreshToken, ttl)
+    }
+
+    // 토큰을 먼저 지워, 목록에서는 빠졌는데 토큰은 살아 있는 세션이 생기지 않게 함
+    private fun deleteRefreshToken(
+        userId: UUID,
+        sessionId: UUID,
+    ) {
+        redisTemplate.delete(refreshTokenKey(userId, sessionId))
+        redisTemplate.opsForSet().remove(refreshSessionsKey(userId), sessionId.toString())
+    }
+
+    companion object {
+        private fun refreshTokenKey(
+            userId: UUID,
+            sessionId: UUID,
+        ) = "refresh-token:$userId:$sessionId"
+
+        private fun refreshSessionsKey(userId: UUID) = "refresh-sessions:$userId"
     }
 }
