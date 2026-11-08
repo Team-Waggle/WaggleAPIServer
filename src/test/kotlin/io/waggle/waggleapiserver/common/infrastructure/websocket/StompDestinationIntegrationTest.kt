@@ -102,6 +102,24 @@ class StompDestinationIntegrationTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM messages", Long::class.java)).isEqualTo(1L)
     }
 
+    @Test
+    fun `전송이 실패하면 보낸 사람의 오류 큐로 알린다`() {
+        val sender = createUser("sender")
+        val senderSession = connect(sender)
+        val errors = subscribe(senderSession, "/user/queue/errors")
+
+        senderSession.send("/app/message/send", sendBody(sender.id, "to myself"))
+        senderSession.send("/app/message/send", sendBody(UUID.randomUUID(), " "))
+
+        // inbound 채널이 프레임을 병렬로 처리해 도착 순서는 보장되지 않음
+        val received = listOfNotNull(errors.poll(5, TimeUnit.SECONDS), errors.poll(5, TimeUnit.SECONDS))
+        assertThat(received.map { it.get("code").asText() }).containsOnly("INVALID_INPUT_VALUE").hasSize(2)
+        assertThat(received.map { it.get("detail").asText() })
+            .anyMatch { it == "Cannot send a message to yourself" }
+            .anyMatch { it.startsWith("content:") }
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM messages", Long::class.java)).isZero()
+    }
+
     private fun createUser(name: String): User =
         userRepository.save(
             User(
