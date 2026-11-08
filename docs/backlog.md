@@ -12,7 +12,6 @@
 | ID | 항목 | 우선순위 |
 |---|---|---|
 | U2 | 프로필, 팀 이미지 URL을 조작해 버킷의 다른 S3 객체를 지울 수 있음 | 긴급 |
-| U4 | `@Async`가 스레드 풀 없이 작업마다 새 스레드를 만듦 | 긴급 |
 | H1 | 요청 시작 때 읽은 `User`를 저장해 다른 변경을 덮어씀 | 높음 |
 | H2 | 리프레시 토큰이 사용자당 1개라 다른 기기 로그인 시 기존 기기가 로그아웃됨 | 높음 |
 | H3 | 같은 모집글에 다른 포지션으로 동시에 지원하면 중복 지원이 들어감 | 높음 |
@@ -26,7 +25,6 @@
 | M6 | 재가입 시 팔로우 복원으로 팔로워, 팔로잉 목록이 404나 500이 됨 | 중간 |
 | M7 | 리프레시 토큰을 액세스 토큰으로도 쓸 수 있음 | 중간 |
 | M8 | 완료된 팀이 계속 지원을 받고, 상태를 바꿀 때마다 리뷰 요청이 반복됨 | 중간 |
-| M9 | 조회수 스케줄러의 종료 대기 설정이 적용되지 않음 | 중간 |
 | M10 | 이미지 URL 컬럼 길이가 엔티티와 마이그레이션에서 다르고 요청 길이 제한이 없음 | 중간 |
 | M11 | Presigned URL 업로드에 크기 제한이 없고 고아 객체가 쌓임 | 중간 |
 | L1 | 약관 미동의가 400(`INVALID_STATE`) | 낮음 |
@@ -86,18 +84,6 @@
   - 삭제 시점에도 `S3_BASE_URL`로 시작하지 않는 URL은 무시한다. OAuth 가입 때 저장된 Google, Kakao 외부 이미지 URL로 쓸데없는 삭제 요청이 나가는 것도 함께 막힌다
   - 가능하면 발급한 키를 사용자나 팀 ID와 묶어 검증한다
   - 역할의 `s3:DeleteObject`를 `waggle-server/prod/*`로 좁힌다
-
-### U4. `@Async`가 스레드 풀 없이 작업마다 새 스레드를 만듦
-
-- **위치**: `AsyncErrorAlertConfig` (`AsyncConfigurer`를 구현하지만 `getAsyncExecutor()`가 없음), `WebSocketConfig`
-- **문제**: `@EnableWebSocketMessageBroker`가 메시지 채널용 실행기 빈들을 등록하므로 Spring Boot의 기본 스레드 풀(`applicationTaskExecutor`)이 만들어지지 않는다. 실행기 빈이 여럿이고 `taskExecutor`라는 이름의 빈도 없어서, `@Async`는 `SimpleAsyncTaskExecutor`로 대체된다. 작업마다 새 스레드를 만들고 상한이 없다.
-- **영향**
-  - 알림 생성, 이미지 삭제, Discord 알림이 모두 상한 없이 스레드를 만든다. 장애로 에러가 몰리면 요청마다 Discord 전송 스레드가 생기고 각각 최대 8초(타임아웃)를 붙잡는다. RAM 1.9GB 서버에서 스레드가 계속 늘면 메모리 압박이 커진다
-  - 알림 리스너 스레드도 따로 늘어 HTTP 요청과 DB 커넥션 풀(20개)을 두고 경쟁한다
-  - 종료할 때 진행 중인 작업을 기다리지 않는다
-  - `DiscordWebhookClient`의 주석("알림 저장, 이미지 삭제와 공유하는 @Async 풀이 물려 함께 멈춤")은 공유 풀이 있다는 잘못된 전제로 쓰였다. 타임아웃 자체는 응답 없는 호출마다 스레드가 영원히 남는 것을 막으므로 유지한다
-- **확인**: 실행 재현 (테스트에서 `@Async` 메서드 실행 스레드가 `SimpleAsyncTaskExecutor-1, -2, -3`이고, `applicationTaskExecutor`와 `taskExecutor` 빈이 없음을 확인). 운영 로그의 루트 레벨이 WARN이라 Spring이 남기는 INFO 경고가 보이지 않는다
-- **권장 방향**: `getAsyncExecutor()`에서 상한이 있는 `ThreadPoolTaskExecutor`(core와 max 4~8, 큐 수백, 거부 정책 명시, 종료 시 대기)를 반환한다. Discord 알림은 작은 전용 실행기로 분리하는 것도 검토한다. `DiscordWebhookClient` 주석을 실제 구성에 맞게 고친다
 
 ---
 
@@ -249,14 +235,6 @@
 - **확인**: 코드 추적
 - **정할 것**: 완료를 되돌릴 수 없는 최종 상태로 둘지, 정원(`Recruitment.count`)을 넘는 승인을 막을지 (지금은 표시용으로만 쓰임)
 - **권장 방향**: 허용하는 상태 전이를 엔티티에 명시하고, 완료 알림은 처음 완료될 때만 보낸다. 완료 시 열린 모집을 닫거나, 지원과 승인, 모집글 수정에서 완료된 팀을 거부한다.
-
-### M9. 조회수 스케줄러의 종료 대기 설정이 적용되지 않음
-
-- **위치**: `application.yaml`의 `spring.task.scheduling.shutdown.*`, `AsyncErrorAlertConfig.configureTasks`
-- **문제**: yaml은 "조회수 반영이 중간에 잘리면 복구 불가"라는 이유로 종료 시 10초를 기다리도록 설정했다. 하지만 `configureTasks`가 `ThreadPoolTaskScheduler`를 직접 만들어 쓰므로 이 설정이 연결되지 않는다. 직접 만든 스케줄러는 빈이 아니라 컨텍스트가 종료를 관리하지 않고, 진행 중인 작업을 기다리지 않는다.
-- **영향**: 배포 중 앱 종료가 조회수 반영(`PostViewScheduler`: Redis에서 증분을 지운 뒤 DB에 반영)과 겹치면, Redis에서는 지웠는데 DB에는 반영되지 않은 증분이 사라진다. 확률은 낮지만, 팀이 이 설정으로 막고 있다고 믿는다는 점이 문제다.
-- **확인**: 코드 추적
-- **권장 방향**: 스케줄러를 `@Bean`으로 등록하고 `setWaitForTasksToCompleteOnShutdown(true)`, `setAwaitTerminationSeconds(10)`을 설정한 뒤 `configureTasks`에서 그 빈을 쓴다. yaml의 무효한 설정은 지운다.
 
 ### M10. 이미지 URL 컬럼 길이가 엔티티와 마이그레이션에서 다르고 요청 길이 제한이 없음
 
@@ -457,7 +435,7 @@
 - **영향**: 드물게 알림이 사라진다. 사용자는 지원이나 댓글이 있었는지 모르게 된다.
 - **현재 판단**: 인앱 알림은 핵심 기능이 아니라서 유실을 허용한다(best-effort). 알림이 중요해지면(푸시 알림 도입, 알림 누락 문의 발생 등) 다시 본다.
 - **권장 방향**: Transactional Outbox. 본 트랜잭션 안에서 알림 이벤트를 outbox 테이블에 저장하고, 스케줄러가 처리 후 표시한다.
-- **주의**: 삭제 cascade 리스너는 `@EventListener` + `@Transactional(MANDATORY)` 동기 방식이라 이 문제가 없다. 알림 **생성** 경로에만 해당한다. 종료 시 대기하지 않는 문제는 U4에서 함께 풀린다.
+- **주의**: 삭제 cascade 리스너는 `@EventListener` + `@Transactional(MANDATORY)` 동기 방식이라 이 문제가 없다. 알림 **생성** 경로에만 해당한다.
 
 ### L26. `Recruitment.status`의 `final`로 기동 시 Hibernate 경고
 
@@ -531,7 +509,7 @@
 - **위치**: `Dockerfile` (`java -jar app.jar`), `docker-compose.yml`의 `app` 서비스
 - **문제**: 힙은 호스트 메모리의 기본 25%(약 480MB)로 암묵적으로 정해지고, 스레드와 메타스페이스는 제한이 없다. OutOfMemoryError가 나도 프로세스가 살아 있어 `restart: unless-stopped`가 동작하지 않는다. healthcheck가 없어 응답하지 않는 앱도 "실행 중"으로 보인다. 다섯 컨테이너 모두 메모리 제한이 없어, 한 컨테이너가 메모리를 늘리면 MySQL까지 함께 압박받는다.
 - **확인**: 저장소 파일과 서버 확인. 운영 앱 컨테이너의 실행 명령이 `java -jar app.jar`이고, 전 컨테이너의 메모리 제한이 0(무제한)이다. healthcheck는 MySQL과 fail2ban에만 있다
-- **권장 방향**: `-XX:MaxRAMPercentage`(또는 `-Xmx`)와 `-XX:+ExitOnOutOfMemoryError`를 명시하고, compose에 `mem_limit`과 `/actuator/health` 기반 healthcheck를 둔다. U4와 함께 보면 좋다.
+- **권장 방향**: `-XX:MaxRAMPercentage`(또는 `-Xmx`)와 `-XX:+ExitOnOutOfMemoryError`를 명시하고, compose에 `mem_limit`과 `/actuator/health` 기반 healthcheck를 둔다.
 - **다시 볼 시점**: 인스턴스 유형을 바꾸거나 컨테이너를 추가할 때, 또는 앱이 응답 없이 살아 있는 장애가 생길 때
 
 ### I5. SSH 포트가 전체 인터넷에 열려 있음
