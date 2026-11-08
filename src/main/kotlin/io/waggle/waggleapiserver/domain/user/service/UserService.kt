@@ -48,7 +48,8 @@ class UserService(
         request: UserSetupProfileRequest,
         user: User,
     ): UserDetailResponse {
-        if (user.username != null) {
+        val currentUser = getUser(user.id)
+        if (currentUser.username != null) {
             throw BusinessException(ErrorCode.INVALID_STATE, "Profile already set up")
         }
 
@@ -59,12 +60,12 @@ class UserService(
         }
         storageClient.checkImageOwnership(
             profileImageUrl,
-            user.profileImageUrl,
+            currentUser.profileImageUrl,
             ImageDirectory.USER_PROFILE,
-            user.id,
+            currentUser.id,
         )
 
-        user.setupProfile(
+        currentUser.setupProfile(
             username = username,
             position = position,
             bio = bio,
@@ -72,9 +73,8 @@ class UserService(
             skills = skills,
             portfolioUrls = portfolioUrls,
         )
-        val savedUser = userRepository.save(user)
 
-        return UserDetailResponse.from(savedUser)
+        return UserDetailResponse.from(currentUser)
     }
 
     fun generateProfileImagePresignedUrl(
@@ -162,32 +162,33 @@ class UserService(
         request: UserUpdateRequest,
         user: User,
     ): UserDetailResponse {
+        val currentUser = getUser(user.id)
         val (position, bio, profileImageUrl, skills, portfolioUrls) = request
 
         storageClient.checkImageOwnership(
             profileImageUrl,
-            user.profileImageUrl,
+            currentUser.profileImageUrl,
             ImageDirectory.USER_PROFILE,
-            user.id,
+            currentUser.id,
         )
-        user.profileImageUrl?.takeIf { it != profileImageUrl }?.let {
+        currentUser.profileImageUrl?.takeIf { it != profileImageUrl }?.let {
             eventPublisher.publishEvent(ImageDeleteEvent(it))
         }
 
-        user.update(
+        currentUser.update(
             position = position,
             bio = bio,
             profileImageUrl = profileImageUrl,
             skills = skills,
             portfolioUrls = portfolioUrls,
         )
-        val savedUser = userRepository.save(user)
 
-        return UserDetailResponse.from(savedUser)
+        return UserDetailResponse.from(currentUser)
     }
 
     @Transactional
     fun deactivateUser(user: User) {
+        val currentUser = getUser(user.id)
         val members = memberRepository.findByUserIdOrderByRoleAscIdAsc(user.id)
 
         members.filter { it.isLeader }.forEach { leaderMembership ->
@@ -226,10 +227,14 @@ class UserService(
 
         eventPublisher.publishEvent(UserDeactivatedEvent(user.id))
 
-        user.profileImageUrl?.let { eventPublisher.publishEvent(ImageDeleteEvent(it)) }
+        currentUser.profileImageUrl?.let { eventPublisher.publishEvent(ImageDeleteEvent(it)) }
 
-        user.deactivate()
-
-        userRepository.save(user)
+        currentUser.deactivate()
     }
+
+    // @CurrentUser의 User는 리졸버의 트랜잭션에서 읽혀 분리된 사본이라 save하면 merge가 모든 필드를 덮어씀
+    // 그사이 다른 트랜잭션이 바꾼 값이 요청 시작 시점 값으로 되돌아가므로 수정 전에 이 트랜잭션에서 다시 읽음
+    private fun getUser(userId: UUID): User =
+        userRepository.findByIdOrNull(userId)
+            ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $userId")
 }

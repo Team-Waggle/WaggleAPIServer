@@ -1,14 +1,13 @@
-package io.waggle.waggleapiserver.common.storage
+package io.waggle.waggleapiserver.domain.user.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
-import io.waggle.waggleapiserver.domain.member.MemberRole
-import io.waggle.waggleapiserver.domain.team.dto.request.TeamUpsertRequest
-import io.waggle.waggleapiserver.domain.team.enums.WorkMode
+import io.waggle.waggleapiserver.common.storage.ImageDirectory
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.request.UserSetupProfileRequest
 import io.waggle.waggleapiserver.domain.user.dto.request.UserUpdateRequest
 import io.waggle.waggleapiserver.domain.user.enums.Position
+import io.waggle.waggleapiserver.domain.user.enums.Skill
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -20,9 +19,58 @@ import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.springframework.data.repository.findByIdOrNull
 
-// 이미지를 바꾸면 이전 이미지를 S3에서 지우므로, 남이 올린 객체의 URL이 저장되면 그 객체가 지워짐
-// storageClient는 목이라 isUploadedBy는 스텁한 경우에만 true
-class ProfileImageOwnershipTest : CascadeIntegrationTestSupport() {
+class UserServiceTest : CascadeIntegrationTestSupport() {
+    @Test
+    fun `프로필 수정은 요청 중에 바뀐 협업 온도를 되돌리지 않는다`() {
+        val staleUser = createUser("user")
+        changeTemperatureElsewhere(staleUser, 37.0)
+
+        userService.updateUser(
+            UserUpdateRequest(position = Position.FRONTEND, bio = "new bio", skills = setOf(Skill.AWS)),
+            staleUser,
+        )
+
+        assertThat(temperatureOf(staleUser)).isEqualTo(37.0)
+        assertThat(
+            jdbcTemplate.queryForObject("SELECT bio FROM users WHERE email = ?", String::class.java, staleUser.email),
+        ).isEqualTo("new bio")
+        assertThat(skillCountOf(staleUser)).isEqualTo(1L)
+    }
+
+    @Test
+    fun `프로필 초기 설정은 요청 중에 바뀐 협업 온도를 되돌리지 않는다`() {
+        val staleUser = userRepository.save(createUser("user").apply { username = null })
+        changeTemperatureElsewhere(staleUser, 37.0)
+
+        userService.setupProfile(
+            UserSetupProfileRequest(username = "user", position = Position.BACKEND, skills = setOf(Skill.AWS)),
+            staleUser,
+        )
+
+        assertThat(temperatureOf(staleUser)).isEqualTo(37.0)
+        assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT username FROM users WHERE email = ?",
+                String::class.java,
+                staleUser.email,
+            ),
+        ).isEqualTo("user")
+        assertThat(skillCountOf(staleUser)).isEqualTo(1L)
+    }
+
+    @Test
+    fun `탈퇴는 요청 중에 바뀐 협업 온도를 되돌리지 않는다`() {
+        val staleUser = createUser("user")
+        changeTemperatureElsewhere(staleUser, 37.0)
+
+        userService.deactivateUser(staleUser)
+
+        assertThat(temperatureOf(staleUser)).isEqualTo(37.0)
+        assertThat(count("SELECT COUNT(*) FROM users WHERE email = ? AND deleted_at IS NOT NULL", staleUser.email))
+            .isEqualTo(1L)
+    }
+
+    // storageClient는 목이라 isUploadedBy는 스텁한 경우에만 true
     @Test
     fun `남이 올린 이미지 URL로는 프로필 이미지를 바꿀 수 없다`() {
         val attacker = createUser("attacker", profileImageUrl = LEGACY_URL)
@@ -35,8 +83,7 @@ class ProfileImageOwnershipTest : CascadeIntegrationTestSupport() {
 
     @Test
     fun `프로필 초기 설정에서도 남이 올린 이미지 URL은 거부한다`() {
-        val attacker = createUser("attacker", profileImageUrl = null).apply { username = null }
-        userRepository.save(attacker)
+        val attacker = userRepository.save(createUser("attacker").apply { username = null })
 
         assertRejected {
             userService.setupProfile(
@@ -76,51 +123,28 @@ class ProfileImageOwnershipTest : CascadeIntegrationTestSupport() {
         verify(storageClient, timeout(5_000)).delete(LEGACY_URL)
     }
 
-    @Test
-    fun `남이 올린 이미지 URL로는 팀을 만들거나 팀 이미지를 바꿀 수 없다`() {
-        val manager = createUser("manager", profileImageUrl = null)
-        val team = createTeam(manager.id)
-        createMember(manager.id, team.id, MemberRole.LEADER)
-
-        assertRejected { teamService.createTeam(teamUpsertRequest(team.name, VICTIM_URL), manager) }
-        assertRejected { teamService.updateTeam(team.id, teamUpsertRequest(team.name, VICTIM_URL), manager) }
-
-        assertThat(teamRepository.findByIdOrNull(team.id)?.profileImageUrl).isNull()
-        verify(storageClient, never()).delete(anyString())
+    // @CurrentUser로 받는 User는 요청 시작 때 읽힌 분리된 사본
+    // 그 사이 다른 트랜잭션이 협업 온도를 바꾼 상황을 JDBC UPDATE로 재현함
+    private fun changeTemperatureElsewhere(
+        user: User,
+        temperature: Double,
+    ) {
+        jdbcTemplate.update("UPDATE users SET temperature = ? WHERE email = ?", temperature, user.email)
     }
 
-    @Test
-    fun `팀 이미지는 수정하는 매니저가 직접 올린 것이면 바꿀 수 있다`() {
-        val leader = createUser("leader", profileImageUrl = null)
-        val manager = createUser("manager", profileImageUrl = null)
-        val team = createTeam(leader.id)
-        createMember(leader.id, team.id, MemberRole.LEADER)
-        createMember(manager.id, team.id, MemberRole.MANAGER)
-        val uploaded = "https://bucket/prod/teams/${manager.id}/22222222-2222-2222-2222-222222222222.png"
-        given(storageClient.isUploadedBy(uploaded, ImageDirectory.TEAM_PROFILE, manager.id)).willReturn(true)
+    private fun skillCountOf(user: User): Long =
+        count("SELECT COUNT(*) FROM user_skills s JOIN users u ON u.id = s.user_id WHERE u.email = ?", user.email)
 
-        teamService.updateTeam(team.id, teamUpsertRequest(team.name, uploaded), manager)
-
-        assertThat(teamRepository.findByIdOrNull(team.id)?.profileImageUrl).isEqualTo(uploaded)
-    }
+    private fun temperatureOf(user: User): Double =
+        jdbcTemplate.queryForObject("SELECT temperature FROM users WHERE email = ?", Double::class.java, user.email)!!
 
     private fun createUser(
         name: String,
         profileImageUrl: String?,
-    ): User = createUser(name).apply { this.profileImageUrl = profileImageUrl }.let { userRepository.save(it) }
+    ): User = userRepository.save(createUser(name).apply { this.profileImageUrl = profileImageUrl })
 
     private fun userUpdateRequest(profileImageUrl: String?) =
         UserUpdateRequest(position = Position.BACKEND, profileImageUrl = profileImageUrl, skills = emptySet())
-
-    private fun teamUpsertRequest(
-        name: String,
-        profileImageUrl: String?,
-    ) = TeamUpsertRequest(
-        name = name,
-        description = "description",
-        workMode = WorkMode.ONLINE,
-        profileImageUrl = profileImageUrl,
-    )
 
     private fun assertRejected(action: () -> Unit) {
         assertThatThrownBy(action)
