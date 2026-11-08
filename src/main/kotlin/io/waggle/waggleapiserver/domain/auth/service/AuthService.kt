@@ -7,6 +7,7 @@ import io.waggle.waggleapiserver.domain.auth.dto.response.AccessTokenResponse
 import io.waggle.waggleapiserver.domain.auth.dto.response.WsTokenResponse
 import io.waggle.waggleapiserver.domain.user.UserRole
 import io.waggle.waggleapiserver.security.jwt.JwtProvider
+import io.waggle.waggleapiserver.security.jwt.TokenType
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.StringRedisTemplate
@@ -79,7 +80,7 @@ class AuthService(
         refreshToken: String,
         response: HttpServletResponse,
     ): AccessTokenResponse {
-        if (!jwtProvider.isTokenValid(refreshToken)) {
+        if (!jwtProvider.isTokenValid(refreshToken, TokenType.REFRESH)) {
             throw BusinessException(ErrorCode.INVALID_TOKEN, "Invalid refresh token")
         }
 
@@ -114,7 +115,7 @@ class AuthService(
         refreshToken: String,
         response: HttpServletResponse,
     ) {
-        if (jwtProvider.isTokenValid(refreshToken)) {
+        if (jwtProvider.isTokenValid(refreshToken, TokenType.REFRESH)) {
             val userId = jwtProvider.getUserIdFromToken(refreshToken)
             redisTemplate.delete("refresh-token:$userId")
         }

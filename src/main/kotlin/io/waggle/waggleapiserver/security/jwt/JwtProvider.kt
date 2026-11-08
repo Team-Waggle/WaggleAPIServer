@@ -23,21 +23,19 @@ class JwtProvider(
     fun generateAccessToken(
         userId: UUID,
         role: UserRole,
-    ): String = generateToken(userId, role, accessTokenTtl)
+    ): String = generateToken(userId, role, TokenType.ACCESS, accessTokenTtl)
 
     fun generateRefreshToken(
         userId: UUID,
         role: UserRole,
-    ): String = generateToken(userId, role, refreshTokenTtl)
+    ): String = generateToken(userId, role, TokenType.REFRESH, refreshTokenTtl)
 
-    fun isTokenValid(token: String): Boolean =
+    fun isTokenValid(
+        token: String,
+        type: TokenType,
+    ): Boolean =
         try {
-            Jwts
-                .parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-            true
+            getClaimsFromToken(token)[TYPE_CLAIM] == type.claimValue
         } catch (e: ExpiredJwtException) {
             logger.debug("Expired JWT token")
             false
@@ -59,6 +57,7 @@ class JwtProvider(
     private fun generateToken(
         userId: UUID,
         role: UserRole,
+        type: TokenType,
         ttl: Long,
     ): String {
         val now = Date()
@@ -68,6 +67,7 @@ class JwtProvider(
             .builder()
             .subject(userId.toString())
             .claim("role", role.name)
+            .claim(TYPE_CLAIM, type.claimValue)
             .issuedAt(now)
             .expiration(expiration)
             .signWith(key)
@@ -81,4 +81,8 @@ class JwtProvider(
             .build()
             .parseSignedClaims(token)
             .payload
+
+    companion object {
+        private const val TYPE_CLAIM = "typ"
+    }
 }

@@ -18,7 +18,7 @@ class JwtProviderTest {
     fun `정상 토큰은 유효함`() {
         val token = jwtProvider.generateAccessToken(UUID.randomUUID(), UserRole.USER)
 
-        assertThat(jwtProvider.isTokenValid(token)).isTrue()
+        assertThat(jwtProvider.isTokenValid(token, TokenType.ACCESS)).isTrue()
     }
 
     @Test
@@ -26,7 +26,7 @@ class JwtProviderTest {
         val forgedToken =
             JwtProvider(OTHER_SECRET, TTL, TTL).generateRefreshToken(UUID.randomUUID(), UserRole.USER)
 
-        assertThat(jwtProvider.isTokenValid(forgedToken)).isFalse()
+        assertThat(jwtProvider.isTokenValid(forgedToken, TokenType.REFRESH)).isFalse()
     }
 
     @Test
@@ -34,16 +34,26 @@ class JwtProviderTest {
         val expiredToken =
             JwtProvider(SECRET, -1_000L, -1_000L).generateAccessToken(UUID.randomUUID(), UserRole.USER)
 
-        assertThat(jwtProvider.isTokenValid(expiredToken)).isFalse()
+        assertThat(jwtProvider.isTokenValid(expiredToken, TokenType.ACCESS)).isFalse()
     }
 
     @Test
     fun `형식이 깨진 토큰은 무효 처리함`() {
-        assertThat(jwtProvider.isTokenValid("not.a.jwt")).isFalse()
+        assertThat(jwtProvider.isTokenValid("not.a.jwt", TokenType.ACCESS)).isFalse()
     }
 
     @Test
     fun `빈 토큰은 무효 처리함`() {
-        assertThat(jwtProvider.isTokenValid("")).isFalse()
+        assertThat(jwtProvider.isTokenValid("", TokenType.ACCESS)).isFalse()
+    }
+
+    @Test
+    fun `리프레시 토큰은 액세스 토큰으로, 액세스 토큰은 리프레시 토큰으로 인정하지 않음`() {
+        val accessToken = jwtProvider.generateAccessToken(UUID.randomUUID(), UserRole.USER)
+        val refreshToken = jwtProvider.generateRefreshToken(UUID.randomUUID(), UserRole.USER)
+
+        assertThat(jwtProvider.isTokenValid(refreshToken, TokenType.ACCESS)).isFalse()
+        assertThat(jwtProvider.isTokenValid(accessToken, TokenType.REFRESH)).isFalse()
+        assertThat(jwtProvider.isTokenValid(refreshToken, TokenType.REFRESH)).isTrue()
     }
 }
