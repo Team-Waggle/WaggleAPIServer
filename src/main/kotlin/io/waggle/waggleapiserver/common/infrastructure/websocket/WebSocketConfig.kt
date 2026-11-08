@@ -15,6 +15,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 class WebSocketConfig(
     private val webSocketAuthHandshakeInterceptor: WebSocketAuthHandshakeInterceptor,
     private val webSocketAuthHandshakeHandler: WebSocketAuthHandshakeHandler,
+    private val stompDestinationInterceptor: StompDestinationInterceptor,
     private val stompRateLimitInterceptor: StompRateLimitInterceptor,
     @Value("\${app.cors.allowed-origins}") private val allowedOrigins: List<String>,
 ) : WebSocketMessageBrokerConfigurer {
@@ -26,7 +27,7 @@ class WebSocketConfig(
         }
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
-        // REST CORS 와 목록이 갈리면 REST 는 되는데 메시지만 403 으로 끊김
+        // REST CORS와 목록이 갈리면 REST는 되는데 메시지만 403으로 끊김
         val originPatterns = allowedOrigins.toTypedArray()
 
         // 순수 WebSocket 엔드포인트
@@ -55,7 +56,8 @@ class WebSocketConfig(
     }
 
     override fun configureClientInboundChannel(registration: ChannelRegistration) {
-        registration.interceptors(stompRateLimitInterceptor)
+        // 목적지 검사가 먼저여야 버려질 프레임이 레이트 리밋 토큰을 쓰지 않음
+        registration.interceptors(stompDestinationInterceptor, stompRateLimitInterceptor)
     }
 
     companion object {
