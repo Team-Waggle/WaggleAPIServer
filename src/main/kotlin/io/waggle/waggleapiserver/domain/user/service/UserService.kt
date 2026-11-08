@@ -2,7 +2,9 @@ package io.waggle.waggleapiserver.domain.user.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.storage.ImageDirectory
 import io.waggle.waggleapiserver.common.storage.StorageClient
+import io.waggle.waggleapiserver.common.storage.checkImageOwnership
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
@@ -55,6 +57,12 @@ class UserService(
         if (userRepository.existsByUsername(username)) {
             throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "$username exists already")
         }
+        storageClient.checkImageOwnership(
+            profileImageUrl,
+            user.profileImageUrl,
+            ImageDirectory.USER_PROFILE,
+            user.id,
+        )
 
         user.setupProfile(
             username = username,
@@ -69,9 +77,12 @@ class UserService(
         return UserDetailResponse.from(savedUser)
     }
 
-    fun generateProfileImagePresignedUrl(request: PresignedUrlRequest): PresignedUrlResponse {
+    fun generateProfileImagePresignedUrl(
+        request: PresignedUrlRequest,
+        user: User,
+    ): PresignedUrlResponse {
         val presignedUploadUrl =
-            storageClient.generateUploadUrl("users", request.contentType)
+            storageClient.generateUploadUrl(ImageDirectory.USER_PROFILE, user.id, request.contentType)
         return PresignedUrlResponse.from(presignedUploadUrl)
     }
 
@@ -153,6 +164,12 @@ class UserService(
     ): UserDetailResponse {
         val (position, bio, profileImageUrl, skills, portfolioUrls) = request
 
+        storageClient.checkImageOwnership(
+            profileImageUrl,
+            user.profileImageUrl,
+            ImageDirectory.USER_PROFILE,
+            user.id,
+        )
         user.profileImageUrl?.takeIf { it != profileImageUrl }?.let {
             eventPublisher.publishEvent(ImageDeleteEvent(it))
         }

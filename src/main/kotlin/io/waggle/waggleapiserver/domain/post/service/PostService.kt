@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.storage.ImageDirectory
 import io.waggle.waggleapiserver.common.storage.StorageClient
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
@@ -117,10 +118,14 @@ class PostService(
         )
     }
 
-    fun generateContentImagePresignedUrl(request: PresignedUrlRequest): PresignedUrlResponse {
+    fun generateContentImagePresignedUrl(
+        request: PresignedUrlRequest,
+        user: User,
+    ): PresignedUrlResponse {
         val presignedUploadUrl =
             storageClient.generateUploadUrl(
-                "posts",
+                ImageDirectory.POST_CONTENT,
+                user.id,
                 request.contentType,
             )
         return PresignedUrlResponse.from(presignedUploadUrl)

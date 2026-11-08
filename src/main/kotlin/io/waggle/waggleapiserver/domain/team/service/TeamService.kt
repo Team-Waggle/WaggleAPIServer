@@ -2,7 +2,9 @@ package io.waggle.waggleapiserver.domain.team.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
+import io.waggle.waggleapiserver.common.storage.ImageDirectory
 import io.waggle.waggleapiserver.common.storage.StorageClient
+import io.waggle.waggleapiserver.common.storage.checkImageOwnership
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
@@ -41,6 +43,13 @@ class TeamService(
     ): TeamResponse {
         val (name, description, workMode, profileImageUrl) = request
 
+        storageClient.checkImageOwnership(
+            profileImageUrl,
+            currentImageUrl = null,
+            ImageDirectory.TEAM_PROFILE,
+            user.id,
+        )
+
         val team =
             Team(
                 name = name,
@@ -68,10 +77,15 @@ class TeamService(
         return TeamResponse.of(savedTeam, memberCount, member.role)
     }
 
-    fun generateProfileImagePresignedUrl(request: PresignedUrlRequest): PresignedUrlResponse {
+    // 팀 생성 전에 올리므로 팀 ID 대신 올린 사용자 ID로 묶음
+    fun generateProfileImagePresignedUrl(
+        request: PresignedUrlRequest,
+        user: User,
+    ): PresignedUrlResponse {
         val presignedUploadUrl =
             storageClient.generateUploadUrl(
-                "teams",
+                ImageDirectory.TEAM_PROFILE,
+                user.id,
                 request.contentType,
             )
         return PresignedUrlResponse.from(presignedUploadUrl)
@@ -156,6 +170,12 @@ class TeamService(
         if (name != team.name) {
             member.checkMemberRole(MemberRole.LEADER)
         }
+        storageClient.checkImageOwnership(
+            profileImageUrl,
+            team.profileImageUrl,
+            ImageDirectory.TEAM_PROFILE,
+            user.id,
+        )
 
         team.profileImageUrl?.takeIf { it != profileImageUrl }?.let {
             eventPublisher.publishEvent(ImageDeleteEvent(it))
