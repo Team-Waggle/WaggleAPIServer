@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.common.storage.ImageDirectory
 import io.waggle.waggleapiserver.common.storage.StorageClient
+import io.waggle.waggleapiserver.common.storage.checkImageOwnership
 import io.waggle.waggleapiserver.common.storage.dto.request.PresignedUrlRequest
 import io.waggle.waggleapiserver.common.storage.dto.response.PresignedUrlResponse
 import io.waggle.waggleapiserver.common.storage.event.ImageDeleteEvent
@@ -41,6 +42,13 @@ class TeamService(
         user: User,
     ): TeamResponse {
         val (name, description, workMode, profileImageUrl) = request
+
+        storageClient.checkImageOwnership(
+            profileImageUrl,
+            currentImageUrl = null,
+            ImageDirectory.TEAM_PROFILE,
+            user.id,
+        )
 
         val team =
             Team(
@@ -162,6 +170,12 @@ class TeamService(
         if (name != team.name) {
             member.checkMemberRole(MemberRole.LEADER)
         }
+        storageClient.checkImageOwnership(
+            profileImageUrl,
+            team.profileImageUrl,
+            ImageDirectory.TEAM_PROFILE,
+            user.id,
+        )
 
         team.profileImageUrl?.takeIf { it != profileImageUrl }?.let {
             eventPublisher.publishEvent(ImageDeleteEvent(it))
