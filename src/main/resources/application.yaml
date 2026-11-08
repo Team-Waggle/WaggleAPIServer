@@ -67,6 +67,19 @@ spring:
     timeout-per-shutdown-phase: 30s
 
   task:
+    execution:
+      thread-name-prefix: async-
+      pool:
+        # 알림 저장, 이미지 삭제, Discord 전송 모두 I/O 대기라 2 vCPU에서도 4개면 충분
+        # 큐가 찬 뒤에만 max까지 늘어나며 DB 커넥션 풀(20)을 HTTP 요청에 남겨 두려고 8로 제한
+        core-size: 4
+        max-size: 8
+        # 팀 완료 시 전 멤버 알림처럼 몰리는 작업을 흡수할 버퍼
+        # 넘치면 CallerRunsPolicy로 호출 스레드가 직접 실행함
+        queue-capacity: 500
+      shutdown:
+        await-termination: true
+        await-termination-period: 10s
     scheduling:
       shutdown:
         # 조회수 flush는 Redis에서 증분을 지운 뒤 DB에 반영하므로 중간에 잘리면 복구 불가
