@@ -28,6 +28,7 @@ import io.waggle.waggleapiserver.domain.team.repository.TeamRepository
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.repository.UserRepository
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -100,7 +101,13 @@ class ApplicationService(
                 detail = detail,
             )
         application.portfolioUrls.addAll(portfolioUrls)
-        val savedApplication = applicationRepository.save(application)
+        // 동시에 들어온 다른 포지션 지원은 위 존재 검사를 함께 통과하고 uk_applications_post_active_user에서만 걸림
+        val savedApplication =
+            try {
+                applicationRepository.save(application)
+            } catch (e: DataIntegrityViolationException) {
+                throw BusinessException(ErrorCode.DUPLICATE_RESOURCE, "Already applied to post: $postId")
+            }
 
         eventPublisher.publishEvent(
             ApplicationReceivedEvent(
@@ -321,7 +328,7 @@ class ApplicationService(
         val (detail, portfolioUrls) = request
 
         val application =
-            applicationRepository.findByIdAndUserId(applicationId, user.id)
+            applicationRepository.findForUpdateByIdAndUserId(applicationId, user.id)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Application not found: $applicationId",
@@ -338,7 +345,7 @@ class ApplicationService(
         user: User,
     ) {
         val application =
-            applicationRepository.findByIdAndUserId(applicationId, user.id)
+            applicationRepository.findForUpdateByIdAndUserId(applicationId, user.id)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Application not found: $applicationId",
@@ -360,7 +367,7 @@ class ApplicationService(
         user: User,
     ) {
         val application =
-            applicationRepository.findByIdOrNull(applicationId)
+            applicationRepository.findForUpdateById(applicationId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Application not found: $applicationId",
@@ -437,7 +444,7 @@ class ApplicationService(
         user: User,
     ) {
         val application =
-            applicationRepository.findByIdOrNull(applicationId)
+            applicationRepository.findForUpdateById(applicationId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Application not found: $applicationId",

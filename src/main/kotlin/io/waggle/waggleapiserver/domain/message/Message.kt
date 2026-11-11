@@ -20,6 +20,8 @@ import java.util.UUID
         Index(name = "idx_messages_sender_receiver", columnList = "sender_id, receiver_id"),
         Index(name = "idx_messages_receiver_sender", columnList = "receiver_id, sender_id"),
         Index(name = "idx_messages_receiver_read", columnList = "receiver_id, read_at"),
+        // FULLTEXT 인덱스 ft_messages_content(content, ngram)는 JPA로 표현할 수 없어 V3 마이그레이션에만 있음
+        // 메시지 검색의 MATCH ... AGAINST가 이 인덱스를 씀
     ],
 )
 class Message(

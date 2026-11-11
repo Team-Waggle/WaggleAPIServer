@@ -16,6 +16,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.SQLRestriction
@@ -32,6 +33,9 @@ import java.util.UUID
         Index(name = "idx_applications_team_priority_id", columnList = "team_id, status_priority, id DESC"),
         Index(name = "idx_applications_post_priority_id", columnList = "post_id, status_priority, id DESC"),
         Index(name = "idx_applications_post_user", columnList = "post_id, user_id"),
+    ],
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_applications_post_active_user", columnNames = ["post_id", "active_user_id"]),
     ],
 )
 class Application(
@@ -54,6 +58,11 @@ class Application(
 ) : AuditingEntity() {
     @Column(name = "status_priority", insertable = false, updatable = false, columnDefinition = "TINYINT")
     val statusPriority: Int = 0
+
+    // 삭제된 행은 NULL이 되는 생성 컬럼
+    // 코드에서 읽는 곳은 없고 uk_applications_post_active_user가 취소 후 재지원을 막지 않게 하는 용도
+    @Column(name = "active_user_id", insertable = false, updatable = false, columnDefinition = "BINARY(16)")
+    val activeUserId: UUID? = null
 
     @ElementCollection
     @CollectionTable(name = "application_portfolio_urls", joinColumns = [JoinColumn(name = "application_id")])
