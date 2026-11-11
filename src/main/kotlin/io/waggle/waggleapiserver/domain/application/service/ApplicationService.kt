@@ -321,7 +321,7 @@ class ApplicationService(
         val (detail, portfolioUrls) = request
 
         val application =
-            applicationRepository.findByIdAndUserId(applicationId, user.id)
+            applicationRepository.findForUpdateByIdAndUserId(applicationId, user.id)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Application not found: $applicationId",
@@ -338,7 +338,7 @@ class ApplicationService(
         user: User,
     ) {
         val application =
-            applicationRepository.findByIdAndUserId(applicationId, user.id)
+            applicationRepository.findForUpdateByIdAndUserId(applicationId, user.id)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Application not found: $applicationId",
@@ -360,7 +360,7 @@ class ApplicationService(
         user: User,
     ) {
         val application =
-            applicationRepository.findByIdOrNull(applicationId)
+            applicationRepository.findForUpdateById(applicationId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Application not found: $applicationId",
@@ -437,7 +437,7 @@ class ApplicationService(
         user: User,
     ) {
         val application =
-            applicationRepository.findByIdOrNull(applicationId)
+            applicationRepository.findForUpdateById(applicationId)
                 ?: throw BusinessException(
                     ErrorCode.ENTITY_NOT_FOUND,
                     "Application not found: $applicationId",

@@ -3,8 +3,10 @@ package io.waggle.waggleapiserver.domain.application.repository
 import io.waggle.waggleapiserver.domain.application.Application
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
 import io.waggle.waggleapiserver.domain.user.enums.Position
+import jakarta.persistence.LockModeType
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import java.time.Instant
@@ -26,7 +28,11 @@ interface ApplicationRepository : JpaRepository<Application, Long> {
         userId: UUID,
     ): Application?
 
-    fun findByIdAndUserId(
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    fun findForUpdateById(id: Long): Application?
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    fun findForUpdateByIdAndUserId(
         id: Long,
         userId: UUID,
     ): Application?
