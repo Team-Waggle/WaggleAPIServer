@@ -3,7 +3,10 @@ package io.waggle.waggleapiserver.domain.application.service
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
+import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreateRequest
 import io.waggle.waggleapiserver.domain.member.MemberRole
+import io.waggle.waggleapiserver.domain.recruitment.Recruitment
+import io.waggle.waggleapiserver.domain.user.enums.Position
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -121,5 +124,71 @@ class ApplicationServiceTest : CascadeIntegrationTestSupport() {
                 team.id,
             ),
         ).isZero()
+    }
+
+    @Test
+    fun `같은 모집글에 다른 포지션으로 동시에 지원하면 먼저 커밋된 한 건만 남는다`() {
+        val leader = createUser("leader")
+        val applicant = createUser("applicant")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        createRecruitment(post.id)
+        recruitmentRepository.save(Recruitment(position = Position.FRONTEND, count = 1, postId = post.id))
+        val inserted = CountDownLatch(1)
+        val release = CountDownLatch(1)
+
+        val backendApplication =
+            executor.submit {
+                transactionTemplate.executeWithoutResult {
+                    createApplication(team.id, post.id, applicant.id)
+                    inserted.countDown()
+                    release.await(10, TimeUnit.SECONDS)
+                }
+            }
+        assertThat(inserted.await(10, TimeUnit.SECONDS)).isTrue()
+
+        val frontendApplication =
+            executor.submit {
+                applicationService.applyToTeam(
+                    team.id,
+                    ApplicationCreateRequest(postId = post.id, position = Position.FRONTEND),
+                    applicant,
+                )
+            }
+
+        // 유니크 인덱스가 없으면 커밋 전 지원이 보이지 않아 기다리지 않고 중복 지원이 들어감
+        assertThatThrownBy { frontendApplication.get(500, TimeUnit.MILLISECONDS) }
+            .isInstanceOf(TimeoutException::class.java)
+
+        release.countDown()
+        backendApplication.get(10, TimeUnit.SECONDS)
+
+        assertThatThrownBy { frontendApplication.get(10, TimeUnit.SECONDS) }
+            .isInstanceOf(ExecutionException::class.java)
+            .cause()
+            .isInstanceOf(BusinessException::class.java)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.DUPLICATE_RESOURCE)
+        assertThat(count("SELECT COUNT(*) FROM applications WHERE post_id = ?", post.id)).isEqualTo(1L)
+    }
+
+    @Test
+    fun `지원을 취소한 모집글에는 다시 지원할 수 있다`() {
+        val leader = createUser("leader")
+        val applicant = createUser("applicant")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        createRecruitment(post.id)
+        val request = ApplicationCreateRequest(postId = post.id, position = Position.BACKEND)
+
+        val first = applicationService.applyToTeam(team.id, request, applicant)
+        applicationService.deleteApplication(first.id, applicant)
+        applicationService.applyToTeam(team.id, request, applicant)
+
+        assertThat(count("SELECT COUNT(*) FROM applications WHERE post_id = ? AND deleted_at IS NULL", post.id))
+            .isEqualTo(1L)
+        assertThat(count("SELECT COUNT(*) FROM applications WHERE post_id = ?", post.id)).isEqualTo(2L)
     }
 }
