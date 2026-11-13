@@ -60,9 +60,7 @@ class CustomOAuth2UserService(
                     )
                 if (deletedUser != null) {
                     deletedUser.reactivate()
-                    followRepository.updateDeletedAtNullByFollowerIdOrFolloweeIdAndDeletedAtIsNotNull(
-                        deletedUser.id,
-                    )
+                    followRepository.updateDeletedAtNullByUserIdAndPartnerActive(deletedUser.id)
                     userRepository.save(deletedUser)
                 } else {
                     if (userRepository.existsByEmail(email)) {

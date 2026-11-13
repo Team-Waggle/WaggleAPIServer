@@ -12,9 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * soft delete된 행을 되살리는 경로가 @SQLRestriction 아래에서도 동작하는지 확인.
+ * soft delete된 행을 되살리는 경로가 @SQLRestriction 아래에서도 동작하는지 확인
  * 복원은 native로 행을 찾은 뒤 deletedAt을 null로 되돌리는 구조라,
- * restriction이 그 경로를 막으면 재가입·재팔로우가 조용히 깨진다.
+ * restriction이 그 경로를 막으면 재가입과 재팔로우가 조용히 깨짐
  */
 class ReactivationRegressionTest : CascadeIntegrationTestSupport() {
     @Autowired
@@ -30,7 +30,8 @@ class ReactivationRegressionTest : CascadeIntegrationTestSupport() {
         val request = FollowToggleRequest(followee.id)
 
         followService.toggleFollow(request, follower)
-        // 언팔로우는 hard delete라 이 경로가 아님. 탈퇴 cascade가 만드는 상태를 재현.
+        // 언팔로우는 hard delete라 이 경로가 아님
+        // 탈퇴 cascade가 만드는 상태를 재현
         jdbcTemplate.update(
             "UPDATE follows SET deleted_at = UTC_TIMESTAMP(6) WHERE follower_id = UUID_TO_BIN(?)",
             follower.id.toString(),
@@ -77,7 +78,7 @@ class ReactivationRegressionTest : CascadeIntegrationTestSupport() {
         val deleted = userRepository.findByProviderAndProviderIdAndDeletedAtIsNotNull("google", "rejoiner")
         assertThat(deleted).isNotNull()
         deleted!!.reactivate()
-        followRepository.updateDeletedAtNullByFollowerIdOrFolloweeIdAndDeletedAtIsNotNull(deleted.id)
+        followRepository.updateDeletedAtNullByUserIdAndPartnerActive(deleted.id)
         userRepository.save(deleted)
 
         assertThat(userRepository.findById(user.id).orElse(null)).isNotNull()
