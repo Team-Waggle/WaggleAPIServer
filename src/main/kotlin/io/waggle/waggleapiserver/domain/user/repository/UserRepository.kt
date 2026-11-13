@@ -12,6 +12,8 @@ interface UserRepository : JpaRepository<User, UUID> {
 
     fun existsByIdAndDeletedAtIsNull(id: UUID): Boolean
 
+    fun existsByIdAndUsernameIsNotNullAndPositionIsNotNull(id: UUID): Boolean
+
     fun findByProviderAndProviderId(
         provider: String,
         providerId: String,

@@ -40,6 +40,7 @@ class FollowService(
             followRepository.findByFollowerIdAndFolloweeIdIncludingDeleted(followerId, followeeId)
         return when {
             existingFollow == null -> {
+                checkFollowable(followeeId)
                 followRepository.save(
                     Follow(
                         followerId = followerId,
@@ -55,49 +56,30 @@ class FollowService(
             }
 
             else -> {
+                checkFollowable(followeeId)
                 existingFollow.reactivate()
                 FollowToggleResponse(following = true)
             }
         }
     }
 
-    fun getUserFollowees(userId: UUID): List<UserSimpleResponse> {
-        val follows = followRepository.findByFollowerId(userId)
+    fun getUserFollowees(userId: UUID): List<UserSimpleResponse> =
+        followRepository.findFolloweesWithCompleteProfile(userId).map { UserSimpleResponse.from(it) }
 
-        val followeeIds = follows.map { it.followeeId }
-        val userById = userRepository.findAllById(followeeIds).associateBy { it.id }
-
-        return follows.map { follow ->
-            val user =
-                userById[follow.followeeId]
-                    ?: throw BusinessException(
-                        ErrorCode.ENTITY_NOT_FOUND,
-                        "User not found: ${follow.followerId}",
-                    )
-            UserSimpleResponse.from(user)
-        }
-    }
-
-    fun getUserFollowers(userId: UUID): List<UserSimpleResponse> {
-        val follows = followRepository.findByFolloweeId(userId)
-
-        val followerIds = follows.map { it.followerId }
-        val userById = userRepository.findAllById(followerIds).associateBy { it.id }
-
-        return follows.map { follow ->
-            val user =
-                userById[follow.followerId]
-                    ?: throw BusinessException(
-                        ErrorCode.ENTITY_NOT_FOUND,
-                        "User not found: ${follow.followeeId}",
-                    )
-            UserSimpleResponse.from(user)
-        }
-    }
+    fun getUserFollowers(userId: UUID): List<UserSimpleResponse> =
+        followRepository.findFollowersWithCompleteProfile(userId).map { UserSimpleResponse.from(it) }
 
     fun getUserFollowCounts(userId: UUID): FollowCountsResponse =
         FollowCountsResponse(
-            followed = followRepository.countByFolloweeId(userId).toInt(),
-            following = followRepository.countByFollowerId(userId).toInt(),
+            followed = followRepository.countFollowersWithCompleteProfile(userId).toInt(),
+            following = followRepository.countFolloweesWithCompleteProfile(userId).toInt(),
         )
+
+    // 프로필이 없는 사용자를 팔로우하면 상대의 팔로잉 목록에서 응답을 만들 수 없음
+    // 언팔로우는 막지 않음
+    private fun checkFollowable(followeeId: UUID) {
+        if (!userRepository.existsByIdAndUsernameIsNotNullAndPositionIsNotNull(followeeId)) {
+            throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "User not found: $followeeId")
+        }
+    }
 }
