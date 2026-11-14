@@ -26,8 +26,4 @@ class Follow(
     val followerId: UUID,
     @Column(name = "followee_id", nullable = false)
     val followeeId: UUID,
-) : AuditingEntity() {
-    fun reactivate() {
-        this.deletedAt = null
-    }
-}
+) : AuditingEntity()
