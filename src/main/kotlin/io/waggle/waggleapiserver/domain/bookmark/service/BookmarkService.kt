@@ -2,12 +2,8 @@ package io.waggle.waggleapiserver.domain.bookmark.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
-import io.waggle.waggleapiserver.domain.bookmark.Bookmark
-import io.waggle.waggleapiserver.domain.bookmark.BookmarkId
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
-import io.waggle.waggleapiserver.domain.bookmark.dto.request.BookmarkToggleRequest
 import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkResponse
-import io.waggle.waggleapiserver.domain.bookmark.dto.response.BookmarkToggleResponse
 import io.waggle.waggleapiserver.domain.bookmark.repository.BookmarkRepository
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.post.dto.response.BookmarkedPostResponse
@@ -33,27 +29,23 @@ class BookmarkService(
     private val userRepository: UserRepository,
 ) {
     @Transactional
-    fun toggleBookmark(
-        request: BookmarkToggleRequest,
+    fun bookmark(
+        type: BookmarkType,
+        targetId: Long,
         user: User,
-    ): BookmarkToggleResponse {
-        val (targetId, type) = request
+    ): Boolean {
+        checkBookmarkableTarget(type, targetId)
+        return bookmarkRepository.insertIfAbsent(type, targetId, user.id) == 1
+    }
 
-        val bookmarkId =
-            BookmarkId(
-                userId = user.id,
-                targetId = targetId,
-                type = type,
-            )
-        return if (bookmarkRepository.existsById(bookmarkId)) {
-            bookmarkRepository.deleteById(bookmarkId)
-            BookmarkToggleResponse(bookmarked = false)
-        } else {
-            checkBookmarkableTarget(type, targetId)
-            val bookmark = Bookmark(bookmarkId)
-            bookmarkRepository.save(bookmark)
-            BookmarkToggleResponse(bookmarked = true)
-        }
+    @Transactional
+    fun unbookmark(
+        type: BookmarkType,
+        targetId: Long,
+        user: User,
+    ) {
+        checkBookmarkableTarget(type, targetId)
+        bookmarkRepository.deleteIfPresent(type, targetId, user.id)
     }
 
     fun getUserBookmarkables(

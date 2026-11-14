@@ -1,6 +1,7 @@
 package io.waggle.waggleapiserver.domain.follow.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.waggle.waggleapiserver.common.infrastructure.persistence.CurrentUser
@@ -8,9 +9,14 @@ import io.waggle.waggleapiserver.domain.follow.dto.response.FollowCountsResponse
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.dto.response.UserSimpleResponse
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
@@ -38,4 +44,28 @@ class UserFollowController(
     fun getMyFollowers(
         @CurrentUser user: User,
     ): List<UserSimpleResponse> = followService.getUserFollowers(user.id)
+
+    @Operation(
+        summary = "사용자 팔로우",
+        responses = [
+            ApiResponse(responseCode = "201", description = "팔로우 생성"),
+            ApiResponse(responseCode = "204", description = "이미 팔로우한 상태"),
+        ],
+    )
+    @PutMapping("/{userId}/follow")
+    fun followUser(
+        @PathVariable userId: UUID,
+        @CurrentUser user: User,
+    ): ResponseEntity<Unit> {
+        val created = followService.follow(userId, user)
+        return ResponseEntity.status(if (created) HttpStatus.CREATED else HttpStatus.NO_CONTENT).build()
+    }
+
+    @Operation(summary = "사용자 언팔로우")
+    @DeleteMapping("/{userId}/follow")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun unfollowUser(
+        @PathVariable userId: UUID,
+        @CurrentUser user: User,
+    ) = followService.unfollow(userId, user)
 }

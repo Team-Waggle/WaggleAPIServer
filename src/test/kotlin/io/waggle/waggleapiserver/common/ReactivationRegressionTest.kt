@@ -2,7 +2,6 @@ package io.waggle.waggleapiserver.common
 
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
 import io.waggle.waggleapiserver.domain.application.service.ApplicationService
-import io.waggle.waggleapiserver.domain.follow.dto.request.FollowToggleRequest
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
@@ -27,9 +26,8 @@ class ReactivationRegressionTest : CascadeIntegrationTestSupport() {
     fun `탈퇴 cascade로 지워진 팔로우를 다시 누르면 되살아난다`() {
         val follower = createUser("follower")
         val followee = createUser("followee")
-        val request = FollowToggleRequest(followee.id)
 
-        followService.toggleFollow(request, follower)
+        followService.follow(followee.id, follower)
         // 언팔로우는 hard delete라 이 경로가 아님
         // 탈퇴 cascade가 만드는 상태를 재현
         jdbcTemplate.update(
@@ -37,7 +35,7 @@ class ReactivationRegressionTest : CascadeIntegrationTestSupport() {
             follower.id.toString(),
         )
 
-        assertThat(followService.toggleFollow(request, follower).following).isTrue()
+        assertThat(followService.follow(followee.id, follower)).isTrue()
         assertThat(
             count(
                 "SELECT COUNT(*) FROM follows WHERE follower_id = UUID_TO_BIN(?) AND deleted_at IS NULL",

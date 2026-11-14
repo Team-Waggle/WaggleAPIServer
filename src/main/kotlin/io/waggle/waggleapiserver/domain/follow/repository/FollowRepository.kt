@@ -28,15 +28,15 @@ interface FollowRepository : JpaRepository<Follow, Long> {
 
     @Query(
         """
-        SELECT * FROM follows
-        WHERE follower_id = :followerId AND followee_id = :followeeId
+        SELECT COUNT(*) FROM follows
+        WHERE follower_id = :followerId AND followee_id = :followeeId AND deleted_at IS NOT NULL
         """,
         nativeQuery = true,
     )
-    fun findByFollowerIdAndFolloweeIdIncludingDeleted(
+    fun countByFollowerIdAndFolloweeIdAndDeletedAtIsNotNull(
         followerId: UUID,
         followeeId: UUID,
-    ): Follow?
+    ): Long
 
     @Query(
         """
@@ -56,10 +56,37 @@ interface FollowRepository : JpaRepository<Follow, Long> {
     )
     fun findFollowersWithCompleteProfile(followeeId: UUID): List<User>
 
+    // 동시 PUT이 확인 후 저장을 함께 통과하면 유니크 충돌로 500이 되므로 INSERT 하나로 판정
+    @Modifying
+    @Query(
+        """
+        INSERT IGNORE INTO follows (follower_id, followee_id, created_at, updated_at)
+        VALUES (:followerId, :followeeId, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+        """,
+        nativeQuery = true,
+    )
+    fun insertIfAbsent(
+        followerId: UUID,
+        followeeId: UUID,
+    ): Int
+
     fun deleteByFollowerIdAndFolloweeId(
         followerId: UUID,
         followeeId: UUID,
     )
+
+    @Modifying
+    @Query(
+        """
+        UPDATE follows SET deleted_at = NULL, updated_at = UTC_TIMESTAMP(6)
+        WHERE follower_id = :followerId AND followee_id = :followeeId AND deleted_at IS NOT NULL
+        """,
+        nativeQuery = true,
+    )
+    fun updateDeletedAtNullByFollowerIdAndFolloweeIdAndDeletedAtIsNotNull(
+        followerId: UUID,
+        followeeId: UUID,
+    ): Int
 
     @Modifying
     @Query(
