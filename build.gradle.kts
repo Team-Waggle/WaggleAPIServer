@@ -34,6 +34,11 @@ repositories {
     mavenCentral()
 }
 
+// Spring Boot 3.5.6이 고르는 1.21.3은 Docker API 1.32로 접속해, API 1.40 미만을 거부하는 최신 Docker Engine에서 컨테이너를 못 띄움
+// GitHub ubuntu-26.04 러너가 여기에 해당함
+// Spring Boot가 1.21.4 이상을 고르게 되면 이 줄 삭제
+extra["testcontainers.version"] = "1.21.4"
+
 val snippetsDir = file("build/generated-snippets")
 
 dependencies {
