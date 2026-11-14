@@ -165,7 +165,6 @@
 
 - **위치**: `GlobalExceptionHandler` (`DataIntegrityViolationException` 처리가 없어 `Exception` 처리로 떨어짐)
 - **문제**: 여러 곳이 "있는지 확인한 뒤 저장"하는 구조라, 동시 요청이 둘 다 확인을 통과하면 뒤의 요청이 DB 유니크 제약에 걸린다. 이 예외가 500, ERROR 로그, Discord 알림으로 이어진다.
-  - 북마크 토글, 팔로우 토글(더블클릭)
   - 프로필 설정의 username (`uk_users_username`)
   - 약관 동의 중복 제출, OAuth 콜백 중복 (`(user_id, term_id)`, `(provider, provider_id)`)
   - 팀원 리뷰(`uk_member_reviews_reviewer_reviewee_team`), 지원서 열람 기록(`application_reads (application_id, user_id)`), 같은 지원서 동시 승인(`members (user_id, team_id)`)
@@ -174,7 +173,7 @@
 - **확인**: 핸들러 부재, 유니크 제약, 확인 후 저장 구조는 코드 추적. 동시 요청 재현은 안 함
 - **권장 방향**
   - `DataIntegrityViolationException`을 409 `DUPLICATE_RESOURCE`로 매핑하는 핸들러를 두고, 응답과 알림에 SQL 메시지를 넣지 않는다
-  - 멱등해야 하는 곳(북마크, 팔로우, 약관 동의, 열람 기록)은 `INSERT IGNORE`나 `ON DUPLICATE KEY UPDATE`로 바꾼다. 열람 기록은 `ON DUPLICATE KEY UPDATE deleted_at = NULL`로 복원까지 겸한다
+  - 멱등해야 하는 곳(약관 동의, 열람 기록)은 `INSERT IGNORE`나 `ON DUPLICATE KEY UPDATE`로 바꾼다. 북마크, 팔로우, 좋아요는 이미 `INSERT IGNORE`로 처리한다(`insertIfAbsent`). 열람 기록은 `ON DUPLICATE KEY UPDATE deleted_at = NULL`로 복원까지 겸한다
   - username은 409로 "이미 사용 중"을 알린다
 - **프론트**: 불필요. 500이 409로 바뀌며, 웹은 에러를 공통으로 처리한다
 
