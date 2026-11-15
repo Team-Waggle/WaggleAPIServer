@@ -1,5 +1,5 @@
-# Base image - Java 21 JRE (런타임만 필요)
-FROM eclipse-temurin:21-jre-alpine
+# Base image - Java 25 JRE (런타임만 필요)
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 
