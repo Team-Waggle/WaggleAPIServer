@@ -1,13 +1,13 @@
 package io.waggle.waggleapiserver.domain.post.dto.request
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.exc.MismatchedInputException
 import java.time.LocalDate
 
 // @JsonTest는 앱 클래스의 @EnableJpaAuditing까지 끌어와 JPA 메타모델을 요구하므로 Jackson 자동설정만 올림

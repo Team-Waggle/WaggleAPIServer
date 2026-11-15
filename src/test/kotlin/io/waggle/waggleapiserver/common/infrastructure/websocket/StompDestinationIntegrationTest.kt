@@ -1,6 +1,5 @@
 package io.waggle.waggleapiserver.common.infrastructure.websocket
 
-import com.fasterxml.jackson.databind.JsonNode
 import io.waggle.waggleapiserver.domain.auth.service.AuthService
 import io.waggle.waggleapiserver.domain.user.User
 import io.waggle.waggleapiserver.domain.user.enums.Position
@@ -16,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.messaging.converter.MappingJackson2MessageConverter
+import org.springframework.messaging.converter.JacksonJsonMessageConverter
 import org.springframework.messaging.simp.stomp.StompFrameHandler
 import org.springframework.messaging.simp.stomp.StompHeaders
 import org.springframework.messaging.simp.stomp.StompSession
@@ -24,6 +23,7 @@ import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.web.socket.client.standard.StandardWebSocketClient
 import org.springframework.web.socket.messaging.WebSocketStompClient
+import tools.jackson.databind.JsonNode
 import java.lang.reflect.Type
 import java.util.UUID
 import java.util.concurrent.BlockingQueue
@@ -84,7 +84,7 @@ class StompDestinationIntegrationTest {
         attackerSession.send("/app/message/send", sendBody(victim.id, "REAL"))
 
         // 위조가 통과했다면 먼저 보냈으므로 먼저 도착함
-        assertThat(victimInbox.poll(5, TimeUnit.SECONDS)?.get("content")?.asText()).isEqualTo("REAL")
+        assertThat(victimInbox.poll(5, TimeUnit.SECONDS)?.get("content")?.asString()).isEqualTo("REAL")
         assertThat(victimInbox.poll(1, TimeUnit.SECONDS)).isNull()
     }
 
@@ -98,7 +98,7 @@ class StompDestinationIntegrationTest {
         senderSession.send("/app/message//send", sendBody(receiver.id, "DOUBLE_SLASH"))
         senderSession.send("/app/message/send", sendBody(receiver.id, "REAL"))
 
-        assertThat(receiverInbox.poll(5, TimeUnit.SECONDS)?.get("content")?.asText()).isEqualTo("REAL")
+        assertThat(receiverInbox.poll(5, TimeUnit.SECONDS)?.get("content")?.asString()).isEqualTo("REAL")
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM messages", Long::class.java)).isEqualTo(1L)
     }
 
@@ -113,8 +113,8 @@ class StompDestinationIntegrationTest {
 
         // inbound 채널이 프레임을 병렬로 처리해 도착 순서는 보장되지 않음
         val received = listOfNotNull(errors.poll(5, TimeUnit.SECONDS), errors.poll(5, TimeUnit.SECONDS))
-        assertThat(received.map { it.get("code").asText() }).containsOnly("INVALID_INPUT_VALUE").hasSize(2)
-        assertThat(received.map { it.get("detail").asText() })
+        assertThat(received.map { it.get("code").asString() }).containsOnly("INVALID_INPUT_VALUE").hasSize(2)
+        assertThat(received.map { it.get("detail").asString() })
             .anyMatch { it == "Cannot send a message to yourself" }
             .anyMatch { it.startsWith("content:") }
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM messages", Long::class.java)).isZero()
@@ -137,7 +137,7 @@ class StompDestinationIntegrationTest {
         val client =
             WebSocketStompClient(StandardWebSocketClient()).apply {
                 messageConverter =
-                    MappingJackson2MessageConverter()
+                    JacksonJsonMessageConverter()
             }
         val token = authService.issueWsToken(user.id).token
         return client

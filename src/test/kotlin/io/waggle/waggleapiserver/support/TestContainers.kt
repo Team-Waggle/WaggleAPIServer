@@ -1,7 +1,7 @@
 package io.waggle.waggleapiserver.support
 
 import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.MySQLContainer
+import org.testcontainers.mysql.MySQLContainer
 
 /**
  * 컨텍스트마다 컨테이너가 새로 뜨지 않도록 JVM 싱글턴으로 둠
@@ -10,7 +10,7 @@ import org.testcontainers.containers.MySQLContainer
  */
 object TestContainers {
     // docker-compose.yml(운영)과 같은 버전 유지
-    val mysql: MySQLContainer<*> =
+    val mysql: MySQLContainer =
         MySQLContainer("mysql:8.0.45").apply {
             withDatabaseName("waggle")
             withCommand("--ngram-token-size=2")

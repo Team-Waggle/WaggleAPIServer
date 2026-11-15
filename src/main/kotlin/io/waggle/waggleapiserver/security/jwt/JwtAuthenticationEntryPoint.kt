@@ -1,6 +1,5 @@
 package io.waggle.waggleapiserver.security.jwt
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.waggle.waggleapiserver.common.dto.response.ErrorResponse
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import jakarta.servlet.http.HttpServletRequest
@@ -9,6 +8,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.stereotype.Component
+import tools.jackson.databind.ObjectMapper
 
 @Component
 class JwtAuthenticationEntryPoint(

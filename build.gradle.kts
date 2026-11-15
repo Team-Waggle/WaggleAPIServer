@@ -1,9 +1,9 @@
 plugins {
-    kotlin("jvm") version "1.9.25"
-    kotlin("plugin.spring") version "1.9.25"
-    kotlin("plugin.jpa") version "1.9.25"
-    kotlin("kapt") version "1.9.25"
-    id("org.springframework.boot") version "3.5.6"
+    kotlin("jvm") version "2.3.21"
+    kotlin("plugin.spring") version "2.3.21"
+    kotlin("plugin.jpa") version "2.3.21"
+    kotlin("kapt") version "2.3.21"
+    id("org.springframework.boot") version "4.1.2"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.diffplug.spotless") version "8.11.0"
 }
@@ -33,11 +33,6 @@ repositories {
     mavenCentral()
 }
 
-// Spring Boot 3.5.6이 고르는 1.21.3은 Docker API 1.32로 접속해, API 1.40 미만을 거부하는 최신 Docker Engine에서 컨테이너를 못 띄움
-// GitHub ubuntu-26.04 러너가 여기에 해당함
-// Spring Boot가 1.21.4 이상을 고르게 되면 이 줄 삭제
-extra["testcontainers.version"] = "1.21.4"
-
 dependencies {
     // ID Generator
     implementation("com.github.f4b6a3:uuid-creator:5.3.7")
@@ -52,7 +47,7 @@ dependencies {
     implementation("software.amazon.awssdk:s3")
 
     // OpenAPI (Swagger)
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
 
     // QueryDSL (버전은 Spring Boot BOM 관리)
     implementation("com.querydsl:querydsl-jpa::jakarta")
@@ -65,18 +60,22 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-restclient")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
 
     // Kotlin
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("tools.jackson.module:jackson-module-kotlin")
+    // swagger-core는 Jackson 2로 스키마를 만들어, springdoc이 이 모듈을 감지해야 non-null 프로퍼티를 required로 표시함
+    // 빠지면 빌드와 테스트는 통과하고 API 문서에서만 required가 사라짐
+    runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // Database
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-mysql")
     runtimeOnly("com.mysql:mysql-connector-j")
 
@@ -84,18 +83,19 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     // Test
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:mysql")
-    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-mysql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
     }
 }
 

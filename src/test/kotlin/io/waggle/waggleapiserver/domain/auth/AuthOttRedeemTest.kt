@@ -1,6 +1,5 @@
 package io.waggle.waggleapiserver.domain.auth
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.domain.auth.dto.request.OttRedeemRequest
 import io.waggle.waggleapiserver.domain.auth.service.AuthService
@@ -17,6 +16,7 @@ import org.springframework.http.MediaType
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
 class AuthOttRedeemTest {
