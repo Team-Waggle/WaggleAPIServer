@@ -49,9 +49,10 @@ dependencies {
     // OpenAPI (Swagger)
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
 
-    // QueryDSL (버전은 Spring Boot BOM 관리)
-    implementation("com.querydsl:querydsl-jpa::jakarta")
-    kapt("com.querydsl:querydsl-apt::jakarta")
+    // QueryDSL
+    // 원본 com.querydsl은 유지보수가 멈춰 CVE-2024-49203이 고쳐지지 않아 OpenFeign 포크 사용
+    implementation("io.github.openfeign.querydsl:querydsl-jpa:7.7")
+    kapt("io.github.openfeign.querydsl:querydsl-apt:7.7:jpa")
 
     // Rate Limiting
     implementation("com.bucket4j:bucket4j-core:8.10.1")
