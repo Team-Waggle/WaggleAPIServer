@@ -387,7 +387,7 @@ class ApplicationService(
             )
 
         when {
-            existingMember == null ->
+            existingMember == null -> {
                 memberRepository.save(
                     Member(
                         userId = application.userId,
@@ -397,19 +397,22 @@ class ApplicationService(
                         admittedBy = user.id,
                     ),
                 )
+            }
 
-            existingMember.deletedAt != null ->
+            existingMember.deletedAt != null -> {
                 existingMember.reactivate(
                     position = application.position,
                     role = MemberRole.MEMBER,
                     admittedBy = user.id,
                 )
+            }
 
-            else ->
+            else -> {
                 throw BusinessException(
                     ErrorCode.DUPLICATE_RESOURCE,
                     "User is already a member of team: ${application.teamId}",
                 )
+            }
         }
 
         applicationReadRepository

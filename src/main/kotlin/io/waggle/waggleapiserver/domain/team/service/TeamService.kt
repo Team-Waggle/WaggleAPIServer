@@ -118,20 +118,24 @@ class TeamService(
         val activeMembers = memberRepository.findByTeamIdOrderByRoleAscIdAsc(teamId)
         val deletedMembers =
             when {
-                isTeamMember ->
+                isTeamMember -> {
                     memberRepository.findByTeamIdAndDeletedAtIsNotNullOrderByRoleAscIdAsc(
                         teamId,
                     )
+                }
 
-                user != null ->
+                user != null -> {
                     listOfNotNull(
                         memberRepository.findByUserIdAndTeamIdAndDeletedAtIsNotNull(
                             user.id,
                             teamId,
                         ),
                     )
+                }
 
-                else -> emptyList()
+                else -> {
+                    emptyList()
+                }
             }
         val members = activeMembers + deletedMembers
 
