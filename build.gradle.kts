@@ -35,15 +35,15 @@ repositories {
 
 dependencies {
     // ID Generator
-    implementation("com.github.f4b6a3:uuid-creator:5.3.7")
+    implementation("com.github.f4b6a3:uuid-creator:6.1.1")
 
     // JWT
-    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+    implementation("io.jsonwebtoken:jjwt-api:0.13.0")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
     // AWS S3
-    implementation(platform("software.amazon.awssdk:bom:2.29.51"))
+    implementation(platform("software.amazon.awssdk:bom:2.59.1"))
     implementation("software.amazon.awssdk:s3")
 
     // OpenAPI (Swagger)
@@ -55,7 +55,7 @@ dependencies {
     kapt("io.github.openfeign.querydsl:querydsl-apt:7.7:jpa")
 
     // Rate Limiting
-    implementation("com.bucket4j:bucket4j-core:8.10.1")
+    implementation("com.bucket4j:bucket4j_jdk17-core:8.22.0")
 
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-actuator")
