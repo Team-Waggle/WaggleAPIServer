@@ -5,7 +5,6 @@ plugins {
     kotlin("kapt") version "1.9.25"
     id("org.springframework.boot") version "3.5.6"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.asciidoctor.jvm.convert") version "3.3.2"
     id("com.diffplug.spotless") version "6.25.0"
 }
 
@@ -38,8 +37,6 @@ repositories {
 // GitHub ubuntu-26.04 러너가 여기에 해당함
 // Spring Boot가 1.21.4 이상을 고르게 되면 이 줄 삭제
 extra["testcontainers.version"] = "1.21.4"
-
-val snippetsDir = file("build/generated-snippets")
 
 dependencies {
     // ID Generator
@@ -89,7 +86,6 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:mysql")
@@ -110,11 +106,5 @@ allOpen {
 }
 
 tasks.withType<Test> {
-    outputs.dir(snippetsDir)
     useJUnitPlatform()
-}
-
-tasks.named<org.asciidoctor.gradle.jvm.AsciidoctorTask>("asciidoctor") {
-    inputs.dir(snippetsDir)
-    dependsOn(tasks.test)
 }
