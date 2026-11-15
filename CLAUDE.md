@@ -4,7 +4,7 @@
 
 ## 1. 스택 & 구조
 
-- Kotlin 1.9.25 / Spring Boot 3.5.6 / Java 21, Gradle Kotlin DSL
+- Kotlin 2.3.21 / Spring Boot 4.1.2 / Java 25, Gradle 9 Kotlin DSL
 - 주요 의존성: Spring Web · Data JPA · Data Redis · Security · OAuth2 · WebSocket · Validation, Flyway + MySQL, AWS S3, Bucket4j, springdoc-openapi, JJWT, uuid-creator
 - 패키지 루트: `io.waggle.waggleapiserver.{common, domain, security}`
 - 도메인 하위 구조 (예: `domain/team/`):
@@ -124,7 +124,7 @@
 
 ## 6. 코드 스타일
 
-- spotless + ktlint 1.3.1 적용. **Kotlin 파일 수정을 마무리할 때마다 `./gradlew spotlessApply` 실행할 것.**
+- spotless + ktlint 1.8.0 적용. **Kotlin 파일 수정을 마무리할 때마다 `./gradlew spotlessApply` 실행할 것.**
   - 컴파일 실패 상태에선 spotless도 실패하므로 컴파일 성공 후 실행.
   - 개별 Edit마다 돌리지 말고 작업(요청받은 기능/수정) 완료 시점에 한 번.
 - **주석은 코드가 말할 수 없는 것만 쓸 것.** 코드·이름·호출부·인접 문서가 이미 말하는 내용을 옮겨 적지 말 것. 남길 가치가 있는 것은 대체로 넷이다.

@@ -60,7 +60,7 @@
 | L24 | Spring MVC 예외 응답이 내부 클래스명을 노출하거나 원인을 버림 | 낮음 | 불필요 |
 | L26 | `Recruitment.status`의 `final`로 기동 시 Hibernate 경고 | 낮음 | 불필요 |
 | L27 | 테스트가 통합 테스트 위주이고 테스트가 없는 기능이 있음 | 낮음 | 불필요 |
-| L28 | 쓰이지 않는 코드, 설정, 의존성 | 낮음 | 불필요 |
+| L28 | 쓰이지 않는 코드와 설정 | 낮음 | 불필요 |
 | L29 | 조회수 반영 스케줄러가 15분마다 Redis 전체 키를 훑음 | 낮음 | 불필요 |
 | L30 | 팀을 나간 사람이 그 팀의 리뷰를 쓸 수 없음 | 낮음 | 확인 필요 |
 | I1 | DB 백업이 EBS 스냅샷뿐이고 복원을 시험한 적이 없음 | 낮음 (인프라) | 불필요 |
@@ -473,12 +473,12 @@
 - **권장 방향**: 도메인 규칙(엔티티 상태 전이, 계산 로직 등)은 단위 테스트로 빼고, 통합 테스트는 쿼리와 cascade 검증에 집중한다. 쓰기 API는 최소한 "실제로 DB가 바뀌는지"를 확인하는 통합 테스트를 하나씩 둔다.
 - **프론트**: 불필요
 
-### L28. 쓰이지 않는 코드, 설정, 의존성
+### L28. 쓰이지 않는 코드와 설정
 
 - **코드**: `memberreview/enums/ReviewQueryType`, `MemberReviewRepository`의 `MemberReviewCount` (사용처 없음)
-- **빌드**: asciidoctor 플러그인, `spring-restdocs-mockmvc`, snippetsDir 설정 (REST Docs 테스트와 `src/docs`가 없음)
 - **설정**
-  - `application-local.yaml`의 `org.hibernate.type.descriptor.sql.BasicBinder` 로그 설정은 Hibernate 6에서 쓰이지 않는다 (현재 이름은 `org.hibernate.orm.jdbc.bind`)
+  - `application-local.yaml`의 `org.hibernate.type.descriptor.sql.BasicBinder` 로그 설정은 Hibernate 6부터 쓰이지 않는다 (현재 이름은 `org.hibernate.orm.jdbc.bind`)
+  - `application-mysql-test.yaml`의 `hibernate.dialect` 지정은 Hibernate가 자동으로 고르는 값과 같아, 테스트 기동 시 지정할 필요가 없다는 경고(HHH90000025)가 난다
   - `application.yaml`의 `order_inserts`는 대부분의 엔티티 키가 IDENTITY라 INSERT 배치에 거의 적용되지 않는다. `User`(UUID 직접 할당)와 `Like`, `Bookmark`(`@EmbeddedId`)만 해당된다. `batch_size`는 `order_updates`와 함께 UPDATE 배치에도 쓰이므로 지우지 말 것
 - **권장 방향**: 지운다.
 - **프론트**: 불필요
