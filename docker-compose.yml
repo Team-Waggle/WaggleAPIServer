@@ -56,9 +56,11 @@ services:
 
   database:
     # TestContainers.kt와 같은 버전 유지
-    image: mysql:8.0.45
+    image: mysql:8.4.13
     container_name: waggle-db
-    command: --ngram-token-size=2
+    # innodb-log-buffer-size는 8.4에서 기본값이 64MB로 늘어 쓰기가 쌓이면 메모리를 최대 48MB 더 씀
+    # RAM 1.9GB 서버라 8.0 기본값인 16MB로 고정하며 지금 쓰기량에는 16MB로 충분함
+    command: --ngram-token-size=2 --innodb-log-buffer-size=16M
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
