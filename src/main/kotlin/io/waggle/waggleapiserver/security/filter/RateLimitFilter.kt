@@ -1,6 +1,5 @@
 package io.waggle.waggleapiserver.security.filter
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.bucket4j.Bandwidth
 import io.github.bucket4j.Bucket
 import io.waggle.waggleapiserver.common.dto.response.ErrorResponse
@@ -12,6 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 

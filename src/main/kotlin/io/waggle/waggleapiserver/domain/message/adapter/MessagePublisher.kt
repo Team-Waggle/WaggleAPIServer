@@ -1,11 +1,11 @@
 package io.waggle.waggleapiserver.domain.message.adapter
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
+import tools.jackson.databind.ObjectMapper
 
 @Component
 class MessagePublisher(

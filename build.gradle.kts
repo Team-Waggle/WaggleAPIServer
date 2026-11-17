@@ -1,21 +1,20 @@
 plugins {
-    kotlin("jvm") version "1.9.25"
-    kotlin("plugin.spring") version "1.9.25"
-    kotlin("plugin.jpa") version "1.9.25"
-    kotlin("kapt") version "1.9.25"
-    id("org.springframework.boot") version "3.5.6"
+    kotlin("jvm") version "2.3.21"
+    kotlin("plugin.spring") version "2.3.21"
+    kotlin("plugin.jpa") version "2.3.21"
+    kotlin("kapt") version "2.3.21"
+    id("org.springframework.boot") version "4.1.2"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.asciidoctor.jvm.convert") version "3.3.2"
-    id("com.diffplug.spotless") version "6.25.0"
+    id("com.diffplug.spotless") version "8.11.0"
 }
 
 spotless {
     kotlin {
-        ktlint("1.3.1")
+        ktlint("1.8.0")
         target("src/**/*.kt")
     }
     kotlinGradle {
-        ktlint("1.3.1")
+        ktlint("1.8.0")
         target("*.gradle.kts")
     }
 }
@@ -26,7 +25,7 @@ description = "WaggleAPIServer"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
@@ -34,52 +33,50 @@ repositories {
     mavenCentral()
 }
 
-// Spring Boot 3.5.6이 고르는 1.21.3은 Docker API 1.32로 접속해, API 1.40 미만을 거부하는 최신 Docker Engine에서 컨테이너를 못 띄움
-// GitHub ubuntu-26.04 러너가 여기에 해당함
-// Spring Boot가 1.21.4 이상을 고르게 되면 이 줄 삭제
-extra["testcontainers.version"] = "1.21.4"
-
-val snippetsDir = file("build/generated-snippets")
-
 dependencies {
     // ID Generator
-    implementation("com.github.f4b6a3:uuid-creator:5.3.7")
+    implementation("com.github.f4b6a3:uuid-creator:6.1.1")
 
     // JWT
-    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+    implementation("io.jsonwebtoken:jjwt-api:0.13.0")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
     // AWS S3
-    implementation(platform("software.amazon.awssdk:bom:2.29.51"))
+    implementation(platform("software.amazon.awssdk:bom:2.59.1"))
     implementation("software.amazon.awssdk:s3")
 
     // OpenAPI (Swagger)
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
 
-    // QueryDSL (버전은 Spring Boot BOM 관리)
-    implementation("com.querydsl:querydsl-jpa::jakarta")
-    kapt("com.querydsl:querydsl-apt::jakarta")
+    // QueryDSL
+    // 원본 com.querydsl은 유지보수가 멈춰 CVE-2024-49203이 고쳐지지 않아 OpenFeign 포크 사용
+    implementation("io.github.openfeign.querydsl:querydsl-jpa:7.7")
+    kapt("io.github.openfeign.querydsl:querydsl-apt:7.7:jpa")
 
     // Rate Limiting
-    implementation("com.bucket4j:bucket4j-core:8.10.1")
+    implementation("com.bucket4j:bucket4j_jdk17-core:8.22.0")
 
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-restclient")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
 
     // Kotlin
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("tools.jackson.module:jackson-module-kotlin")
+    // swagger-core는 Jackson 2로 스키마를 만들어, springdoc이 이 모듈을 감지해야 non-null 프로퍼티를 required로 표시함
+    // 빠지면 빌드와 테스트는 통과하고 API 문서에서만 required가 사라짐
+    runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // Database
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-mysql")
     runtimeOnly("com.mysql:mysql-connector-j")
 
@@ -87,19 +84,19 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     // Test
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:mysql")
-    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-mysql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
     }
 }
 
@@ -110,11 +107,5 @@ allOpen {
 }
 
 tasks.withType<Test> {
-    outputs.dir(snippetsDir)
     useJUnitPlatform()
-}
-
-tasks.named<org.asciidoctor.gradle.jvm.AsciidoctorTask>("asciidoctor") {
-    inputs.dir(snippetsDir)
-    dependsOn(tasks.test)
 }

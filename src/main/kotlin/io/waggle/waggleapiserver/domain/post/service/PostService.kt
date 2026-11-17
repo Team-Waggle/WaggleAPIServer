@@ -287,7 +287,7 @@ class PostService(
             }
 
         val unreadApplicationCountByPostId =
-            if (isMember && postIds.isNotEmpty() && user != null) {
+            if (isMember && postIds.isNotEmpty()) {
                 applicationRepository
                     .countUnreadApplicationsGroupByPostId(user.id, postIds)
                     .associate { it.postId to it.unreadCount.toInt() }

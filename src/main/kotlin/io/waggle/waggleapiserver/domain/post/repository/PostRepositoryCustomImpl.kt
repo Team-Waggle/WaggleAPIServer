@@ -26,13 +26,15 @@ class PostRepositoryCustomImpl(
         size: Int,
     ): List<Post> =
         when (sort) {
-            PostSort.NEWEST ->
+            PostSort.NEWEST -> {
                 findOrderByColumn(q, positions, skills, size, cursor?.let { post.id.lt(it) }, post.id.desc())
+            }
 
-            PostSort.OLDEST ->
+            PostSort.OLDEST -> {
                 findOrderByColumn(q, positions, skills, size, cursor?.let { post.id.gt(it) }, post.id.asc())
+            }
 
-            PostSort.MOST_VIEWED ->
+            PostSort.MOST_VIEWED -> {
                 findOrderByColumn(
                     q,
                     positions,
@@ -42,8 +44,9 @@ class PostRepositoryCustomImpl(
                     post.viewCount.desc(),
                     post.id.desc(),
                 )
+            }
 
-            PostSort.MOST_LIKED ->
+            PostSort.MOST_LIKED -> {
                 findOrderByColumn(
                     q,
                     positions,
@@ -53,8 +56,11 @@ class PostRepositoryCustomImpl(
                     post.likeCount.desc(),
                     post.id.desc(),
                 )
+            }
 
-            PostSort.DEADLINE_SOON -> findByDeadlineGroup(q, positions, skills, size, cursor)
+            PostSort.DEADLINE_SOON -> {
+                findByDeadlineGroup(q, positions, skills, size, cursor)
+            }
         }
 
     // 하나의 CASE로 정렬하면 선두 키가 표현식이라 필터에 걸린 전체를 filesort 해야 해서 묶음별로 나눔

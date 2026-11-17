@@ -1,11 +1,11 @@
 package io.waggle.waggleapiserver.security.filter
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.mock.web.MockFilterChain
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
+import tools.jackson.databind.ObjectMapper
 
 class RateLimitFilterTest {
     companion object {

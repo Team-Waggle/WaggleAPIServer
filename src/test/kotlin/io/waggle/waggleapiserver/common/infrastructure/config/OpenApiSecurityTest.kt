@@ -1,14 +1,14 @@
 package io.waggle.waggleapiserver.common.infrastructure.config
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.waggle.waggleapiserver.support.IntegrationTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
 
 @AutoConfigureMockMvc
 class OpenApiSecurityTest : IntegrationTestSupport() {
@@ -29,7 +29,7 @@ class OpenApiSecurityTest : IntegrationTestSupport() {
     fun `전역 기본값은 bearer 필수 인증임`() {
         val apiDocs = apiDocs()
 
-        assertThat(apiDocs.at("/components/securitySchemes/bearerAuth/scheme").asText()).isEqualTo("bearer")
+        assertThat(apiDocs.at("/components/securitySchemes/bearerAuth/scheme").asString()).isEqualTo("bearer")
         assertThat(apiDocs.at("/security")).isEqualTo(objectMapper.readTree("""[{"bearerAuth":[]}]"""))
         // security 필드가 없어야 전역 기본값을 상속함
         assertThat(apiDocs.at("/paths/~1posts/post").has("security")).isFalse()
