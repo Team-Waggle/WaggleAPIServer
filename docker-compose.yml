@@ -56,9 +56,11 @@ services:
 
   database:
     # TestContainers.kt와 같은 버전 유지
-    image: mysql:8.0.45
+    image: mysql:8.4.13
     container_name: waggle-db
-    command: --ngram-token-size=2
+    # innodb-log-buffer-size는 8.4에서 기본값이 64MB로 늘어 쓰기가 쌓이면 메모리를 최대 48MB 더 씀
+    # RAM 1.9GB 서버라 8.0 기본값인 16MB로 고정하며 지금 쓰기량에는 16MB로 충분함
+    command: --ngram-token-size=2 --innodb-log-buffer-size=16M
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
@@ -75,6 +77,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      # 버전을 올린 뒤 첫 기동은 시스템 테이블을 고치는 동안 접속을 받지 않음
+      # 이 동안의 실패를 세면 unhealthy가 되어 이 서비스를 기다리는 app이 뜨지 않음
+      # 8.0에서 8.4로 올릴 때 로컬에서 약 25초 걸렸고 t3.small의 느린 CPU를 감안해 넉넉히 잡음
+      start_period: 300s
     logging:
       driver: json-file
       options:

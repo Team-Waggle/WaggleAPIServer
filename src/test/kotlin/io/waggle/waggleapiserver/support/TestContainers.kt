@@ -11,7 +11,7 @@ import org.testcontainers.mysql.MySQLContainer
 object TestContainers {
     // docker-compose.yml(운영)과 같은 버전 유지
     val mysql: MySQLContainer =
-        MySQLContainer("mysql:8.0.45").apply {
+        MySQLContainer("mysql:8.4.13").apply {
             withDatabaseName("waggle")
             withCommand("--ngram-token-size=2")
             start()
