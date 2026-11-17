@@ -77,6 +77,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      # 버전을 올린 뒤 첫 기동은 시스템 테이블을 고치는 동안 접속을 받지 않음
+      # 이 동안의 실패를 세면 unhealthy가 되어 이 서비스를 기다리는 app이 뜨지 않음
+      # 8.0에서 8.4로 올릴 때 로컬에서 약 25초 걸렸고 t3.small의 느린 CPU를 감안해 넉넉히 잡음
+      start_period: 300s
     logging:
       driver: json-file
       options:
