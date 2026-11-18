@@ -5,7 +5,6 @@ import io.waggle.waggleapiserver.common.dto.response.CursorResponse
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.application.Application
-import io.waggle.waggleapiserver.domain.application.ApplicationRead
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
 import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreateRequest
 import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationUpdateRequest
@@ -138,14 +137,7 @@ class ApplicationService(
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
         member.checkMemberRole(MemberRole.MANAGER)
 
-        if (!applicationReadRepository.existsByApplicationIdAndUserId(applicationId, user.id)) {
-            val applicationRead =
-                ApplicationRead(
-                    applicationId = applicationId,
-                    userId = user.id,
-                )
-            applicationReadRepository.save(applicationRead)
-        }
+        applicationReadRepository.insertOrRestore(applicationId, user.id)
 
         val applicant =
             userRepository.findByIdOrNull(application.userId)
