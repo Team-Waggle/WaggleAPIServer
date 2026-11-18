@@ -4,7 +4,9 @@ import io.waggle.waggleapiserver.common.dto.response.ErrorResponse
 import io.waggle.waggleapiserver.common.infrastructure.discord.DiscordErrorContext
 import io.waggle.waggleapiserver.common.infrastructure.discord.DiscordWebhookClient
 import jakarta.servlet.http.HttpServletRequest
+import org.hibernate.exception.ConstraintViolationException
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
@@ -58,6 +60,30 @@ class GlobalExceptionHandler(
             )
         return ResponseEntity
             .status(ErrorCode.INVALID_TYPE_VALUE.status)
+            .body(errorResponse)
+    }
+
+    // 확인 후 저장 사이에 같은 값이 먼저 커밋되는 경합이라 409로 응답함
+    // 외래 키, NOT NULL, 길이 초과는 코드 결함이므로 500과 알림을 유지함
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDataIntegrityViolationException(
+        e: DataIntegrityViolationException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ErrorResponse> {
+        val uniqueViolation =
+            (e.cause as? ConstraintViolationException)
+                ?.takeIf { it.kind == ConstraintViolationException.ConstraintKind.UNIQUE }
+                ?: return handleException(e, request)
+        // 예외 메시지에는 중복된 값과 SQL이 들어 있어 제약 이름만 남김
+        logger.warn("Unique constraint violated: ${uniqueViolation.constraintName}")
+        val errorResponse =
+            ErrorResponse(
+                status = ErrorCode.DUPLICATE_RESOURCE.status.value(),
+                code = ErrorCode.DUPLICATE_RESOURCE.name,
+                message = ErrorCode.DUPLICATE_RESOURCE.message,
+            )
+        return ResponseEntity
+            .status(ErrorCode.DUPLICATE_RESOURCE.status)
             .body(errorResponse)
     }
 
