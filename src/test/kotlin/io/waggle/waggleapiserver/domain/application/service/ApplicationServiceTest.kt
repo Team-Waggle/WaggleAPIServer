@@ -191,4 +191,45 @@ class ApplicationServiceTest : CascadeIntegrationTestSupport() {
             .isEqualTo(1L)
         assertThat(count("SELECT COUNT(*) FROM applications WHERE post_id = ?", post.id)).isEqualTo(2L)
     }
+
+    @Test
+    fun `같은 지원서를 여러 번 열람해도 열람 기록은 하나다`() {
+        val leader = createUser("leader")
+        val applicant = createUser("applicant")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        val application = createApplication(team.id, post.id, applicant.id)
+
+        applicationService.markApplicationAsRead(application.id, leader)
+        applicationService.markApplicationAsRead(application.id, leader)
+
+        assertThat(count("SELECT COUNT(*) FROM application_reads WHERE application_id = ?", application.id))
+            .isEqualTo(1L)
+    }
+
+    @Test
+    fun `탈퇴 cascade로 지워진 열람 기록이 있어도 다시 열람하면 기록이 되살아난다`() {
+        val leader = createUser("leader")
+        val applicant = createUser("applicant")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        val application = createApplication(team.id, post.id, applicant.id)
+        applicationService.markApplicationAsRead(application.id, leader)
+        transactionTemplate.executeWithoutResult {
+            applicationReadRepository.updateDeletedAtByUserIdAndDeletedAtIsNull(leader.id)
+        }
+
+        applicationService.markApplicationAsRead(application.id, leader)
+
+        assertThat(
+            count(
+                "SELECT COUNT(*) FROM application_reads WHERE application_id = ? AND deleted_at IS NULL",
+                application.id,
+            ),
+        ).isEqualTo(1L)
+        assertThat(count("SELECT COUNT(*) FROM application_reads WHERE application_id = ?", application.id))
+            .isEqualTo(1L)
+    }
 }

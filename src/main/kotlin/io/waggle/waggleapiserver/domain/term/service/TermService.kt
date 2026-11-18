@@ -2,7 +2,6 @@ package io.waggle.waggleapiserver.domain.term.service
 
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
-import io.waggle.waggleapiserver.domain.term.UserTermAgreement
 import io.waggle.waggleapiserver.domain.term.dto.request.TermsAgreeRequest
 import io.waggle.waggleapiserver.domain.term.dto.response.TermResponse
 import io.waggle.waggleapiserver.domain.term.repository.TermRepository
@@ -51,11 +50,7 @@ class TermService(
                             ErrorCode.INVALID_INPUT_VALUE,
                             "Unknown term type: ${agreement.type}",
                         )
-                if (userTermAgreementRepository.findByUserIdAndTermId(user.id, term.id) == null) {
-                    userTermAgreementRepository.save(
-                        UserTermAgreement(userId = user.id, termId = term.id),
-                    )
-                }
+                userTermAgreementRepository.insertIfAbsent(user.id, term.id)
             }
     }
 

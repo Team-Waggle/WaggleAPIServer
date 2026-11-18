@@ -7,11 +7,6 @@ import org.springframework.data.jpa.repository.Query
 import java.util.UUID
 
 interface ApplicationReadRepository : JpaRepository<ApplicationRead, Long> {
-    fun existsByApplicationIdAndUserId(
-        applicationId: Long,
-        userId: UUID,
-    ): Boolean
-
     @Query(
         """
         SELECT ar.applicationId FROM ApplicationRead ar
@@ -28,6 +23,22 @@ interface ApplicationReadRepository : JpaRepository<ApplicationRead, Long> {
         applicationIds: List<Long>,
         userIds: List<UUID>,
     ): List<ApplicationRead>
+
+    // 탈퇴 cascade로 soft delete된 기록은 존재 확인에 보이지 않지만 유니크 제약에는 걸려
+    // 확인 후 저장으로는 재가입한 매니저가 예전에 읽은 지원서를 열 때마다 충돌함
+    @Modifying
+    @Query(
+        """
+        INSERT INTO application_reads (application_id, user_id, created_at, updated_at)
+        VALUES (:applicationId, :userId, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+        ON DUPLICATE KEY UPDATE deleted_at = NULL, updated_at = UTC_TIMESTAMP(6)
+        """,
+        nativeQuery = true,
+    )
+    fun insertOrRestore(
+        applicationId: Long,
+        userId: UUID,
+    )
 
     @Modifying
     @Query(
