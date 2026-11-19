@@ -23,6 +23,7 @@ data class UserSetupProfileRequest(
     val bio: String? = null,
     @Schema(description = "프로필 이미지 URL")
     @field:WebUrl
+    @field:Size(max = 2048)
     val profileImageUrl: String? = null,
     @Schema(description = "기술 스택", example = "[\"KOTLIN\", \"SPRING\"]")
     @field:NotNull
@@ -32,5 +33,10 @@ data class UserSetupProfileRequest(
         example = "[\"https://github.com/user\", \"https://blog.example.com\"]",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
     )
-    val portfolioUrls: List<@WebUrl String> = emptyList(),
+    @field:Size(max = 10)
+    val portfolioUrls: List<
+        @WebUrl
+        @Size(max = 2048)
+        String,
+    > = emptyList(),
 )

@@ -41,7 +41,7 @@ class User(
     val email: String,
     @Column(nullable = false, columnDefinition = "DOUBLE DEFAULT 36.5")
     var temperature: Double = 36.5,
-    @Column(name = "profile_image_url", columnDefinition = "VARCHAR(2083)")
+    @Column(name = "profile_image_url", columnDefinition = "VARCHAR(2048)")
     var profileImageUrl: String?,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(10)")

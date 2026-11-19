@@ -112,6 +112,15 @@ class UserServiceTest : CascadeIntegrationTestSupport() {
     }
 
     @Test
+    fun `가입 때 받은 외부 프로필 이미지 URL은 255자를 넘어도 저장된다`() {
+        val longOauthUrl = OAUTH_URL.padEnd(2048, 'a')
+
+        val user = createUser("oauth", profileImageUrl = longOauthUrl)
+
+        assertThat(userRepository.findByIdOrNull(user.id)?.profileImageUrl).isEqualTo(longOauthUrl)
+    }
+
+    @Test
     fun `직접 올린 이미지로 바꾸면 저장되고 이전 이미지 삭제를 요청한다`() {
         val user = createUser("user", profileImageUrl = LEGACY_URL)
         val uploaded = "https://bucket/prod/users/${user.id}/11111111-1111-1111-1111-111111111111.png"

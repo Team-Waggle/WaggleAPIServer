@@ -96,7 +96,12 @@ dependencies {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xannotation-default-target=param-property",
+            // 이 옵션이 없으면 컬렉션 원소에 붙인 검증 애너테이션이 바이트코드에 남지 않아 검증 없이 통과함
+            "-Xemit-jvm-type-annotations",
+        )
     }
 }
 

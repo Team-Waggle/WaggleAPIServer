@@ -22,5 +22,6 @@ data class TeamUpsertRequest(
     val workMode: WorkMode,
     @Schema(description = "팀 프로필 이미지 URL")
     @field:WebUrl
+    @field:Size(max = 2048)
     val profileImageUrl: String? = null,
 )
