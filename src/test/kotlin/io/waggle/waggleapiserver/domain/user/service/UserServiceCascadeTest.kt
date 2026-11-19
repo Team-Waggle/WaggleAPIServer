@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.like.LikeType
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.notification.NotificationType
+import io.waggle.waggleapiserver.domain.user.enums.Skill
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -86,6 +87,24 @@ class UserServiceCascadeTest : CascadeIntegrationTestSupport() {
     }
 
     @Test
+    fun `deactivateUser는 프로필 정보를 지운다`() {
+        val user =
+            userRepository.save(
+                createUser("user").apply {
+                    bio = "bio"
+                    skills.add(Skill.KOTLIN)
+                    portfolioUrls.add("https://github.com/user")
+                },
+            )
+
+        userService.deactivateUser(user)
+
+        assertThat(count("SELECT COUNT(*) FROM users WHERE bio IS NOT NULL OR position IS NOT NULL")).isZero()
+        assertThat(count("SELECT COUNT(*) FROM user_skills")).isZero()
+        assertThat(count("SELECT COUNT(*) FROM user_portfolios")).isZero()
+    }
+
+    @Test
     fun `deactivateUser는 누른 좋아요와 받은 좋아요를 모두 정리한다`() {
         val user = createUser("user")
         val other = createUser("other")
@@ -97,7 +116,7 @@ class UserServiceCascadeTest : CascadeIntegrationTestSupport() {
 
         // 탈퇴자가 누른 좋아요
         createLike(user.id, LikeType.POST, othersPost.id)
-        // 탈퇴자의 글·댓글이 받은 좋아요
+        // 탈퇴자의 글과 댓글이 받은 좋아요
         createLike(other.id, LikeType.POST, ownPost.id)
         createLike(other.id, LikeType.COMMENT, ownComment.id)
         // 무관한 좋아요 — 보존 대상

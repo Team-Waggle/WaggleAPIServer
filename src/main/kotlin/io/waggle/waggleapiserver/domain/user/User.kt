@@ -115,6 +115,10 @@ class User(
     fun deactivate() {
         this.username = null
         this.profileImageUrl = null
+        this.bio = null
+        this.position = null
+        this.skills.clear()
+        this.portfolioUrls.clear()
         delete()
     }
 
