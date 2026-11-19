@@ -35,7 +35,7 @@ class Team(
     @Enumerated(EnumType.STRING)
     @Column(name = "work_mode", nullable = false, columnDefinition = "VARCHAR(20)")
     var workMode: WorkMode,
-    @Column(name = "profile_image_url", columnDefinition = "VARCHAR(2083)")
+    @Column(name = "profile_image_url", columnDefinition = "VARCHAR(2048)")
     var profileImageUrl: String? = null,
     @Column(name = "leader_id", nullable = false)
     var leaderId: UUID,
