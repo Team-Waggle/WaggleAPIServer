@@ -59,6 +59,14 @@ class CustomOAuth2UserService(
                         userInfo.providerId,
                     )
                 if (deletedUser != null) {
+                    // 복원 전에 확인해야 함
+                    // 복원 뒤에 조회하면 자동 flush로 자기 자신도 활성 사용자로 세어짐
+                    if (userRepository.existsByEmail(deletedUser.email)) {
+                        throw oauth2AuthenticationException(
+                            ErrorCode.DUPLICATE_RESOURCE,
+                            "Already existing email: ${deletedUser.email}",
+                        )
+                    }
                     deletedUser.reactivate()
                     followRepository.updateDeletedAtNullByUserIdAndPartnerActive(deletedUser.id)
                     userRepository.save(deletedUser)
