@@ -40,6 +40,11 @@ data class PostDetailResponse(
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "현재 사용자의 이 모집글에 대한 지원 상태")
     val applicationStatus: ApplicationStatus? = null,
+    @Schema(
+        description = "현재 사용자가 이 팀을 나갔거나 추방된 이전 팀원인지 여부. 이전 팀원은 지원할 수 없음 (비로그인이면 false)",
+        example = "false",
+    )
+    val formerMember: Boolean,
     @Schema(description = "모집 마감일. 그날 24시(KST)까지 모집. 미지정 시 무기한", example = "2026-09-30")
     val deadline: LocalDate?,
     @Schema(description = "모집글 생성일시", example = "2025-11-16T12:30:45.123456Z")
@@ -56,6 +61,7 @@ data class PostDetailResponse(
             likeCount: Long = 0,
             liked: Boolean = false,
             applicationStatus: ApplicationStatus? = null,
+            formerMember: Boolean = false,
         ): PostDetailResponse =
             PostDetailResponse(
                 id = post.id,
@@ -70,6 +76,7 @@ data class PostDetailResponse(
                 likeCount = likeCount,
                 liked = liked,
                 applicationStatus = applicationStatus,
+                formerMember = formerMember,
                 deadline = post.expiresAt?.let { Deadline.toDeadline(it) },
                 createdAt = post.createdAt,
             )

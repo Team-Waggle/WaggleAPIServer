@@ -5,6 +5,7 @@ import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
 import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreateRequest
 import io.waggle.waggleapiserver.domain.member.MemberRole
+import io.waggle.waggleapiserver.domain.member.service.MemberService
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
 import io.waggle.waggleapiserver.domain.user.enums.Position
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
@@ -23,6 +24,9 @@ import java.util.concurrent.TimeoutException
 class ApplicationServiceTest : CascadeIntegrationTestSupport() {
     @Autowired
     private lateinit var applicationService: ApplicationService
+
+    @Autowired
+    private lateinit var memberService: MemberService
 
     @Autowired
     private lateinit var transactionTemplate: TransactionTemplate
@@ -193,6 +197,46 @@ class ApplicationServiceTest : CascadeIntegrationTestSupport() {
     }
 
     @Test
+    fun `팀을 나가거나 추방된 사람은 같은 팀에 다시 지원할 수 없다`() {
+        val leader = createUser("leader")
+        val leaver = createUser("leaver")
+        val removed = createUser("removed")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        createMember(leaver.id, team.id, MemberRole.MEMBER)
+        val removedMember = createMember(removed.id, team.id, MemberRole.MEMBER)
+        val post = createPost(leader.id, team.id)
+        createRecruitment(post.id)
+        memberService.leaveTeam(team.id, leaver)
+        memberService.removeMember(removedMember.id, leader)
+        val request = ApplicationCreateRequest(postId = post.id, position = Position.BACKEND)
+
+        assertRejectedAsDuplicate { applicationService.applyToTeam(team.id, request, leaver) }
+        assertRejectedAsDuplicate { applicationService.applyToTeam(team.id, request, removed) }
+        assertThat(count("SELECT COUNT(*) FROM applications")).isZero()
+    }
+
+    @Test
+    fun `이전 팀원이 재지원 차단 전에 낸 지원서는 승인할 수 없다`() {
+        val leader = createUser("leader")
+        val applicant = createUser("applicant")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        createMember(applicant.id, team.id, MemberRole.MEMBER)
+        memberService.leaveTeam(team.id, applicant)
+        // 지원 시 검사를 거치지 않고 저장해 차단 전에 들어온 지원서를 재현함
+        val pendingApplication = createApplication(team.id, createPost(leader.id, team.id).id, applicant.id)
+
+        assertRejectedAsDuplicate {
+            applicationService.updateApplicationStatus(pendingApplication.id, ApplicationStatus.APPROVED, leader)
+        }
+        assertThat(applicationRepository.findById(pendingApplication.id).get().status)
+            .isEqualTo(ApplicationStatus.PENDING)
+        assertThat(count("SELECT COUNT(*) FROM members WHERE team_id = ? AND deleted_at IS NULL", team.id))
+            .isEqualTo(1L)
+    }
+
+    @Test
     fun `같은 지원서를 여러 번 열람해도 열람 기록은 하나다`() {
         val leader = createUser("leader")
         val applicant = createUser("applicant")
@@ -231,5 +275,12 @@ class ApplicationServiceTest : CascadeIntegrationTestSupport() {
         ).isEqualTo(1L)
         assertThat(count("SELECT COUNT(*) FROM application_reads WHERE application_id = ?", application.id))
             .isEqualTo(1L)
+    }
+
+    private fun assertRejectedAsDuplicate(action: () -> Unit) {
+        assertThatThrownBy(action)
+            .isInstanceOf(BusinessException::class.java)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.DUPLICATE_RESOURCE)
     }
 }

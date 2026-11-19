@@ -66,17 +66,4 @@ class Member(
         this.deletedBy = deletedBy
         delete()
     }
-
-    fun reactivate(
-        position: Position,
-        role: MemberRole,
-        admittedBy: UUID,
-    ) {
-        this.deletedAt = null
-        this.deletedBy = null
-        this.position = position
-        this.role = role
-        this.visible = true
-        this.admittedBy = admittedBy
-    }
 }

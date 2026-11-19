@@ -66,10 +66,11 @@ class ApplicationService(
 
         post.checkNotExpired()
 
-        if (memberRepository.existsByUserIdAndTeamId(user.id, teamId)) {
+        // 탈퇴와 자진 이탈이 모두 deleted_by = 본인으로 남아 구분할 수 없어 탈퇴 후 재가입한 사람도 막힘
+        if (memberRepository.findByUserIdAndTeamIdIncludingDeleted(user.id, teamId) != null) {
             throw BusinessException(
                 ErrorCode.DUPLICATE_RESOURCE,
-                "Already a member of team: $teamId",
+                "Current or former member of team: $teamId",
             )
         }
 
@@ -372,40 +373,22 @@ class ApplicationService(
 
         application.updateStatus(ApplicationStatus.APPROVED)
 
-        val existingMember =
-            memberRepository.findByUserIdAndTeamIdIncludingDeleted(
-                application.userId,
-                application.teamId,
+        // 재지원 차단 전에 이전 팀원이 낸 대기 중 지원서가 남아 있을 수 있어 승인할 때도 확인함
+        if (memberRepository.findByUserIdAndTeamIdIncludingDeleted(application.userId, application.teamId) != null) {
+            throw BusinessException(
+                ErrorCode.DUPLICATE_RESOURCE,
+                "User is a current or former member of team: ${application.teamId}",
             )
-
-        when {
-            existingMember == null -> {
-                memberRepository.save(
-                    Member(
-                        userId = application.userId,
-                        teamId = application.teamId,
-                        position = application.position,
-                        role = MemberRole.MEMBER,
-                        admittedBy = user.id,
-                    ),
-                )
-            }
-
-            existingMember.deletedAt != null -> {
-                existingMember.reactivate(
-                    position = application.position,
-                    role = MemberRole.MEMBER,
-                    admittedBy = user.id,
-                )
-            }
-
-            else -> {
-                throw BusinessException(
-                    ErrorCode.DUPLICATE_RESOURCE,
-                    "User is already a member of team: ${application.teamId}",
-                )
-            }
         }
+        memberRepository.save(
+            Member(
+                userId = application.userId,
+                teamId = application.teamId,
+                position = application.position,
+                role = MemberRole.MEMBER,
+                admittedBy = user.id,
+            ),
+        )
 
         applicationReadRepository
             .updateDeletedAtByApplicationUserIdAndTeamIdAndApplicationIdNotAndStatusPendingAndDeletedAtIsNull(

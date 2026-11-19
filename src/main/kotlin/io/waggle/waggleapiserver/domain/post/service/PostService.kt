@@ -237,6 +237,10 @@ class PostService(
             user?.let { memberRepository.findByUserIdAndTeamId(it.id, post.teamId)?.role }
         val applicationStatus =
             user?.let { applicationRepository.findByPostIdAndUserId(postId, it.id)?.status }
+        val formerMember =
+            user != null &&
+                memberRole == null &&
+                memberRepository.findByUserIdAndTeamIdAndDeletedAtIsNotNull(user.id, post.teamId) != null
 
         return PostDetailResponse.of(
             post,
@@ -248,6 +252,7 @@ class PostService(
             post.likeCount,
             user?.let { likeRepository.existsById(LikeId(LikeType.POST, postId, it.id)) } ?: false,
             applicationStatus,
+            formerMember,
         )
     }
 

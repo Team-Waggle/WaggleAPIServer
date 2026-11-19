@@ -1,9 +1,6 @@
 package io.waggle.waggleapiserver.common
 
-import io.waggle.waggleapiserver.domain.application.ApplicationStatus
-import io.waggle.waggleapiserver.domain.application.service.ApplicationService
 import io.waggle.waggleapiserver.domain.follow.service.FollowService
-import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -18,9 +15,6 @@ import org.springframework.transaction.annotation.Transactional
 class ReactivationRegressionTest : CascadeIntegrationTestSupport() {
     @Autowired
     private lateinit var followService: FollowService
-
-    @Autowired
-    private lateinit var applicationService: ApplicationService
 
     @Test
     fun `탈퇴 cascade로 지워진 팔로우를 다시 누르면 되살아난다`() {
@@ -42,28 +36,6 @@ class ReactivationRegressionTest : CascadeIntegrationTestSupport() {
                 follower.id.toString(),
             ),
         ).isEqualTo(1L)
-    }
-
-    @Test
-    fun `팀을 나갔던 사용자의 지원을 승인하면 멤버가 되살아난다`() {
-        val leader = createUser("leader")
-        val rejoiner = createUser("rejoiner")
-        val team = createTeam(leader.id)
-        createMember(leader.id, team.id, MemberRole.LEADER)
-        val oldMember = createMember(rejoiner.id, team.id, MemberRole.MEMBER)
-        val post = createPost(leader.id, team.id)
-
-        // 탈퇴 상태 재현
-        jdbcTemplate.update("UPDATE members SET deleted_at = UTC_TIMESTAMP(6) WHERE id = ?", oldMember.id)
-
-        val application = createApplication(team.id, post.id, rejoiner.id)
-
-        // 실제 프로덕션 경로 — 내부에서 findByUserIdAndTeamIdIncludingDeleted + reactivate()
-        applicationService.updateApplicationStatus(application.id, ApplicationStatus.APPROVED, leader)
-
-        assertThat(count("SELECT COUNT(*) FROM members WHERE id = ? AND deleted_at IS NULL", oldMember.id))
-            .isEqualTo(1L)
-        assertThat(count("SELECT COUNT(*) FROM members WHERE team_id = ?", team.id)).isEqualTo(2L)
     }
 
     @Test
