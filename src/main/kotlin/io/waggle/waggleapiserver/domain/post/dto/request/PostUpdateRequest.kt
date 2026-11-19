@@ -23,6 +23,7 @@ data class PostUpdateRequest(
     @Schema(description = "모집 정보")
     @field:Valid
     @field:NotNull
+    @field:Size(min = 1)
     @field:UniquePosition
     val recruitments: List<RecruitmentUpsertRequest>,
     @JsonProperty(required = true)
