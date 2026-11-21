@@ -48,7 +48,7 @@ class MemberService(
 
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, team.id)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: ${team.id}")
 
         when (role) {
             MemberRole.MEMBER, MemberRole.MANAGER -> {
@@ -106,7 +106,7 @@ class MemberService(
 
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, team.id)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: ${team.id}")
         if (targetMember.role.level >= member.role.level) {
             throw BusinessException(
                 ErrorCode.ACCESS_DENIED,

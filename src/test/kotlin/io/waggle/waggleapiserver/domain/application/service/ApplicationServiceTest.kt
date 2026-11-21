@@ -1,5 +1,6 @@
 package io.waggle.waggleapiserver.domain.application.service
 
+import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.application.ApplicationStatus
@@ -237,6 +238,23 @@ class ApplicationServiceTest : CascadeIntegrationTestSupport() {
     }
 
     @Test
+    fun `팀원이 아닌 사람은 팀 지원서를 조회하거나 승인할 수 없다`() {
+        val leader = createUser("leader")
+        val applicant = createUser("applicant")
+        val outsider = createUser("outsider")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val application = createApplication(team.id, createPost(leader.id, team.id).id, applicant.id)
+
+        assertAccessDenied {
+            applicationService.getTeamApplications(team.id, null, CursorGetQuery(cursor = null), outsider)
+        }
+        assertAccessDenied {
+            applicationService.updateApplicationStatus(application.id, ApplicationStatus.APPROVED, outsider)
+        }
+    }
+
+    @Test
     fun `같은 지원서를 여러 번 열람해도 열람 기록은 하나다`() {
         val leader = createUser("leader")
         val applicant = createUser("applicant")
@@ -275,6 +293,13 @@ class ApplicationServiceTest : CascadeIntegrationTestSupport() {
         ).isEqualTo(1L)
         assertThat(count("SELECT COUNT(*) FROM application_reads WHERE application_id = ?", application.id))
             .isEqualTo(1L)
+    }
+
+    private fun assertAccessDenied(action: () -> Unit) {
+        assertThatThrownBy(action)
+            .isInstanceOf(BusinessException::class.java)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.ACCESS_DENIED)
     }
 
     private fun assertRejectedAsDuplicate(action: () -> Unit) {

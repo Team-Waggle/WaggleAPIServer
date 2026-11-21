@@ -135,7 +135,7 @@ class ApplicationService(
 
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, application.teamId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: ${application.teamId}")
         member.checkMemberRole(MemberRole.MANAGER)
 
         applicationReadRepository.insertOrRestore(applicationId, user.id)
@@ -220,7 +220,7 @@ class ApplicationService(
     ): CursorResponse<TeamApplicationResponse> {
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, teamId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: $teamId")
         member.checkMemberRole(MemberRole.MANAGER)
 
         val pageable = PageRequest.of(0, cursorQuery.size + 1)
@@ -368,7 +368,7 @@ class ApplicationService(
 
         val approver =
             memberRepository.findByUserIdAndTeamId(user.id, application.teamId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: ${application.teamId}")
         approver.checkMemberRole(MemberRole.MANAGER)
 
         application.updateStatus(ApplicationStatus.APPROVED)
@@ -430,7 +430,7 @@ class ApplicationService(
 
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, application.teamId)
-                ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Member not found")
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: ${application.teamId}")
         member.checkMemberRole(MemberRole.MANAGER)
 
         application.updateStatus(ApplicationStatus.REJECTED)
