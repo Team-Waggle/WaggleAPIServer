@@ -22,6 +22,7 @@ class SoftDeleteRestrictionTest : CascadeIntegrationTestSupport() {
     fun `삭제된 모집글은 findByIdOrNull에 잡히지 않는다`() {
         val owner = createUser("owner")
         val team = createTeam(owner.id)
+        createMember(owner.id, team.id, MemberRole.LEADER)
         val post = createPost(owner.id, team.id)
 
         postService.deletePost(post.id, owner)
@@ -38,6 +39,7 @@ class SoftDeleteRestrictionTest : CascadeIntegrationTestSupport() {
     fun `삭제된 모집글은 상세 조회에서 404가 된다`() {
         val owner = createUser("owner")
         val team = createTeam(owner.id)
+        createMember(owner.id, team.id, MemberRole.LEADER)
         val post = createPost(owner.id, team.id)
 
         postService.deletePost(post.id, owner)
@@ -53,6 +55,7 @@ class SoftDeleteRestrictionTest : CascadeIntegrationTestSupport() {
         val owner = createUser("owner")
         val commenter = createUser("commenter")
         val team = createTeam(owner.id)
+        createMember(owner.id, team.id, MemberRole.LEADER)
         val post = createPost(owner.id, team.id)
 
         postService.deletePost(post.id, owner)

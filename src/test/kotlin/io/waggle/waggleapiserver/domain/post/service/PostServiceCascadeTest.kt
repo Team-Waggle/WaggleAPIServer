@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.post.service
 
 import io.waggle.waggleapiserver.domain.bookmark.BookmarkType
 import io.waggle.waggleapiserver.domain.like.LikeType
+import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.notification.NotificationType
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -15,6 +16,7 @@ class PostServiceCascadeTest : CascadeIntegrationTestSupport() {
         val bookmarker = createUser("bookmarker")
         val recipient = createUser("recipient")
         val team = createTeam(owner.id)
+        createMember(owner.id, team.id, MemberRole.LEADER)
 
         val post = createPost(owner.id, team.id)
         val sibling = createPost(owner.id, team.id)
@@ -57,6 +59,7 @@ class PostServiceCascadeTest : CascadeIntegrationTestSupport() {
         val owner = createUser("owner")
         val liker = createUser("liker")
         val team = createTeam(owner.id)
+        createMember(owner.id, team.id, MemberRole.LEADER)
         val post = createPost(owner.id, team.id)
         val sibling = createPost(owner.id, team.id)
         val comment = createComment(post.id, owner.id)
