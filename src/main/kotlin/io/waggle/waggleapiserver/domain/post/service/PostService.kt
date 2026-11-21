@@ -343,7 +343,9 @@ class PostService(
         val member = getMemberManagingPost(post, user)
         post.update(title, content, deadline?.let { Deadline.toExpiresAt(it) })
 
-        val existingRecruitmentByPosition = recruitmentRepository.findByPostId(postId).associateBy { it.position }
+        // 잠그지 않으면 진행 중인 승인보다 옛 approvedCount로 검사해 승인 인원보다 적게 줄일 수 있음
+        val existingRecruitmentByPosition =
+            recruitmentRepository.findForUpdateByPostId(postId).associateBy { it.position }
         val requestedRecruitmentByPosition = recruitments.associateBy { it.position }
 
         val recruitmentsToDelete =
@@ -351,13 +353,17 @@ class PostService(
         recruitmentsToDelete.forEach { checkDeletableRecruitment(it) }
         recruitmentRepository.deleteAll(recruitmentsToDelete)
 
+        var closedByUpdate = false
         val updatedRecruitments =
             requestedRecruitmentByPosition.mapNotNull { (position, requestedRecruitment) ->
                 existingRecruitmentByPosition[position]?.also {
+                    val wasRecruiting = it.isRecruiting()
                     it.update(
                         requestedRecruitment.count,
                         requestedRecruitment.skills,
                     )
+                    it.closeIfFull(it.approvedCount)
+                    closedByUpdate = closedByUpdate || (wasRecruiting && !it.isRecruiting())
                 }
             }
 
@@ -383,6 +389,10 @@ class PostService(
             )
 
         val savedRecruitments = updatedRecruitments + insertedRecruitments
+        // 마감일이 미래로 남으면 직무를 추가해 마감된 글을 다시 열 수 있음
+        if (closedByUpdate && savedRecruitments.none { it.isRecruiting() }) {
+            post.limitDeadlineToToday()
+        }
 
         val team =
             teamRepository.findByIdOrNull(post.teamId)

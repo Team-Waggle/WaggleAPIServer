@@ -22,6 +22,9 @@ interface RecruitmentRepository : JpaRepository<Recruitment, Long> {
 
     fun findByPostId(postId: Long): List<Recruitment>
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    fun findForUpdateByPostId(postId: Long): List<Recruitment>
+
     fun findByPostIdIn(postIds: List<Long>): List<Recruitment>
 
     // 파생 판정이 이미 지원을 막고 있고, 이 쿼리는 응답의 포지션별 status를 화면과 일치시키는 역할
@@ -39,6 +42,10 @@ interface RecruitmentRepository : JpaRepository<Recruitment, Long> {
         nativeQuery = true,
     )
     fun updateStatusToClosedByPostExpired(): Int
+
+    @Modifying
+    @Query("UPDATE recruitments SET approved_count = approved_count + 1 WHERE id = :id", nativeQuery = true)
+    fun increaseApprovedCount(id: Long)
 
     @Modifying
     @Query(
