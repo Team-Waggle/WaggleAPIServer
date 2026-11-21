@@ -15,6 +15,8 @@ class RecruitmentResponse(
     val position: Position,
     @Schema(description = "모집 인원 수", example = "3")
     val count: Int,
+    @Schema(description = "이 직무에 승인된 인원 수. 모집 인원에 닿으면 직무가 마감됨", example = "1")
+    val approvedCount: Int,
     @Schema(description = "모집 상태", example = "RECRUITING")
     val status: RecruitmentStatus,
     @Schema(description = "요구 스킬 목록")
@@ -30,6 +32,7 @@ class RecruitmentResponse(
                 id = recruitment.id,
                 position = recruitment.position,
                 count = recruitment.count,
+                approvedCount = recruitment.approvedCount,
                 status = recruitment.status,
                 skills = recruitment.skills,
                 createdAt = recruitment.createdAt,

@@ -1,5 +1,7 @@
 package io.waggle.waggleapiserver.domain.recruitment
 
+import io.waggle.waggleapiserver.common.exception.BusinessException
+import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.user.enums.Position
 import io.waggle.waggleapiserver.domain.user.enums.Skill
 import jakarta.persistence.CollectionTable
@@ -54,6 +56,13 @@ class Recruitment(
     final var status: RecruitmentStatus = RecruitmentStatus.RECRUITING
         private set
 
+    // 승인 처리의 native UPDATE만 이 컬럼을 씀
+    // JPA가 쓰면 저장 시 메모리의 옛 값으로 덮어씀 (CLAUDE.md 2절)
+    // 탈퇴한 승인자도 뽑은 인원으로 세어 줄이는 경로가 없음
+    // 승인을 취소하는 기능이 생기면 그 경로에서 함께 줄여야 함
+    @Column(name = "approved_count", nullable = false, insertable = false, updatable = false)
+    val approvedCount: Int = 0
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     lateinit var createdAt: Instant
@@ -75,5 +84,19 @@ class Recruitment(
 
     fun close() {
         status = RecruitmentStatus.CLOSED
+    }
+
+    // 승인과 모집 인원 수정이 모두 이 규칙을 지나야 다 찬 직무가 모집 중으로 남지 않음
+    // approvedCount 필드는 native UPDATE로만 바뀌어 승인 경로는 이번 승인을 더한 값을 넘김
+    fun closeIfFull(approvedCount: Int) {
+        if (approvedCount > count) {
+            throw BusinessException(
+                ErrorCode.INVALID_STATE,
+                "Approved count $approvedCount exceeds recruitment count $count for $position",
+            )
+        }
+        if (approvedCount == count) {
+            close()
+        }
     }
 }

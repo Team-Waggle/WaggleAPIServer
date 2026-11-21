@@ -380,6 +380,22 @@ class ApplicationService(
                 "User is a current or former member of team: ${application.teamId}",
             )
         }
+
+        // 잠금 읽기는 스냅숏이 아니라 최신 커밋 값을 읽어 approvedCount가 앞선 승인을 반영함
+        // 일반 조회로 바꾸면 잠금을 기다린 승인이 옛 값을 보고 정원을 넘김
+        // 직무가 모집글에서 지워진 지원서는 정원을 알 수 없어 확인 없이 승인함
+        recruitmentRepository.findForUpdateByPostIdAndPosition(application.postId, application.position)?.let {
+            it.closeIfFull(it.approvedCount + 1)
+            recruitmentRepository.increaseApprovedCount(it.id)
+            // 마감일이 미래로 남으면 직무를 추가해 마감된 글을 다시 열 수 있음
+            if (recruitmentRepository.findByPostId(application.postId).none { recruitment ->
+                    recruitment.isRecruiting()
+                }
+            ) {
+                postRepository.findByIdOrNull(application.postId)?.limitDeadlineToToday()
+            }
+        }
+
         memberRepository.save(
             Member(
                 userId = application.userId,

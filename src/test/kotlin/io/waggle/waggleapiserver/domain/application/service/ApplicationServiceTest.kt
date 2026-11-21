@@ -7,6 +7,7 @@ import io.waggle.waggleapiserver.domain.application.ApplicationStatus
 import io.waggle.waggleapiserver.domain.application.dto.request.ApplicationCreateRequest
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.service.MemberService
+import io.waggle.waggleapiserver.domain.post.Deadline
 import io.waggle.waggleapiserver.domain.recruitment.Recruitment
 import io.waggle.waggleapiserver.domain.user.enums.Position
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
@@ -252,6 +253,142 @@ class ApplicationServiceTest : CascadeIntegrationTestSupport() {
         assertAccessDenied {
             applicationService.updateApplicationStatus(application.id, ApplicationStatus.APPROVED, outsider)
         }
+    }
+
+    @Test
+    fun `직무 인원을 다 채우면 그 직무만 마감되고 모집글은 계속 모집 중이다`() {
+        val leader = createUser("leader")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        val backend = recruitmentRepository.save(Recruitment(position = Position.BACKEND, count = 2, postId = post.id))
+        val frontend =
+            recruitmentRepository.save(
+                Recruitment(position = Position.FRONTEND, count = 1, postId = post.id),
+            )
+        val (first, second) =
+            listOf("first", "second").map { createApplication(team.id, post.id, createUser(it).id) }
+
+        applicationService.updateApplicationStatus(first.id, ApplicationStatus.APPROVED, leader)
+        assertThat(recruitmentRepository.findById(backend.id).get().isRecruiting()).isTrue()
+
+        applicationService.updateApplicationStatus(second.id, ApplicationStatus.APPROVED, leader)
+        assertThat(recruitmentRepository.findById(backend.id).get().isRecruiting()).isFalse()
+        assertThat(recruitmentRepository.findById(frontend.id).get().isRecruiting()).isTrue()
+
+        val detail = postService.getPost(post.id, leader)
+        assertThat(detail.recruiting).isTrue()
+        assertThat(detail.recruitments.single { it.position == Position.BACKEND }.approvedCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `마지막 직무가 승인으로 마감되면 마감일이 오늘로 당겨진다`() {
+        val leader = createUser("leader")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        recruitmentRepository.save(Recruitment(position = Position.BACKEND, count = 1, postId = post.id))
+        val application = createApplication(team.id, post.id, createUser("applicant").id)
+
+        applicationService.updateApplicationStatus(application.id, ApplicationStatus.APPROVED, leader)
+
+        assertThat(postRepository.findById(post.id).get().expiresAt).isEqualTo(Deadline.todayExpiresAt())
+        assertThat(postService.getPost(post.id, leader).recruiting).isFalse()
+    }
+
+    @Test
+    fun `승인 후 탈퇴한 사람도 승인 인원에 포함된다`() {
+        val leader = createUser("leader")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        val recruitment =
+            recruitmentRepository.save(
+                Recruitment(position = Position.BACKEND, count = 2, postId = post.id),
+            )
+        val withdrawn = createUser("withdrawn")
+        val first = createApplication(team.id, post.id, withdrawn.id)
+        val second = createApplication(team.id, post.id, createUser("second").id)
+        applicationService.updateApplicationStatus(first.id, ApplicationStatus.APPROVED, leader)
+        userService.deactivateUser(withdrawn)
+
+        applicationService.updateApplicationStatus(second.id, ApplicationStatus.APPROVED, leader)
+
+        assertThat(recruitmentRepository.findById(recruitment.id).get().isRecruiting()).isFalse()
+        assertThat(
+            postService
+                .getPost(post.id, leader)
+                .recruitments
+                .single()
+                .approvedCount,
+        ).isEqualTo(2)
+    }
+
+    @Test
+    fun `인원이 찬 직무의 지원서는 승인할 수 없다`() {
+        val leader = createUser("leader")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        recruitmentRepository.save(Recruitment(position = Position.BACKEND, count = 1, postId = post.id))
+        val (first, second) =
+            listOf("first", "second").map { createApplication(team.id, post.id, createUser(it).id) }
+        applicationService.updateApplicationStatus(first.id, ApplicationStatus.APPROVED, leader)
+
+        assertThatThrownBy {
+            applicationService.updateApplicationStatus(second.id, ApplicationStatus.APPROVED, leader)
+        }.isInstanceOf(BusinessException::class.java)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.INVALID_STATE)
+        assertThat(applicationRepository.findById(second.id).get().status).isEqualTo(ApplicationStatus.PENDING)
+    }
+
+    @Test
+    fun `마지막 자리를 동시에 승인하면 먼저 커밋된 한 건만 승인된다`() {
+        val leader = createUser("leader")
+        val team = createTeam(leader.id)
+        createMember(leader.id, team.id, MemberRole.LEADER)
+        val post = createPost(leader.id, team.id)
+        val recruitment =
+            recruitmentRepository.save(
+                Recruitment(position = Position.BACKEND, count = 1, postId = post.id),
+            )
+        val (first, second) =
+            listOf("first", "second").map { createApplication(team.id, post.id, createUser(it).id) }
+        val lockHeld = CountDownLatch(1)
+        val release = CountDownLatch(1)
+
+        val firstApproval =
+            executor.submit {
+                transactionTemplate.executeWithoutResult {
+                    applicationRepository.findForUpdateById(first.id)!!.updateStatus(ApplicationStatus.APPROVED)
+                    recruitmentRepository.findForUpdateByPostIdAndPosition(post.id, Position.BACKEND)
+                    recruitmentRepository.increaseApprovedCount(recruitment.id)
+                    lockHeld.countDown()
+                    release.await(10, TimeUnit.SECONDS)
+                }
+            }
+        assertThat(lockHeld.await(10, TimeUnit.SECONDS)).isTrue()
+
+        val secondApproval =
+            executor.submit {
+                applicationService.updateApplicationStatus(second.id, ApplicationStatus.APPROVED, leader)
+            }
+
+        // 잠금이 없으면 두 번째 승인이 바로 끝나 정원을 넘김
+        assertThatThrownBy { secondApproval.get(500, TimeUnit.MILLISECONDS) }
+            .isInstanceOf(TimeoutException::class.java)
+
+        release.countDown()
+        firstApproval.get(10, TimeUnit.SECONDS)
+
+        assertThatThrownBy { secondApproval.get(10, TimeUnit.SECONDS) }
+            .isInstanceOf(ExecutionException::class.java)
+            .cause()
+            .isInstanceOf(BusinessException::class.java)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.INVALID_STATE)
+        assertThat(count("SELECT COUNT(*) FROM applications WHERE status = 'APPROVED'")).isEqualTo(1L)
     }
 
     @Test
