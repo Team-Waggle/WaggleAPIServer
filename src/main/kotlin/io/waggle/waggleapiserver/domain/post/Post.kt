@@ -96,10 +96,4 @@ class Post(
             throw BusinessException(ErrorCode.INVALID_STATE, "Post is closed: $id")
         }
     }
-
-    fun checkOwnership(currentUserId: UUID) {
-        if (userId != currentUserId) {
-            throw BusinessException(ErrorCode.ACCESS_DENIED, "Not the owner of the post")
-        }
-    }
 }

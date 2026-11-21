@@ -12,6 +12,7 @@ class CommentServiceCascadeTest : CascadeIntegrationTestSupport() {
         val owner = createUser("owner")
         val commenter = createUser("commenter")
         val team = createTeam(owner.id)
+        createMember(owner.id, team.id, MemberRole.LEADER)
         val post = createPost(owner.id, team.id)
         val sibling = createPost(owner.id, team.id)
 

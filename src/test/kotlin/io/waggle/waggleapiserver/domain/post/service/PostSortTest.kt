@@ -2,6 +2,7 @@ package io.waggle.waggleapiserver.domain.post.service
 
 import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.domain.like.LikeType
+import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.post.Deadline
 import io.waggle.waggleapiserver.domain.post.Post
 import io.waggle.waggleapiserver.domain.post.PostSort
@@ -285,6 +286,7 @@ class PostSortTest : CascadeIntegrationTestSupport() {
     fun `마감 임박순은 커서 글이 삭제되면 빈 목록을 준다`() {
         val author = createUser("author")
         val team = createTeam(author.id)
+        createMember(author.id, team.id, MemberRole.LEADER)
 
         openPost(author.id, team.id, LocalDate.now().plusDays(1))
         openPost(author.id, team.id, LocalDate.now().plusDays(7))
@@ -299,6 +301,7 @@ class PostSortTest : CascadeIntegrationTestSupport() {
     fun `조회순은 커서 글이 삭제되면 빈 목록을 준다`() {
         val author = createUser("author")
         val team = createTeam(author.id)
+        createMember(author.id, team.id, MemberRole.LEADER)
 
         val mostViewed = createPost(author.id, team.id)
         createPost(author.id, team.id)
@@ -314,6 +317,7 @@ class PostSortTest : CascadeIntegrationTestSupport() {
     fun `좋아요순은 커서 글이 삭제되면 좋아요 있는 구간을 건너뛰지 않고 끝낸다`() {
         val author = createUser("author")
         val team = createTeam(author.id)
+        createMember(author.id, team.id, MemberRole.LEADER)
         val firstLiker = createUser("first-liker")
         val secondLiker = createUser("second-liker")
 

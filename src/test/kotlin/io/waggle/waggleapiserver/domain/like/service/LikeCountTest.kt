@@ -137,6 +137,7 @@ class LikeCountTest : CascadeIntegrationTestSupport() {
         val owner = createUser("owner")
         val liker = createUser("liker")
         val team = createTeam(owner.id)
+        createMember(owner.id, team.id, MemberRole.LEADER)
         val post = createPost(owner.id, team.id)
         val sibling = createPost(owner.id, team.id)
         val comment = createComment(post.id, owner.id)

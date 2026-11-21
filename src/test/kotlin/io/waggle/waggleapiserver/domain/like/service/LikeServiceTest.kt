@@ -4,6 +4,7 @@ import io.waggle.waggleapiserver.common.dto.request.CursorGetQuery
 import io.waggle.waggleapiserver.common.exception.BusinessException
 import io.waggle.waggleapiserver.common.exception.ErrorCode
 import io.waggle.waggleapiserver.domain.like.LikeType
+import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.post.dto.request.PostGetQuery
 import io.waggle.waggleapiserver.support.CascadeIntegrationTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -116,6 +117,7 @@ class LikeServiceTest : CascadeIntegrationTestSupport() {
         val author = createUser("author")
         val liker = createUser("liker")
         val team = createTeam(author.id)
+        createMember(author.id, team.id, MemberRole.LEADER)
         val post = createPost(author.id, team.id)
 
         postService.deletePost(post.id, author)

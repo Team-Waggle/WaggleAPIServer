@@ -13,6 +13,7 @@ import io.waggle.waggleapiserver.domain.comment.repository.CommentRepository
 import io.waggle.waggleapiserver.domain.like.LikeId
 import io.waggle.waggleapiserver.domain.like.LikeType
 import io.waggle.waggleapiserver.domain.like.repository.LikeRepository
+import io.waggle.waggleapiserver.domain.member.Member
 import io.waggle.waggleapiserver.domain.member.MemberRole
 import io.waggle.waggleapiserver.domain.member.repository.MemberRepository
 import io.waggle.waggleapiserver.domain.post.Deadline
@@ -342,15 +343,8 @@ class PostService(
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
 
-        post.checkOwnership(user.id)
+        val member = getMemberManagingPost(post, user)
         post.update(title, content, deadline?.let { Deadline.toExpiresAt(it) })
-
-        val member =
-            memberRepository.findByUserIdAndTeamId(user.id, post.teamId)
-                ?: throw BusinessException(
-                    ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, ${post.teamId}",
-                )
 
         val existingRecruitmentByPosition = recruitmentRepository.findByPostId(postId).associateBy { it.position }
         val requestedRecruitmentByPosition = recruitments.associateBy { it.position }
@@ -413,6 +407,20 @@ class PostService(
         )
     }
 
+    // 멤버 확인이 작성자 확인보다 먼저여야 팀을 떠난 작성자가 막힘
+    private fun getMemberManagingPost(
+        post: Post,
+        user: User,
+    ): Member {
+        val member =
+            memberRepository.findByUserIdAndTeamId(user.id, post.teamId)
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: ${post.teamId}")
+        if (post.userId != user.id) {
+            member.checkMemberRole(MemberRole.MANAGER)
+        }
+        return member
+    }
+
     // 마감한 포지션을 지웠다 다시 추가하면 RECRUITING으로 되살아나 재개 금지가 우회됨
     // 지원서는 recruitment가 아니라 position을 참조해 삭제해도 남으므로 대응 모집 정보가 없는 지원서가 생김
     private fun checkDeletableRecruitment(recruitment: Recruitment) {
@@ -470,7 +478,7 @@ class PostService(
         val post =
             postRepository.findByIdOrNull(postId)
                 ?: throw BusinessException(ErrorCode.ENTITY_NOT_FOUND, "Post not found: $postId")
-        post.checkOwnership(user.id)
+        getMemberManagingPost(post, user)
 
         eventPublisher.publishEvent(PostDeletedEvent(postId))
 
