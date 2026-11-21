@@ -81,10 +81,7 @@ class PostService(
 
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, teamId)
-                ?: throw BusinessException(
-                    ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, $teamId",
-                )
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: $teamId")
         member.checkMemberRole(MemberRole.MANAGER)
 
         val post =
@@ -450,10 +447,7 @@ class PostService(
 
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, post.teamId)
-                ?: throw BusinessException(
-                    ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, ${post.teamId}",
-                )
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: ${post.teamId}")
         member.checkMemberRole(MemberRole.MANAGER)
 
         // 현재 기획상 마감 상태를 재모집으로 변경하지 않음

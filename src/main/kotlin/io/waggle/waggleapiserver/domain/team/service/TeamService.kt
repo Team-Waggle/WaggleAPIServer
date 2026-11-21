@@ -156,10 +156,7 @@ class TeamService(
     ): TeamResponse {
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, teamId)
-                ?: throw BusinessException(
-                    ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, $teamId",
-                )
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: $teamId")
         member.checkMemberRole(MemberRole.MANAGER)
 
         val team =
@@ -205,10 +202,7 @@ class TeamService(
     ) {
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, teamId)
-                ?: throw BusinessException(
-                    ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, $teamId",
-                )
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: $teamId")
         member.checkMemberRole(MemberRole.LEADER)
 
         val team =
@@ -232,10 +226,7 @@ class TeamService(
     ) {
         val member =
             memberRepository.findByUserIdAndTeamId(user.id, teamId)
-                ?: throw BusinessException(
-                    ErrorCode.ENTITY_NOT_FOUND,
-                    "Member not found: ${user.id}, $teamId",
-                )
+                ?: throw BusinessException(ErrorCode.ACCESS_DENIED, "Not a member of team: $teamId")
         member.checkMemberRole(MemberRole.LEADER)
 
         val team =
